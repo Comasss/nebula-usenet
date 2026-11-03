@@ -367,7 +367,7 @@ mockIPC(
           current: '1.0.0',
           version: '1.6.0',
           notes: '<!-- nebula-autobuild -->\n## Cambios\n- Actualizador integrado con aviso y descarga desde la app\n- API compatible con NZBHydra2\n- Corrige la reanudación de descargas en Android\n\n| File | What |\n|---|---|',
-          url: 'https://github.com/Comasss/nebula/releases/tag/v1.6.0',
+          url: 'https://github.com/Comasss/nebula-usenet/releases/tag/v1.6.0',
           publishedAt: new Date().toISOString(),
           kind: /android/i.test(navigator.userAgent) ? 'apk' : 'installer',
           assetName: 'Nebula_1.6.0_x64-setup.exe',

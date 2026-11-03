@@ -4,7 +4,7 @@ version = "1.10.0"
 description = "Nebula — a modern Usenet (NZB) client for Windows and Android"
 authors = ["Genis"]
 license = "PolyForm-Noncommercial-1.0.0"
-repository = "https://github.com/Comasss/nebula"
+repository = "https://github.com/Comasss/nebula-usenet"
 edition = "2021"
 
 [lib]
