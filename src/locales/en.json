@@ -542,7 +542,8 @@
       "updates": "Updates",
       "api": "API",
       "transfer": "Move to another device",
-      "remote": "Remote control"
+      "remote": "Remote control",
+      "finish": "On finish"
     },
     "speedLimitDesc": "In MB/s. 0 = no limit.",
     "startMinimized": "Start minimized to tray",
@@ -796,7 +797,8 @@
       "api": "Newznab for Sonarr, Radarr…",
       "transfer": "Send or receive your settings with a QR code",
       "remote": "See and manage a PC's downloads",
-      "rss": "Automatic downloads with rules"
+      "rss": "Automatic downloads with rules",
+      "finish": "Alerts, scripts and shutdown"
     }
   },
   "update": {
@@ -1057,6 +1059,76 @@
       "seen": "Already grabbed: won't repeat",
       "duplicate": "Already in the queue or history: will be skipped",
       "any": "No filters: everything matches"
+    }
+  },
+  "finish": {
+    "title": "On finish",
+    "desc": "Actions that run when a download completes, when it fails or when the queue becomes empty. They never slow down downloads, and if something fails the reason goes to the Log.",
+    "add": "Add action",
+    "when": "Runs on",
+    "remove": "Remove action",
+    "removeConfirm": "Remove “{name}”?",
+    "on": {
+      "complete": "Completed",
+      "failed": "Failed",
+      "queueEmpty": "Queue empty"
+    },
+    "kind": {
+      "discord": "Discord",
+      "telegram": "Telegram",
+      "ntfy": "ntfy",
+      "webhook": "Webhook",
+      "script": "Script or program",
+      "power": "Shut down the PC"
+    },
+    "kindDesc": {
+      "discord": "Message to a channel through a webhook",
+      "telegram": "Message from your bot to a chat",
+      "ntfy": "Push notification on your ntfy server",
+      "webhook": "JSON POST to any URL",
+      "script": "Runs with the download's details",
+      "power": "Shut down, sleep or hibernate when the queue is empty"
+    },
+    "webhookUrl": "Webhook URL",
+    "url": "URL",
+    "webhookHint": "Receives a JSON POST: event, name, status, path, size, durationSecs, avgSpeed, via, error, stage and message.",
+    "botToken": "Bot token",
+    "chatId": "Chat id",
+    "server": "Server",
+    "topic": "Topic",
+    "accessToken": "Access token",
+    "script": "Script or program",
+    "pickScript": "Choose the script or program",
+    "programs": "Programs and scripts",
+    "timeout": "Time limit",
+    "scriptEnv": "Receives these environment variables:",
+    "powerMode": "What to do",
+    "power": {
+      "shutdown": "Shut down",
+      "sleep": "Sleep",
+      "hibernate": "Hibernate"
+    },
+    "once": "Just this once",
+    "onceDesc": "Turns itself off after it runs.",
+    "powerNote": "Only when the queue is empty (no paused or waiting jobs). There's a 60 s countdown first that you can cancel from the window, the notification or the tray.",
+    "encrypted": "Tokens and URLs are stored encrypted.",
+    "testOk": "Test OK: {name}",
+    "testPower": "Countdown test: nothing will shut down this time.",
+    "quick": {
+      "title": "When the queue is empty",
+      "off": "Do nothing",
+      "once": "Just this once: turns itself off after it runs.",
+      "always": "Always on (from Settings › On finish).",
+      "armed": "{action} when the queue is empty, just this once",
+      "cancel": "Cancel the countdown",
+      "cancelIn": "Cancel · {secs} s"
+    },
+    "countdown": {
+      "shutdown": "The PC is about to shut down",
+      "sleep": "The PC is about to sleep",
+      "hibernate": "The PC is about to hibernate",
+      "sub": "The download queue is empty. Happening in {secs} s.",
+      "test": "This is a test: nothing will happen at the end."
     }
   }
 }

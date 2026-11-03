@@ -524,7 +524,8 @@
       "updates": "アップデート",
       "api": "API",
       "transfer": "別のデバイスへ移行",
-      "remote": "リモート操作"
+      "remote": "リモート操作",
+      "finish": "完了時"
     },
     "speedLimitDesc": "MB/s 単位。0 = 制限なし。",
     "startMinimized": "トレイに最小化した状態で起動",
@@ -775,7 +776,8 @@
       "api": "Sonarr、Radarr 向け Newznab",
       "transfer": "QR コードで設定を送受信",
       "remote": "PC のダウンロードを確認・操作",
-      "rss": "ルールで自動ダウンロード"
+      "rss": "ルールで自動ダウンロード",
+      "finish": "通知、スクリプト、シャットダウン"
     }
   },
   "update": {
@@ -1036,6 +1038,76 @@
       "seen": "取得済み：繰り返しません",
       "duplicate": "キューか履歴にあり：スキップします",
       "any": "フィルターなし：すべて一致"
+    }
+  },
+  "finish": {
+    "title": "完了時",
+    "desc": "ダウンロードの完了時、失敗時、またはキューが空になったときに実行するアクションです。ダウンロードを遅くすることはなく、失敗した場合は理由がログに残ります。",
+    "add": "アクションを追加",
+    "when": "実行タイミング",
+    "remove": "アクションを削除",
+    "removeConfirm": "「{name}」を削除しますか？",
+    "on": {
+      "complete": "完了",
+      "failed": "失敗",
+      "queueEmpty": "キューが空"
+    },
+    "kind": {
+      "discord": "Discord",
+      "telegram": "Telegram",
+      "ntfy": "ntfy",
+      "webhook": "Webhook",
+      "script": "スクリプトまたはプログラム",
+      "power": "PC をシャットダウン"
+    },
+    "kindDesc": {
+      "discord": "Webhook でチャンネルにメッセージ",
+      "telegram": "ボットからチャットにメッセージ",
+      "ntfy": "ntfy サーバーにプッシュ通知",
+      "webhook": "任意の URL に JSON を POST",
+      "script": "ダウンロードの情報付きで実行",
+      "power": "キューが空になったらシャットダウン・スリープ・休止状態"
+    },
+    "webhookUrl": "Webhook URL",
+    "url": "URL",
+    "webhookHint": "JSON の POST を受け取ります: event, name, status, path, size, durationSecs, avgSpeed, via, error, stage, message。",
+    "botToken": "ボットのトークン",
+    "chatId": "Chat id",
+    "server": "サーバー",
+    "topic": "Topic",
+    "accessToken": "アクセストークン",
+    "script": "スクリプトまたはプログラム",
+    "pickScript": "スクリプトまたはプログラムを選択",
+    "programs": "プログラムとスクリプト",
+    "timeout": "制限時間",
+    "scriptEnv": "次の環境変数を受け取ります:",
+    "powerMode": "動作",
+    "power": {
+      "shutdown": "シャットダウン",
+      "sleep": "スリープ",
+      "hibernate": "休止状態"
+    },
+    "once": "今回のみ",
+    "onceDesc": "実行後に自動でオフになります。",
+    "powerNote": "キューが空のときのみ（一時停止中・待機中のジョブがない状態）。実行前に 60 秒のカウントダウンがあり、ウィンドウ・通知・トレイからキャンセルできます。",
+    "encrypted": "トークンと URL は暗号化して保存されます。",
+    "testOk": "テスト成功: {name}",
+    "testPower": "カウントダウンのテスト: 今回は何もシャットダウンしません。",
+    "quick": {
+      "title": "キューが空になったら",
+      "off": "何もしない",
+      "once": "今回のみ: 実行後に自動でオフになります。",
+      "always": "常にオン（設定 › 完了時 から）。",
+      "armed": "キューが空になったら{action}（今回のみ）",
+      "cancel": "カウントダウンをキャンセル",
+      "cancelIn": "キャンセル · {secs} 秒"
+    },
+    "countdown": {
+      "shutdown": "PC をシャットダウンします",
+      "sleep": "PC をスリープします",
+      "hibernate": "PC を休止状態にします",
+      "sub": "ダウンロードキューが空です。{secs} 秒後に実行します。",
+      "test": "これはテストです: 最後に何も起こりません。"
     }
   }
 }

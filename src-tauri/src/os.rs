@@ -20,6 +20,27 @@ pub fn notify(app: &tauri::AppHandle, tools_dir: &Path, title: &str, body: &str)
     let _ = (app, tools_dir, title, body);
 }
 
+/// Notificación de la cuenta atrás de apagado, con el botón Cancelar (solo Windows).
+pub fn notify_power(app: &tauri::AppHandle, title: &str, body: &str, cancel: &str) {
+    #[cfg(windows)]
+    if let Some(e) = tauri::Manager::try_state::<Arc<Engine>>(app) {
+        crate::winint::toast_power(app, &e.paths.tools, title, body, cancel);
+    }
+    #[cfg(not(windows))]
+    let _ = (app, title, body, cancel);
+}
+
+/// Apagar, suspender o hibernar: solo en Windows.
+pub fn power_action(mode: &str) -> Result<(), String> {
+    #[cfg(windows)]
+    return crate::winint::power_action(mode);
+    #[cfg(not(windows))]
+    {
+        let _ = mode;
+        Err(t!("finish.windowsOnly"))
+    }
+}
+
 /// Estado de la cola: en Windows va al icono de la bandeja; en Android, a la notificación
 /// permanente que mantiene viva la descarga con la pantalla apagada.
 pub fn queue_status(app: &tauri::AppHandle, active: usize, text: String) {

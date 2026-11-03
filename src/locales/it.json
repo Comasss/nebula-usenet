@@ -542,7 +542,8 @@
       "updates": "Aggiornamenti",
       "api": "API",
       "transfer": "Passa a un altro dispositivo",
-      "remote": "Controllo remoto"
+      "remote": "Controllo remoto",
+      "finish": "Al termine"
     },
     "speedLimitDesc": "In MB/s. 0 = nessun limite.",
     "startMinimized": "Avvia ridotto nell'area di notifica",
@@ -796,7 +797,8 @@
       "api": "Newznab per Sonarr, Radarr…",
       "transfer": "Invia o ricevi le impostazioni con un QR",
       "remote": "Vedi e gestisci i download di un PC",
-      "rss": "Download automatico con regole"
+      "rss": "Download automatico con regole",
+      "finish": "Avvisi, script e spegnimento"
     }
   },
   "update": {
@@ -1057,6 +1059,76 @@
       "seen": "Già preso: non si ripete",
       "duplicate": "Già in coda o nella cronologia: verrà saltato",
       "any": "Nessun filtro: corrisponde tutto"
+    }
+  },
+  "finish": {
+    "title": "Al termine",
+    "desc": "Azioni eseguite quando un download termina, fallisce o quando la coda resta vuota. Non rallentano mai i download e, se qualcosa va storto, il motivo finisce nel Log.",
+    "add": "Aggiungi azione",
+    "when": "Si attiva con",
+    "remove": "Rimuovi azione",
+    "removeConfirm": "Rimuovere «{name}»?",
+    "on": {
+      "complete": "Completato",
+      "failed": "Non riuscito",
+      "queueEmpty": "Coda vuota"
+    },
+    "kind": {
+      "discord": "Discord",
+      "telegram": "Telegram",
+      "ntfy": "ntfy",
+      "webhook": "Webhook",
+      "script": "Script o programma",
+      "power": "Spegni il PC"
+    },
+    "kindDesc": {
+      "discord": "Messaggio in un canale tramite webhook",
+      "telegram": "Messaggio del tuo bot in una chat",
+      "ntfy": "Notifica push sul tuo server ntfy",
+      "webhook": "POST JSON a qualsiasi URL",
+      "script": "Eseguito con i dati del download",
+      "power": "Spegni, sospendi o iberna con la coda vuota"
+    },
+    "webhookUrl": "URL del webhook",
+    "url": "URL",
+    "webhookHint": "Riceve un POST JSON: event, name, status, path, size, durationSecs, avgSpeed, via, error, stage e message.",
+    "botToken": "Token del bot",
+    "chatId": "Chat id",
+    "server": "Server",
+    "topic": "Topic",
+    "accessToken": "Token di accesso",
+    "script": "Script o programma",
+    "pickScript": "Scegli lo script o il programma",
+    "programs": "Programmi e script",
+    "timeout": "Tempo limite",
+    "scriptEnv": "Riceve queste variabili d'ambiente:",
+    "powerMode": "Cosa fare",
+    "power": {
+      "shutdown": "Spegni",
+      "sleep": "Sospendi",
+      "hibernate": "Iberna"
+    },
+    "once": "Solo questa volta",
+    "onceDesc": "Si disattiva da sola dopo l'attivazione.",
+    "powerNote": "Solo con la coda vuota (nessun lavoro in pausa o in attesa). Prima c'è un conto alla rovescia di 60 s che puoi annullare dalla finestra, dalla notifica o dall'area di notifica.",
+    "encrypted": "Token e URL vengono salvati cifrati.",
+    "testOk": "Prova riuscita: {name}",
+    "testPower": "Prova del conto alla rovescia: questa volta non si spegnerà nulla.",
+    "quick": {
+      "title": "Quando la coda è vuota",
+      "off": "Non fare nulla",
+      "once": "Solo questa volta: si disattiva dopo l'attivazione.",
+      "always": "Sempre attivo (da Impostazioni › Al termine).",
+      "armed": "{action} con la coda vuota, solo questa volta",
+      "cancel": "Annulla il conto alla rovescia",
+      "cancelIn": "Annulla · {secs} s"
+    },
+    "countdown": {
+      "shutdown": "Il PC sta per spegnersi",
+      "sleep": "Il PC sta per sospendersi",
+      "hibernate": "Il PC sta per andare in ibernazione",
+      "sub": "La coda dei download è vuota. Tra {secs} s.",
+      "test": "Questa è una prova: alla fine non succederà nulla."
     }
   }
 }

@@ -9,6 +9,7 @@ mod debrid;
 mod debrid_job;
 mod engine;
 mod fetch;
+mod finish;
 mod indexer;
 mod logger;
 mod nntp;
@@ -30,7 +31,7 @@ mod yenc;
 use engine::{Engine, OpenItem};
 use std::sync::Arc;
 #[cfg(desktop)]
-use tauri::menu::{Menu, MenuItem, PredefinedMenuItem};
+use tauri::menu::{CheckMenuItem, Menu, MenuItem, PredefinedMenuItem};
 #[cfg(desktop)]
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 #[cfg(desktop)]
@@ -41,7 +42,42 @@ use tauri::{AppHandle, Manager, RunEvent, WindowEvent};
 struct TrayItems {
     show: MenuItem<Wry>,
     pause: MenuItem<Wry>,
+    /// Apagar al vaciarse la cola (solo esta vez), o cancelar la cuenta atrás.
+    power: CheckMenuItem<Wry>,
     quit: MenuItem<Wry>,
+}
+
+/// Texto y marca del apagado rápido en la bandeja: (texto, activo).
+#[cfg(desktop)]
+fn power_item(app: &AppHandle) -> (String, bool) {
+    let Some(e) = app.try_state::<Arc<Engine>>() else { return (t!("tray.power.shutdown"), false) };
+    if finish::power_status(&e.finish).is_some() {
+        return (t!("tray.powerCancel"), true);
+    }
+    let s = e.settings.read();
+    let armed = finish::armed(&s);
+    let mode = armed
+        .or_else(|| s.finish_actions.iter().find(|a| a.kind == "power"))
+        .map(|a| a.power.clone())
+        .unwrap_or_default();
+    let text = match mode.as_str() {
+        "sleep" => t!("tray.power.sleep"),
+        "hibernate" => t!("tray.power.hibernate"),
+        _ => t!("tray.power.shutdown"),
+    };
+    (text, armed.is_some())
+}
+
+/// Actualiza el apagado rápido de la bandeja (tras cambiar los ajustes o la cuenta atrás).
+pub fn refresh_tray_power(app: &AppHandle) {
+    #[cfg(mobile)]
+    let _ = app;
+    #[cfg(desktop)]
+    if let Some(items) = app.try_state::<TrayItems>() {
+        let (text, on) = power_item(app);
+        let _ = items.power.set_text(text);
+        let _ = items.power.set_checked(on);
+    }
 }
 
 #[cfg(desktop)]
@@ -72,6 +108,7 @@ pub fn refresh_tray_texts(app: &AppHandle, paused: bool) {
         let _ = items.pause.set_text(pause_label(paused));
         let _ = items.quit.set_text(t!("tray.quit"));
     }
+    refresh_tray_power(app);
 }
 
 /// Convierte argumentos de línea de comandos en elementos a abrir (.nzb o enlaces).
@@ -105,9 +142,16 @@ fn build_tray(app: &tauri::App) -> tauri::Result<()> {
     let show = MenuItem::with_id(app, "show", t!("tray.show"), true, None::<&str>)?;
     let pause = MenuItem::with_id(app, "pause", pause_label(false), true, None::<&str>)?;
     let sep = PredefinedMenuItem::separator(app)?;
+    let power = CheckMenuItem::with_id(app, "power", t!("tray.power.shutdown"), true, false, None::<&str>)?;
+    let sep2 = PredefinedMenuItem::separator(app)?;
     let quit = MenuItem::with_id(app, "quit", t!("tray.quit"), true, None::<&str>)?;
-    let menu = Menu::with_items(app, &[&show, &pause, &sep, &quit])?;
-    app.manage(TrayItems { show, pause, quit });
+    // Apagar, suspender e hibernar solo existen en Windows.
+    let menu = if cfg!(windows) {
+        Menu::with_items(app, &[&show, &pause, &sep, &power, &sep2, &quit])?
+    } else {
+        Menu::with_items(app, &[&show, &pause, &sep, &quit])?
+    };
+    app.manage(TrayItems { show, pause, power, quit });
     let mut builder = TrayIconBuilder::with_id("main")
         .tooltip("Nebula")
         .menu(&menu)
@@ -123,6 +167,21 @@ fn build_tray(app: &tauri::App) -> tauri::Result<()> {
                     let paused = e.st.lock().paused;
                     e.set_paused(!paused);
                 }
+            }
+            "power" => {
+                if let Some(e) = app.try_state::<Arc<Engine>>() {
+                    if !finish::cancel_power(app, &e.finish) {
+                        let mode = {
+                            let s = e.settings.read();
+                            match finish::armed(&s) {
+                                Some(_) => None,
+                                None => Some(s.finish_actions.iter().find(|a| a.kind == "power").map(|a| a.power.clone()).unwrap_or_else(|| "shutdown".into())),
+                            }
+                        };
+                        finish::quick_power(&e, mode.as_deref());
+                    }
+                }
+                refresh_tray_power(app);
             }
             "quit" => app.exit(0),
             _ => {}
@@ -205,6 +264,7 @@ pub fn run() {
             os::refresh_registrations(settings.associate_nzb, settings.start_with_windows);
             let engine = Engine::new(app.handle().clone(), paths.clone(), settings.clone());
             app.manage(engine.clone());
+            refresh_tray_power(app.handle());
             engine.start();
             rss::start(engine.clone());
             os::start_clipboard_monitor(engine.clone());
@@ -224,6 +284,9 @@ pub fn run() {
         })
         .on_window_event(|window, event| {
             if let WindowEvent::CloseRequested { api, .. } = event {
+                if window.label() != "main" {
+                    return;
+                }
                 if let Some(e) = window.try_state::<Arc<Engine>>() {
                     if e.settings.read().close_to_tray {
                         api.prevent_close();
@@ -312,6 +375,10 @@ pub fn run() {
             commands::rss_check_now,
             commands::rss_preview,
             commands::rss_clear_log,
+            commands::finish_test,
+            commands::power_status,
+            commands::power_cancel,
+            commands::power_quick,
         ])
         .build(tauri::generate_context!())
         .expect("no se pudo iniciar Nebula");

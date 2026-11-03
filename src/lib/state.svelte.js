@@ -162,6 +162,10 @@ export async function init() {
   await listen('history', () => {
     if (!remote.active) refreshHistory();
   });
+  // Ajustes cambiados desde el motor (p. ej. el apagado "solo esta vez" al dispararse o desde la bandeja).
+  await listen('settings', (e) => {
+    ui.settings = e.payload;
+  });
   await listen('log', (e) => {
     ui.logs.push(e.payload);
     if (ui.logs.length > 2000) ui.logs.splice(0, ui.logs.length - 2000);

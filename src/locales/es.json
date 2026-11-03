@@ -542,7 +542,8 @@
       "updates": "Actualizaciones",
       "api": "API",
       "transfer": "Pasar a otro dispositivo",
-      "remote": "Control remoto"
+      "remote": "Control remoto",
+      "finish": "Al terminar"
     },
     "speedLimitDesc": "En MB/s. 0 = sin límite.",
     "startMinimized": "Iniciar minimizado en la bandeja",
@@ -796,7 +797,8 @@
       "api": "Newznab para Sonarr, Radarr…",
       "transfer": "Envía o recibe tus ajustes con un QR",
       "remote": "Ver y manejar las descargas de un PC",
-      "rss": "Descarga automática con reglas"
+      "rss": "Descarga automática con reglas",
+      "finish": "Avisos, scripts y apagado"
     }
   },
   "update": {
@@ -1057,6 +1059,76 @@
       "seen": "Ya se cogió: no se repite",
       "duplicate": "Ya está en la cola o el historial: se saltará",
       "any": "Sin filtros: coincide todo"
+    }
+  },
+  "finish": {
+    "title": "Al terminar",
+    "desc": "Acciones que se ejecutan cuando una descarga termina, cuando falla o cuando la cola se queda vacía. Nunca frenan las descargas y, si algo falla, el motivo queda en el Log.",
+    "add": "Añadir acción",
+    "when": "Se dispara con",
+    "remove": "Eliminar acción",
+    "removeConfirm": "¿Eliminar «{name}»?",
+    "on": {
+      "complete": "Completada",
+      "failed": "Fallida",
+      "queueEmpty": "Cola vacía"
+    },
+    "kind": {
+      "discord": "Discord",
+      "telegram": "Telegram",
+      "ntfy": "ntfy",
+      "webhook": "Webhook",
+      "script": "Script o programa",
+      "power": "Apagar el equipo"
+    },
+    "kindDesc": {
+      "discord": "Mensaje en un canal con un webhook",
+      "telegram": "Mensaje de tu bot a un chat",
+      "ntfy": "Notificación push en tu servidor ntfy",
+      "webhook": "POST con JSON a cualquier URL",
+      "script": "Se ejecuta con los datos de la descarga",
+      "power": "Apagar, suspender o hibernar con la cola vacía"
+    },
+    "webhookUrl": "URL del webhook",
+    "url": "URL",
+    "webhookHint": "Recibe un POST con JSON: event, name, status, path, size, durationSecs, avgSpeed, via, error, stage y message.",
+    "botToken": "Token del bot",
+    "chatId": "Chat id",
+    "server": "Servidor",
+    "topic": "Topic",
+    "accessToken": "Token de acceso",
+    "script": "Script o programa",
+    "pickScript": "Elige el script o programa",
+    "programs": "Programas y scripts",
+    "timeout": "Tiempo límite",
+    "scriptEnv": "Recibe estas variables de entorno:",
+    "powerMode": "Qué hacer",
+    "power": {
+      "shutdown": "Apagar",
+      "sleep": "Suspender",
+      "hibernate": "Hibernar"
+    },
+    "once": "Solo esta vez",
+    "onceDesc": "Se desactiva sola después de dispararse.",
+    "powerNote": "Solo con la cola vacía (sin trabajos en pausa ni en espera). Antes hay una cuenta atrás de 60 s que puedes cancelar desde la ventana, la notificación o la bandeja.",
+    "encrypted": "Los tokens y las URLs se guardan cifrados.",
+    "testOk": "Prueba correcta: {name}",
+    "testPower": "Prueba de la cuenta atrás: esta vez no se apagará nada.",
+    "quick": {
+      "title": "Al vaciarse la cola",
+      "off": "No hacer nada",
+      "once": "Solo esta vez: se desactiva sola al dispararse.",
+      "always": "Activado siempre (desde Ajustes › Al terminar).",
+      "armed": "{action} al vaciarse la cola, solo esta vez",
+      "cancel": "Cancelar la cuenta atrás",
+      "cancelIn": "Cancelar · {secs} s"
+    },
+    "countdown": {
+      "shutdown": "El equipo se va a apagar",
+      "sleep": "El equipo se va a suspender",
+      "hibernate": "El equipo se va a hibernar",
+      "sub": "La cola de descargas está vacía. Ocurrirá en {secs} s.",
+      "test": "Esto es una prueba: al terminar no pasará nada."
     }
   }
 }

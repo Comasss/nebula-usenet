@@ -1,7 +1,7 @@
 <script>
   import { t, tn, th, locale, num } from '../lib/i18n.svelte.js';
   import { remote, call, addItems } from '../lib/remote.svelte.js';
-  import { pickNzbFiles, isAndroid } from '../lib/platform.js';
+  import { pickNzbFiles, isAndroid, isWindows } from '../lib/platform.js';
   import { haptic } from '../lib/feedback.js';
   import { fly, fade, scale } from 'svelte/transition';
   import { flip } from 'svelte/animate';
@@ -9,6 +9,7 @@
   import Icon from '../components/Icon.svelte';
   import JobCard from '../components/JobCard.svelte';
   import SpeedGraph from '../components/SpeedGraph.svelte';
+  import PowerQuick from '../components/PowerQuick.svelte';
   import { ui, queueAdd, toast, d } from '../lib/state.svelte.js';
   import * as f from '../lib/format.js';
   import { usableDebrid } from '../lib/debrid.js';
@@ -159,6 +160,8 @@
           <div class="st-label">{t('downloads.currentSpeed')}</div>
           <div class="st-value big">{ui.queue.paused ? t('status.paused') : f.speed(ui.queue.speed)}</div>
         </div>
+        <div class="st-tools">
+        {#if isWindows}<PowerQuick />{/if}
         <div class="limit-wrap">
           <button
             class="limit-btn"
@@ -182,6 +185,7 @@
               </form>
             </div>
           {/if}
+        </div>
         </div>
       </div>
       <div class="graph"><SpeedGraph data={ui.speedHistory} height={64} id="main" /></div>
@@ -300,6 +304,7 @@
   .of { color: var(--muted); font-size: 15px; }
   .st-foot { font-size: 12px; color: var(--muted); margin-top: auto; padding-top: 6px; }
   .graph { margin: 6px -18px 0; overflow: hidden; }
+  .st-tools { display: flex; align-items: flex-start; gap: 6px; }
   .limit-wrap { position: relative; }
   .limit-btn {
     display: inline-flex; align-items: center; gap: 6px;

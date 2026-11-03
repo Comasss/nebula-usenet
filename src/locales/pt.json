@@ -542,7 +542,8 @@
       "updates": "Atualizações",
       "api": "API",
       "transfer": "Passar para outro dispositivo",
-      "remote": "Controle remoto"
+      "remote": "Controle remoto",
+      "finish": "Ao terminar"
     },
     "speedLimitDesc": "Em MB/s. 0 = sem limite.",
     "startMinimized": "Iniciar minimizado na bandeja",
@@ -796,7 +797,8 @@
       "api": "Newznab para Sonarr, Radarr…",
       "transfer": "Envie ou receba as suas configurações com um QR",
       "remote": "Ver e gerenciar os downloads de um PC",
-      "rss": "Transferência automática com regras"
+      "rss": "Transferência automática com regras",
+      "finish": "Alertas, scripts e desligar"
     }
   },
   "update": {
@@ -1057,6 +1059,76 @@
       "seen": "Já obtido: não se repete",
       "duplicate": "Já está na fila ou no histórico: será ignorado",
       "any": "Sem filtros: tudo corresponde"
+    }
+  },
+  "finish": {
+    "title": "Ao terminar",
+    "desc": "Ações que correm quando um download termina, falha ou quando a fila fica vazia. Nunca atrasam os downloads e, se algo falhar, o motivo fica no Registo.",
+    "add": "Adicionar ação",
+    "when": "Dispara com",
+    "remove": "Remover ação",
+    "removeConfirm": "Remover «{name}»?",
+    "on": {
+      "complete": "Concluído",
+      "failed": "Com falha",
+      "queueEmpty": "Fila vazia"
+    },
+    "kind": {
+      "discord": "Discord",
+      "telegram": "Telegram",
+      "ntfy": "ntfy",
+      "webhook": "Webhook",
+      "script": "Script ou programa",
+      "power": "Desligar o PC"
+    },
+    "kindDesc": {
+      "discord": "Mensagem num canal através de um webhook",
+      "telegram": "Mensagem do seu bot para um chat",
+      "ntfy": "Notificação push no seu servidor ntfy",
+      "webhook": "POST JSON para qualquer URL",
+      "script": "Corre com os dados do download",
+      "power": "Desligar, suspender ou hibernar com a fila vazia"
+    },
+    "webhookUrl": "URL do webhook",
+    "url": "URL",
+    "webhookHint": "Recebe um POST JSON: event, name, status, path, size, durationSecs, avgSpeed, via, error, stage e message.",
+    "botToken": "Token do bot",
+    "chatId": "Chat id",
+    "server": "Servidor",
+    "topic": "Topic",
+    "accessToken": "Token de acesso",
+    "script": "Script ou programa",
+    "pickScript": "Escolha o script ou programa",
+    "programs": "Programas e scripts",
+    "timeout": "Tempo limite",
+    "scriptEnv": "Recebe estas variáveis de ambiente:",
+    "powerMode": "O que fazer",
+    "power": {
+      "shutdown": "Desligar",
+      "sleep": "Suspender",
+      "hibernate": "Hibernar"
+    },
+    "once": "Só desta vez",
+    "onceDesc": "Desativa-se sozinha depois de disparar.",
+    "powerNote": "Só com a fila vazia (sem tarefas em pausa ou em espera). Antes há uma contagem de 60 s que pode cancelar na janela, na notificação ou na área de notificação.",
+    "encrypted": "Os tokens e os URL são guardados cifrados.",
+    "testOk": "Teste correto: {name}",
+    "testPower": "Teste da contagem: desta vez nada será desligado.",
+    "quick": {
+      "title": "Quando a fila esvaziar",
+      "off": "Não fazer nada",
+      "once": "Só desta vez: desativa-se sozinha ao disparar.",
+      "always": "Sempre ativo (em Definições › Ao terminar).",
+      "armed": "{action} quando a fila esvaziar, só desta vez",
+      "cancel": "Cancelar a contagem",
+      "cancelIn": "Cancelar · {secs} s"
+    },
+    "countdown": {
+      "shutdown": "O PC vai desligar-se",
+      "sleep": "O PC vai suspender",
+      "hibernate": "O PC vai hibernar",
+      "sub": "A fila de downloads está vazia. Acontece em {secs} s.",
+      "test": "Isto é um teste: no fim não acontecerá nada."
     }
   }
 }

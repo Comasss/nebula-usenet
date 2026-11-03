@@ -78,6 +78,12 @@ const settings = {
         { id: 'r1', name: 'Some Show 1080p', enabled: true, feeds: [], must: 'some show 1080p', regex: false, exclude: 'hevc, x265', minSizeMb: 500, maxSizeMb: 6000, categories: '5000', via: '', destDir: 'D:\\Series\\Some Show', createdAt: now() - 5 * 86400, onlyNew: true },
         { id: 'r2', name: 'Documentales', enabled: false, feeds: ['ix-i1'], must: '^Planet\\..*2160p', regex: true, exclude: '', minSizeMb: 0, maxSizeMb: 0, categories: '', via: 'd1', destDir: '', createdAt: now() - 86400, onlyNew: false },
       ],
+  finishActions: params.has('nofinish') ? [] : [
+    { id: 'f1', kind: 'discord', name: '', enabled: true, onComplete: true, onFailed: true, onQueueEmpty: false, url: 'https://discord.com/api/webhooks/123/abc', token: '', chatId: '', topic: '', path: '', timeoutSecs: 120, power: 'shutdown', once: false },
+    { id: 'f2', kind: 'telegram', name: 'Móvil', enabled: true, onComplete: false, onFailed: true, onQueueEmpty: true, url: '', token: '123456:ABC', chatId: '42', topic: '', path: '', timeoutSecs: 120, power: 'shutdown', once: false },
+    { id: 'f3', kind: 'script', name: '', enabled: false, onComplete: true, onFailed: false, onQueueEmpty: false, url: '', token: '', chatId: '', topic: '', path: 'C:\\scripts\\mover-a-nas.bat', timeoutSecs: 300, power: 'shutdown', once: false },
+    { id: 'f4', kind: 'power', name: '', enabled: params.has('armed'), onComplete: false, onFailed: false, onQueueEmpty: true, url: '', token: '', chatId: '', topic: '', path: '', timeoutSecs: 120, power: 'hibernate', once: true },
+  ],
 };
 
 const rssItems = [
@@ -329,6 +335,20 @@ mockIPC(
         await sleep(500);
         return args.dir + '\\' + args.name + '.nzb';
       case 'plugin:window|is_maximized': return false;
+      // Acciones al terminar (con ?armed el apagado rápido está activo; con #power, la ventana de la cuenta atrás)
+      case 'finish_test':
+        await sleep(700);
+        if (args.action.kind === 'telegram') throw 'HTTP 401: {"ok":false,"error_code":401,"description":"Unauthorized"}';
+        return null;
+      case 'power_status': return location.hash === '#power' ? { mode: 'shutdown', remaining: 42, test: false } : null;
+      case 'power_cancel': return true;
+      case 'power_quick': {
+        const p = settings.finishActions.find((a) => a.kind === 'power');
+        if (args.mode) Object.assign(p, { enabled: true, power: args.mode, onQueueEmpty: true });
+        else p.enabled = false;
+        return structuredClone(settings);
+      }
+
       // Android (con ?android y el user agent de un móvil)
       case 'app_resumed': return { files: [], urls: [], clipboard: [], storage: !params.has('nostorage') };
       case 'request_storage_access': return true;

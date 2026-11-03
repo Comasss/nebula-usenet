@@ -542,7 +542,8 @@
       "updates": "Updates",
       "api": "API",
       "transfer": "Auf anderes Gerät übertragen",
-      "remote": "Fernsteuerung"
+      "remote": "Fernsteuerung",
+      "finish": "Nach Abschluss"
     },
     "speedLimitDesc": "In MB/s. 0 = kein Limit.",
     "startMinimized": "Minimiert im Infobereich starten",
@@ -796,7 +797,8 @@
       "api": "Newznab für Sonarr, Radarr…",
       "transfer": "Einstellungen per QR-Code senden oder empfangen",
       "remote": "Downloads eines PCs ansehen und steuern",
-      "rss": "Automatische Downloads mit Regeln"
+      "rss": "Automatische Downloads mit Regeln",
+      "finish": "Benachrichtigungen, Skripte, Herunterfahren"
     }
   },
   "update": {
@@ -1057,6 +1059,76 @@
       "seen": "Bereits geholt: keine Wiederholung",
       "duplicate": "Schon in Warteschlange oder Verlauf: wird übersprungen",
       "any": "Keine Filter: alles passt"
+    }
+  },
+  "finish": {
+    "title": "Nach Abschluss",
+    "desc": "Aktionen, die laufen, wenn ein Download fertig ist, fehlschlägt oder die Warteschlange leer wird. Sie bremsen Downloads nie, und wenn etwas schiefgeht, steht der Grund im Protokoll.",
+    "add": "Aktion hinzufügen",
+    "when": "Auslösen bei",
+    "remove": "Aktion entfernen",
+    "removeConfirm": "„{name}“ entfernen?",
+    "on": {
+      "complete": "Abgeschlossen",
+      "failed": "Fehlgeschlagen",
+      "queueEmpty": "Warteschlange leer"
+    },
+    "kind": {
+      "discord": "Discord",
+      "telegram": "Telegram",
+      "ntfy": "ntfy",
+      "webhook": "Webhook",
+      "script": "Skript oder Programm",
+      "power": "PC herunterfahren"
+    },
+    "kindDesc": {
+      "discord": "Nachricht in einen Kanal per Webhook",
+      "telegram": "Nachricht deines Bots in einen Chat",
+      "ntfy": "Push-Benachrichtigung über deinen ntfy-Server",
+      "webhook": "JSON-POST an eine beliebige URL",
+      "script": "Läuft mit den Daten des Downloads",
+      "power": "Herunterfahren, Energie sparen oder Ruhezustand bei leerer Warteschlange"
+    },
+    "webhookUrl": "Webhook-URL",
+    "url": "URL",
+    "webhookHint": "Erhält einen JSON-POST: event, name, status, path, size, durationSecs, avgSpeed, via, error, stage und message.",
+    "botToken": "Bot-Token",
+    "chatId": "Chat-ID",
+    "server": "Server",
+    "topic": "Topic",
+    "accessToken": "Zugriffstoken",
+    "script": "Skript oder Programm",
+    "pickScript": "Skript oder Programm wählen",
+    "programs": "Programme und Skripte",
+    "timeout": "Zeitlimit",
+    "scriptEnv": "Erhält diese Umgebungsvariablen:",
+    "powerMode": "Was tun",
+    "power": {
+      "shutdown": "Herunterfahren",
+      "sleep": "Energie sparen",
+      "hibernate": "Ruhezustand"
+    },
+    "once": "Nur dieses Mal",
+    "onceDesc": "Schaltet sich nach dem Auslösen selbst ab.",
+    "powerNote": "Nur bei leerer Warteschlange (keine pausierten oder wartenden Aufträge). Vorher läuft ein 60-s-Countdown, den du im Fenster, in der Benachrichtigung oder im Infobereich abbrechen kannst.",
+    "encrypted": "Tokens und URLs werden verschlüsselt gespeichert.",
+    "testOk": "Test erfolgreich: {name}",
+    "testPower": "Countdown-Test: Diesmal wird nichts heruntergefahren.",
+    "quick": {
+      "title": "Bei leerer Warteschlange",
+      "off": "Nichts tun",
+      "once": "Nur dieses Mal: schaltet sich nach dem Auslösen ab.",
+      "always": "Immer aktiv (unter Einstellungen › Nach Abschluss).",
+      "armed": "{action} bei leerer Warteschlange, nur dieses Mal",
+      "cancel": "Countdown abbrechen",
+      "cancelIn": "Abbrechen · {secs} s"
+    },
+    "countdown": {
+      "shutdown": "Der PC wird heruntergefahren",
+      "sleep": "Der PC wechselt in den Energiesparmodus",
+      "hibernate": "Der PC wechselt in den Ruhezustand",
+      "sub": "Die Download-Warteschlange ist leer. In {secs} s.",
+      "test": "Das ist ein Test: Am Ende passiert nichts."
     }
   }
 }

@@ -51,7 +51,7 @@ const LOCAL_KEYS: &[&str] = &[
     "remotePort",
 ];
 /// Campos que solo existen en disco (claves cifradas).
-const DISK_KEYS: &[&str] = &["passwordEnc", "apiKeyEnc"];
+const DISK_KEYS: &[&str] = &["passwordEnc", "apiKeyEnc", "urlEnc", "tokenEnc"];
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -113,6 +113,14 @@ pub fn export(s: &Settings) -> Result<String, String> {
                 m.remove("destDir");
             }
         }
+    }
+    // De las acciones al terminar solo viajan las notificaciones: los scripts y la energía son de este equipo.
+    let notify: Vec<_> = s.finish_actions.iter().filter(|a| a.is_notification()).collect();
+    if notify.is_empty() {
+        obj.remove("finishActions");
+    } else {
+        obj.insert("finishActions".into(), serde_json::to_value(notify).map_err(|e| e.to_string())?);
+        strip_list(&mut obj, "finishActions", serde_json::to_value(crate::config::FinishAction::default()).unwrap_or_default());
     }
     obj.insert("_from".into(), Value::String(platform().into()));
     let json = serde_json::to_vec(&obj).map_err(|e| e.to_string())?;
@@ -183,6 +191,9 @@ pub fn merge(current: &Settings, code: &str) -> Result<Settings, String> {
     for r in &mut s.rss_rules {
         r.dest_dir = current.rss_rules.iter().find(|x| x.id == r.id).map(|x| x.dest_dir.clone()).unwrap_or_default();
     }
+    // Las notificaciones llegan del código; los scripts y la energía de este equipo se quedan.
+    s.finish_actions.retain(|a| a.is_notification());
+    s.finish_actions.extend(current.finish_actions.iter().filter(|a| !a.is_notification()).cloned());
     s.first_run_done = true;
     s.features_chosen = true;
     if !s.feature_nntp && !s.feature_indexers {
@@ -401,7 +412,7 @@ pub async fn send(s: &Settings, target: &str) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::config::{DebridConfig, IndexerConfig, RssFeed, RssRule, ServerConfig};
+    use crate::config::{DebridConfig, FinishAction, IndexerConfig, RssFeed, RssRule, ServerConfig};
 
     fn sample() -> Settings {
         let mut s = Settings::default();
@@ -443,7 +454,22 @@ mod tests {
             created_at: 1_790_000_000,
             ..Default::default()
         });
+        s.finish_actions.push(FinishAction { kind: "telegram".into(), token: "123:abc".into(), chat_id: "42".into(), ..Default::default() });
+        s.finish_actions.push(FinishAction { kind: "script".into(), path: "C:\\scripts\\fin.bat".into(), ..Default::default() });
+        s.finish_actions.push(FinishAction { kind: "power".into(), on_queue_empty: true, ..Default::default() });
         s
+    }
+
+    #[test]
+    fn scripts_and_power_stay_on_the_device() {
+        let code = export(&sample()).unwrap();
+        let mut dst = Settings::default();
+        dst.finish_actions.push(FinishAction { kind: "script".into(), path: "/bin/true".into(), ..Default::default() });
+        dst.finish_actions.push(FinishAction { kind: "discord".into(), url: "https://viejo".into(), ..Default::default() });
+        let out = merge(&dst, &code).unwrap();
+        let kinds: Vec<&str> = out.finish_actions.iter().map(|a| a.kind.as_str()).collect();
+        assert_eq!(kinds, ["telegram", "script"]);
+        assert_eq!(out.finish_actions[1].path, "/bin/true");
     }
 
     #[test]
@@ -483,6 +509,9 @@ mod tests {
         let out2 = merge(&dst2, &code).unwrap();
         assert_eq!(out2.rss_rules[0].dest_dir, "/storage/emulated/0/Series");
         assert_eq!(out2.rss_rules[0].name, "Mi serie");
+        assert_eq!(out.finish_actions.len(), 1);
+        assert_eq!(out.finish_actions[0].kind, "telegram");
+        assert_eq!(out.finish_actions[0].token, "123:abc");
         assert_eq!(
             preview(&code).unwrap(),
             Preview::Settings { from: platform().into(), servers: 3, indexers: 6, debrid: 2, rss: 1, api: true }
