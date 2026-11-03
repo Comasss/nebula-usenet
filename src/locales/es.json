@@ -319,7 +319,8 @@
     "search": "Buscar",
     "servers": "Servidores",
     "settings": "Configuración",
-    "stats": "Estadísticas"
+    "stats": "Estadísticas",
+    "rss": "RSS"
   },
   "search": {
     "adding": "Añadiendo…",
@@ -794,7 +795,8 @@
       "updates": "Buscar e instalar versiones nuevas",
       "api": "Newznab para Sonarr, Radarr…",
       "transfer": "Envía o recibe tus ajustes con un QR",
-      "remote": "Ver y manejar las descargas de un PC"
+      "remote": "Ver y manejar las descargas de un PC",
+      "rss": "Descarga automática con reglas"
     }
   },
   "update": {
@@ -943,5 +945,118 @@
     "pairText": "{name} ({from}) quiere controlar Nebula en este PC. Acepta solo si el móvil muestra el código {code}.",
     "approve": "Aceptar",
     "reject": "Rechazar"
+  },
+  "rss": {
+    "subtitle": "Coge automáticamente lo que publiquen tus indexadores y feeds, según tus reglas.",
+    "checkNow": "Comprobar ahora",
+    "newRule": "Nueva regla",
+    "editRule": "Editar regla",
+    "ruleSubtitle": "Qué coger, de qué feeds y cómo descargarlo",
+    "androidNote": "En Android, las reglas RSS solo funcionan con Nebula abierto. Si cierras la app o pasa mucho rato en segundo plano, no se comprueba nada hasta que vuelvas.",
+    "pausedNote": "La cola está en pausa: no se consulta ningún feed hasta reanudarla.",
+    "noFeedsNote": "Activa la búsqueda en indexadores o añade una URL RSS para tener feeds.",
+    "rules": "Reglas RSS",
+    "feeds": "Feeds",
+    "log": "Capturas automáticas",
+    "includesOld": "Incluye anteriores",
+    "matchesAll": "Cualquier release",
+    "allFeeds": "Todos los feeds",
+    "noFeedLeft": "Ninguno de sus feeds existe ya",
+    "emptyTitle": "Aún no hay reglas",
+    "emptyText": "Crea una regla con las palabras que te interesan y Nebula cogerá lo nuevo en cuanto aparezca.",
+    "addFeed": "Añadir URL RSS",
+    "editFeed": "Editar feed",
+    "feedsHint": "Cada indexador ofrece su feed de novedades. Un feed solo se consulta si alguna regla activa lo usa, y cada consulta cuenta en las estadísticas del indexador.",
+    "indexerFeed": "Indexador",
+    "feedOff": "Desactivado",
+    "feedUnused": "Ninguna regla activa lo usa",
+    "feedPending": "Pendiente de la primera consulta",
+    "feedChecked": "Consultado {ago} · {n} elementos",
+    "intervalDesc": "Minutos entre consultas (mínimo {n}).",
+    "interval": "Intervalo (min)",
+    "minInterval": "El intervalo mínimo es de {n} minutos",
+    "noFeeds": "No hay feeds. Añade un indexador o una URL RSS.",
+    "colDate": "Fecha",
+    "colRule": "Regla",
+    "colRelease": "Release",
+    "colIndexer": "Indexador",
+    "logEmpty": "Todavía no se ha cogido nada automáticamente.",
+    "nothingToCheck": "No hay ningún feed activo que usen tus reglas",
+    "checked": "{feeds} feeds comprobados · {grabbed} capturas",
+    "untitled": "Regla sin nombre",
+    "badRegex": "La expresión regular no es válida",
+    "badSize": "El tamaño mínimo es mayor que el máximo",
+    "ruleAdded": "Regla creada",
+    "ruleUpdated": "Regla actualizada",
+    "removeRuleTitle": "¿Eliminar la regla?",
+    "removeRuleMessage": "«{name}» dejará de coger releases. El registro se conserva.",
+    "feedAdded": "Feed añadido",
+    "feedUpdated": "Feed actualizado",
+    "removeFeedTitle": "¿Eliminar el feed?",
+    "removeFeedMessage": "{name} dejará de consultarse y se quitará de las reglas que lo usan.",
+    "namePlaceholder": "Ej.: Mi serie en 1080p",
+    "ruleFeeds": "Feeds en los que aplica",
+    "must": "Palabras que deben aparecer",
+    "mustRegex": "Expresión regular que debe coincidir",
+    "mustPlaceholder": "some show 1080p",
+    "mustHelp": "Deben aparecer todas, como palabras completas, sin importar mayúsculas ni puntos. Usa comillas para frases: \"web dl\".",
+    "mustRegexHelp": "Se compara con el título completo, sin distinguir mayúsculas.",
+    "exclude": "Palabras excluidas",
+    "excludePlaceholder": "hevc, x265, cam",
+    "minSize": "Tamaño mínimo (MB)",
+    "maxSize": "Tamaño máximo (MB)",
+    "categories": "Categorías",
+    "via": "Método de descarga",
+    "viaDefault": "Predeterminado",
+    "dest": "Carpeta de destino",
+    "destHelp": "Vacía = la carpeta de descargas. La carpeta no se pasa a otros dispositivos.",
+    "onlyNew": "Solo lo nuevo",
+    "onlyNewDesc": "Coge solo lo publicado después de crear la regla ({date}).",
+    "preview": "Vista previa",
+    "previewHint": "Mira qué elementos de los feeds actuales coincidirían y por qué.",
+    "previewCount": {
+      "one": "{n} de {total} coincide",
+      "other": "{n} de {total} coinciden"
+    },
+    "onlyMatches": "Coincidencias",
+    "allItems": "Todos",
+    "previewEmpty": "Ningún elemento que mostrar.",
+    "activeRules": {
+      "one": "{n} regla activa",
+      "other": "{n} reglas activas"
+    },
+    "why": {
+      "must": {
+        "ok": "Contiene: {detail}",
+        "no": "Falta: {detail}"
+      },
+      "regex": {
+        "ok": "Coincide con la regex",
+        "no": "No coincide con la regex"
+      },
+      "exclude": {
+        "ok": "Sin palabras excluidas",
+        "no": "Excluida: {detail}"
+      },
+      "minSize": {
+        "ok": "≥ {detail} MB",
+        "no": "Menos de {detail} MB"
+      },
+      "maxSize": {
+        "ok": "≤ {detail} MB",
+        "no": "Más de {detail} MB"
+      },
+      "category": {
+        "ok": "Categoría {detail}",
+        "no": "No es de {detail}"
+      },
+      "date": {
+        "ok": "Publicado después de crear la regla",
+        "no": "Publicado antes de crear la regla"
+      },
+      "seen": "Ya se cogió: no se repite",
+      "duplicate": "Ya está en la cola o el historial: se saltará",
+      "any": "Sin filtros: coincide todo"
+    }
   }
 }

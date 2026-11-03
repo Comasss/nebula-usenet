@@ -311,7 +311,8 @@
     "search": "搜索",
     "servers": "服务器",
     "settings": "设置",
-    "stats": "统计"
+    "stats": "统计",
+    "rss": "RSS"
   },
   "search": {
     "adding": "正在添加…",
@@ -773,7 +774,8 @@
       "updates": "查找并安装新版本",
       "api": "供 Sonarr、Radarr 使用的 Newznab",
       "transfer": "用二维码发送或接收设置",
-      "remote": "查看和管理电脑上的下载"
+      "remote": "查看和管理电脑上的下载",
+      "rss": "按规则自动下载"
     }
   },
   "update": {
@@ -922,5 +924,118 @@
     "pairText": "{name}（{from}）想要控制这台电脑上的 Nebula。只有当手机显示配对码 {code} 时才接受。",
     "approve": "接受",
     "reject": "拒绝"
+  },
+  "rss": {
+    "subtitle": "按照你的规则，自动抓取索引器和订阅源发布的内容。",
+    "checkNow": "立即检查",
+    "newRule": "新建规则",
+    "editRule": "编辑规则",
+    "ruleSubtitle": "抓取什么、来自哪些订阅源以及如何下载",
+    "androidNote": "在 Android 上，RSS 规则只在 Nebula 打开时生效。关闭应用或长时间在后台时，回来之前不会检查任何内容。",
+    "pausedNote": "队列已暂停：恢复之前不会查询任何订阅源。",
+    "noFeedsNote": "启用索引器搜索或添加 RSS 网址以获得订阅源。",
+    "rules": "RSS 规则",
+    "feeds": "订阅源",
+    "log": "自动抓取记录",
+    "includesOld": "包括旧内容",
+    "matchesAll": "任意发布",
+    "allFeeds": "所有订阅源",
+    "noFeedLeft": "其订阅源都已不存在",
+    "emptyTitle": "还没有规则",
+    "emptyText": "用你关心的关键词创建规则，Nebula 会在新内容出现时立即抓取。",
+    "addFeed": "添加 RSS 网址",
+    "editFeed": "编辑订阅源",
+    "feedsHint": "每个索引器都提供最新发布的订阅源。只有被启用的规则使用时才会查询，每次查询都计入该索引器的统计。",
+    "indexerFeed": "索引器",
+    "feedOff": "已关闭",
+    "feedUnused": "没有启用的规则使用它",
+    "feedPending": "等待首次查询",
+    "feedChecked": "{ago}查询 · {n} 个条目",
+    "intervalDesc": "查询间隔分钟数（至少 {n}）。",
+    "interval": "间隔（分钟）",
+    "minInterval": "最短间隔为 {n} 分钟",
+    "noFeeds": "没有订阅源。请添加索引器或 RSS 网址。",
+    "colDate": "日期",
+    "colRule": "规则",
+    "colRelease": "发布",
+    "colIndexer": "索引器",
+    "logEmpty": "尚未自动抓取任何内容。",
+    "nothingToCheck": "你的规则没有使用任何启用的订阅源",
+    "checked": "已检查 {feeds} 个订阅源 · 抓取 {grabbed} 个",
+    "untitled": "未命名规则",
+    "badRegex": "正则表达式无效",
+    "badSize": "最小大小大于最大大小",
+    "ruleAdded": "规则已创建",
+    "ruleUpdated": "规则已更新",
+    "removeRuleTitle": "删除规则？",
+    "removeRuleMessage": "“{name}”将不再抓取发布。记录会保留。",
+    "feedAdded": "订阅源已添加",
+    "feedUpdated": "订阅源已更新",
+    "removeFeedTitle": "删除订阅源？",
+    "removeFeedMessage": "{name} 将不再被查询，并会从使用它的规则中移除。",
+    "namePlaceholder": "例如：我的剧集 1080p",
+    "ruleFeeds": "适用的订阅源",
+    "must": "必须包含的词",
+    "mustRegex": "必须匹配的正则表达式",
+    "mustPlaceholder": "some show 1080p",
+    "mustHelp": "所有词都必须作为完整单词出现，不区分大小写和点号。短语请用引号：\"web dl\"。",
+    "mustRegexHelp": "与完整标题比较，不区分大小写。",
+    "exclude": "排除的词",
+    "excludePlaceholder": "hevc, x265, cam",
+    "minSize": "最小大小 (MB)",
+    "maxSize": "最大大小 (MB)",
+    "categories": "分类",
+    "via": "下载方式",
+    "viaDefault": "默认",
+    "dest": "目标文件夹",
+    "destHelp": "留空 = 下载文件夹。文件夹不会同步到其他设备。",
+    "onlyNew": "仅新内容",
+    "onlyNewDesc": "只抓取规则创建（{date}）之后发布的内容。",
+    "preview": "预览",
+    "previewHint": "查看当前订阅源中哪些条目会匹配以及原因。",
+    "previewCount": {
+      "one": "{total} 个中 {n} 个匹配",
+      "other": "{total} 个中 {n} 个匹配"
+    },
+    "onlyMatches": "匹配项",
+    "allItems": "全部",
+    "previewEmpty": "没有可显示的内容。",
+    "activeRules": {
+      "one": "{n} 条启用的规则",
+      "other": "{n} 条启用的规则"
+    },
+    "why": {
+      "must": {
+        "ok": "包含：{detail}",
+        "no": "缺少：{detail}"
+      },
+      "regex": {
+        "ok": "匹配正则",
+        "no": "不匹配正则"
+      },
+      "exclude": {
+        "ok": "无排除词",
+        "no": "已排除：{detail}"
+      },
+      "minSize": {
+        "ok": "≥ {detail} MB",
+        "no": "小于 {detail} MB"
+      },
+      "maxSize": {
+        "ok": "≤ {detail} MB",
+        "no": "大于 {detail} MB"
+      },
+      "category": {
+        "ok": "分类 {detail}",
+        "no": "不属于 {detail}"
+      },
+      "date": {
+        "ok": "在规则创建后发布",
+        "no": "在规则创建前发布"
+      },
+      "seen": "已抓取：不会重复",
+      "duplicate": "已在队列或历史中：将跳过",
+      "any": "无筛选：全部匹配"
+    }
   }
 }

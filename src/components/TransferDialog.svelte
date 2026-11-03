@@ -47,6 +47,7 @@
           <div><Icon name="server" size={16} /> <span>{t('nav.servers')}</span> <strong>{p.servers}</strong></div>
           <div><Icon name="layers" size={16} /> <span>{t('nav.indexers')}</span> <strong>{p.indexers}</strong></div>
           <div><Icon name="cloud" size={16} /> <span>{t('nav.debrid')}</span> <strong>{p.debrid}</strong></div>
+          {#if p.rss}<div><Icon name="rss" size={16} /> <span>{t('rss.rules')}</span> <strong>{p.rss}</strong></div>{/if}
           {#if p.api}<div><Icon name="plug" size={16} /> <span>{t('api.title')}</span> <Icon name="check" size={15} stroke={3} /></div>{/if}
         </div>
         <p class="hint left">{t('transfer.importNote')}</p>

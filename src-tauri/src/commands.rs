@@ -636,3 +636,27 @@ pub async fn remote_call(op: String, args: Option<serde_json::Value>) -> Result<
 pub async fn remote_send(id: String, kind: String, value: String) -> Result<serde_json::Value, String> {
     crate::remote::send_nzb(&id, &kind, &value).await
 }
+
+// ---- Descarga automática por RSS ----
+
+#[tauri::command]
+pub fn rss_status(e: Eng) -> crate::rss::Status {
+    crate::rss::status(e.inner())
+}
+
+/// "Comprobar ahora": consulta todos los feeds activos.
+#[tauri::command]
+pub async fn rss_check_now(e: Eng<'_>) -> Result<crate::rss::CheckSummary, String> {
+    crate::rss::run(e.inner(), true).await
+}
+
+/// Vista previa de una regla (aún sin guardar) con los elementos de los feeds actuales.
+#[tauri::command]
+pub async fn rss_preview(e: Eng<'_>, rule: crate::config::RssRule) -> Result<crate::rss::Preview, String> {
+    crate::rss::preview(e.inner(), rule).await
+}
+
+#[tauri::command]
+pub fn rss_clear_log(e: Eng) {
+    crate::rss::clear_log(e.inner());
+}

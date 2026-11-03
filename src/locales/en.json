@@ -319,7 +319,8 @@
     "search": "Search",
     "servers": "Servers",
     "settings": "Settings",
-    "stats": "Statistics"
+    "stats": "Statistics",
+    "rss": "RSS"
   },
   "search": {
     "adding": "Adding…",
@@ -794,7 +795,8 @@
       "updates": "Find and install new versions",
       "api": "Newznab for Sonarr, Radarr…",
       "transfer": "Send or receive your settings with a QR code",
-      "remote": "See and manage a PC's downloads"
+      "remote": "See and manage a PC's downloads",
+      "rss": "Automatic downloads with rules"
     }
   },
   "update": {
@@ -943,5 +945,118 @@
     "pairText": "{name} ({from}) wants to control Nebula on this PC. Accept only if the phone shows the code {code}.",
     "approve": "Accept",
     "reject": "Reject"
+  },
+  "rss": {
+    "subtitle": "Automatically grab what your indexers and feeds publish, based on your rules.",
+    "checkNow": "Check now",
+    "newRule": "New rule",
+    "editRule": "Edit rule",
+    "ruleSubtitle": "What to grab, from which feeds and how to download it",
+    "androidNote": "On Android, RSS rules only work while Nebula is open. If you close the app or it stays in the background for a long time, nothing is checked until you come back.",
+    "pausedNote": "The queue is paused: no feed is checked until you resume it.",
+    "noFeedsNote": "Turn on indexer search or add an RSS URL to get feeds.",
+    "rules": "RSS rules",
+    "feeds": "Feeds",
+    "log": "Automatic grabs",
+    "includesOld": "Includes older",
+    "matchesAll": "Any release",
+    "allFeeds": "All feeds",
+    "noFeedLeft": "None of its feeds exist anymore",
+    "emptyTitle": "No rules yet",
+    "emptyText": "Create a rule with the words you care about and Nebula will grab new releases as soon as they appear.",
+    "addFeed": "Add RSS URL",
+    "editFeed": "Edit feed",
+    "feedsHint": "Each indexer offers its feed of new releases. A feed is only checked if an active rule uses it, and every check counts in the indexer's stats.",
+    "indexerFeed": "Indexer",
+    "feedOff": "Off",
+    "feedUnused": "No active rule uses it",
+    "feedPending": "Waiting for the first check",
+    "feedChecked": "Checked {ago} · {n} items",
+    "intervalDesc": "Minutes between checks (minimum {n}).",
+    "interval": "Interval (min)",
+    "minInterval": "The minimum interval is {n} minutes",
+    "noFeeds": "No feeds. Add an indexer or an RSS URL.",
+    "colDate": "Date",
+    "colRule": "Rule",
+    "colRelease": "Release",
+    "colIndexer": "Indexer",
+    "logEmpty": "Nothing has been grabbed automatically yet.",
+    "nothingToCheck": "No active feed is used by your rules",
+    "checked": "{feeds} feeds checked · {grabbed} grabs",
+    "untitled": "Untitled rule",
+    "badRegex": "The regular expression isn't valid",
+    "badSize": "The minimum size is larger than the maximum",
+    "ruleAdded": "Rule created",
+    "ruleUpdated": "Rule updated",
+    "removeRuleTitle": "Remove rule?",
+    "removeRuleMessage": "\"{name}\" will stop grabbing releases. The log is kept.",
+    "feedAdded": "Feed added",
+    "feedUpdated": "Feed updated",
+    "removeFeedTitle": "Remove feed?",
+    "removeFeedMessage": "{name} will no longer be checked and will be removed from the rules that use it.",
+    "namePlaceholder": "E.g. My show in 1080p",
+    "ruleFeeds": "Feeds it applies to",
+    "must": "Words that must appear",
+    "mustRegex": "Regular expression that must match",
+    "mustPlaceholder": "some show 1080p",
+    "mustHelp": "All of them must appear as whole words, ignoring case and dots. Use quotes for phrases: \"web dl\".",
+    "mustRegexHelp": "Matched against the full title, case-insensitive.",
+    "exclude": "Excluded words",
+    "excludePlaceholder": "hevc, x265, cam",
+    "minSize": "Minimum size (MB)",
+    "maxSize": "Maximum size (MB)",
+    "categories": "Categories",
+    "via": "Download method",
+    "viaDefault": "Default",
+    "dest": "Destination folder",
+    "destHelp": "Empty = the downloads folder. The folder isn't moved to other devices.",
+    "onlyNew": "Only new releases",
+    "onlyNewDesc": "Only grab what's published after the rule was created ({date}).",
+    "preview": "Preview",
+    "previewHint": "See which items in the current feeds would match and why.",
+    "previewCount": {
+      "one": "{n} of {total} matches",
+      "other": "{n} of {total} match"
+    },
+    "onlyMatches": "Matches",
+    "allItems": "All",
+    "previewEmpty": "Nothing to show.",
+    "activeRules": {
+      "one": "{n} active rule",
+      "other": "{n} active rules"
+    },
+    "why": {
+      "must": {
+        "ok": "Contains: {detail}",
+        "no": "Missing: {detail}"
+      },
+      "regex": {
+        "ok": "Matches the regex",
+        "no": "Doesn't match the regex"
+      },
+      "exclude": {
+        "ok": "No excluded words",
+        "no": "Excluded: {detail}"
+      },
+      "minSize": {
+        "ok": "≥ {detail} MB",
+        "no": "Under {detail} MB"
+      },
+      "maxSize": {
+        "ok": "≤ {detail} MB",
+        "no": "Over {detail} MB"
+      },
+      "category": {
+        "ok": "Category {detail}",
+        "no": "Not in {detail}"
+      },
+      "date": {
+        "ok": "Published after the rule was created",
+        "no": "Published before the rule was created"
+      },
+      "seen": "Already grabbed: won't repeat",
+      "duplicate": "Already in the queue or history: will be skipped",
+      "any": "No filters: everything matches"
+    }
   }
 }

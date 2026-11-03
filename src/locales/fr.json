@@ -319,7 +319,8 @@
     "search": "Recherche",
     "servers": "Serveurs",
     "settings": "Paramètres",
-    "stats": "Statistiques"
+    "stats": "Statistiques",
+    "rss": "RSS"
   },
   "search": {
     "adding": "Ajout…",
@@ -794,7 +795,8 @@
       "updates": "Rechercher et installer les nouvelles versions",
       "api": "Newznab pour Sonarr, Radarr…",
       "transfer": "Envoyez ou recevez vos réglages avec un QR code",
-      "remote": "Voir et gérer les téléchargements d'un PC"
+      "remote": "Voir et gérer les téléchargements d'un PC",
+      "rss": "Téléchargement automatique par règles"
     }
   },
   "update": {
@@ -943,5 +945,118 @@
     "pairText": "{name} ({from}) veut contrôler Nebula sur ce PC. N'acceptez que si le téléphone affiche le code {code}.",
     "approve": "Accepter",
     "reject": "Refuser"
+  },
+  "rss": {
+    "subtitle": "Récupère automatiquement ce que publient tes indexeurs et flux, selon tes règles.",
+    "checkNow": "Vérifier maintenant",
+    "newRule": "Nouvelle règle",
+    "editRule": "Modifier la règle",
+    "ruleSubtitle": "Quoi récupérer, depuis quels flux et comment le télécharger",
+    "androidNote": "Sur Android, les règles RSS ne fonctionnent que lorsque Nebula est ouvert. Si tu fermes l'app ou si elle reste longtemps en arrière-plan, rien n'est vérifié avant ton retour.",
+    "pausedNote": "La file est en pause : aucun flux n'est consulté tant qu'elle n'est pas reprise.",
+    "noFeedsNote": "Active la recherche dans les indexeurs ou ajoute une URL RSS pour avoir des flux.",
+    "rules": "Règles RSS",
+    "feeds": "Flux",
+    "log": "Récupérations automatiques",
+    "includesOld": "Inclut les anciens",
+    "matchesAll": "N'importe quelle release",
+    "allFeeds": "Tous les flux",
+    "noFeedLeft": "Aucun de ses flux n'existe plus",
+    "emptyTitle": "Aucune règle pour l'instant",
+    "emptyText": "Crée une règle avec les mots qui t'intéressent et Nebula récupérera les nouveautés dès leur apparition.",
+    "addFeed": "Ajouter une URL RSS",
+    "editFeed": "Modifier le flux",
+    "feedsHint": "Chaque indexeur propose son flux de nouveautés. Un flux n'est consulté que si une règle active l'utilise, et chaque consultation compte dans les statistiques de l'indexeur.",
+    "indexerFeed": "Indexeur",
+    "feedOff": "Désactivé",
+    "feedUnused": "Aucune règle active ne l'utilise",
+    "feedPending": "En attente de la première consultation",
+    "feedChecked": "Consulté {ago} · {n} éléments",
+    "intervalDesc": "Minutes entre les consultations (minimum {n}).",
+    "interval": "Intervalle (min)",
+    "minInterval": "L'intervalle minimum est de {n} minutes",
+    "noFeeds": "Aucun flux. Ajoute un indexeur ou une URL RSS.",
+    "colDate": "Date",
+    "colRule": "Règle",
+    "colRelease": "Release",
+    "colIndexer": "Indexeur",
+    "logEmpty": "Rien n'a encore été récupéré automatiquement.",
+    "nothingToCheck": "Aucun flux actif n'est utilisé par tes règles",
+    "checked": "{feeds} flux vérifiés · {grabbed} récupérations",
+    "untitled": "Règle sans nom",
+    "badRegex": "L'expression régulière n'est pas valide",
+    "badSize": "La taille minimale est supérieure à la maximale",
+    "ruleAdded": "Règle créée",
+    "ruleUpdated": "Règle mise à jour",
+    "removeRuleTitle": "Supprimer la règle ?",
+    "removeRuleMessage": "« {name} » ne récupérera plus de releases. Le journal est conservé.",
+    "feedAdded": "Flux ajouté",
+    "feedUpdated": "Flux mis à jour",
+    "removeFeedTitle": "Supprimer le flux ?",
+    "removeFeedMessage": "{name} ne sera plus consulté et sera retiré des règles qui l'utilisent.",
+    "namePlaceholder": "Ex. : Ma série en 1080p",
+    "ruleFeeds": "Flux concernés",
+    "must": "Mots obligatoires",
+    "mustRegex": "Expression régulière à respecter",
+    "mustPlaceholder": "some show 1080p",
+    "mustHelp": "Tous doivent apparaître comme mots entiers, sans tenir compte des majuscules ni des points. Utilise des guillemets pour les phrases : \"web dl\".",
+    "mustRegexHelp": "Comparée au titre complet, sans distinction de casse.",
+    "exclude": "Mots exclus",
+    "excludePlaceholder": "hevc, x265, cam",
+    "minSize": "Taille minimale (Mo)",
+    "maxSize": "Taille maximale (Mo)",
+    "categories": "Catégories",
+    "via": "Méthode de téléchargement",
+    "viaDefault": "Par défaut",
+    "dest": "Dossier de destination",
+    "destHelp": "Vide = le dossier de téléchargements. Le dossier n'est pas transféré vers d'autres appareils.",
+    "onlyNew": "Seulement les nouveautés",
+    "onlyNewDesc": "Ne récupère que ce qui est publié après la création de la règle ({date}).",
+    "preview": "Aperçu",
+    "previewHint": "Vois quels éléments des flux actuels correspondraient et pourquoi.",
+    "previewCount": {
+      "one": "{n} sur {total} correspond",
+      "other": "{n} sur {total} correspondent"
+    },
+    "onlyMatches": "Correspondances",
+    "allItems": "Tous",
+    "previewEmpty": "Rien à afficher.",
+    "activeRules": {
+      "one": "{n} règle active",
+      "other": "{n} règles actives"
+    },
+    "why": {
+      "must": {
+        "ok": "Contient : {detail}",
+        "no": "Manque : {detail}"
+      },
+      "regex": {
+        "ok": "Correspond à la regex",
+        "no": "Ne correspond pas à la regex"
+      },
+      "exclude": {
+        "ok": "Aucun mot exclu",
+        "no": "Exclu : {detail}"
+      },
+      "minSize": {
+        "ok": "≥ {detail} Mo",
+        "no": "Moins de {detail} Mo"
+      },
+      "maxSize": {
+        "ok": "≤ {detail} Mo",
+        "no": "Plus de {detail} Mo"
+      },
+      "category": {
+        "ok": "Catégorie {detail}",
+        "no": "Hors de {detail}"
+      },
+      "date": {
+        "ok": "Publié après la création de la règle",
+        "no": "Publié avant la création de la règle"
+      },
+      "seen": "Déjà récupéré : pas de doublon",
+      "duplicate": "Déjà dans la file ou l'historique : sera ignoré",
+      "any": "Sans filtre : tout correspond"
+    }
   }
 }

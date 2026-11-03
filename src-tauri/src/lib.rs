@@ -16,6 +16,7 @@ mod nzb;
 mod os;
 mod postproc;
 mod remote;
+mod rss;
 mod stats;
 #[cfg(windows)]
 mod tools;
@@ -205,6 +206,7 @@ pub fn run() {
             let engine = Engine::new(app.handle().clone(), paths.clone(), settings.clone());
             app.manage(engine.clone());
             engine.start();
+            rss::start(engine.clone());
             os::start_clipboard_monitor(engine.clone());
             let args: Vec<String> = std::env::args().skip(1).collect();
             engine.open_items(parse_args(&args, None));
@@ -306,6 +308,10 @@ pub fn run() {
             commands::remote_wake,
             commands::remote_call,
             commands::remote_send,
+            commands::rss_status,
+            commands::rss_check_now,
+            commands::rss_preview,
+            commands::rss_clear_log,
         ])
         .build(tauri::generate_context!())
         .expect("no se pudo iniciar Nebula");

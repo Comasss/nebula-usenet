@@ -10,6 +10,11 @@
   import Switch from '../components/Switch.svelte';
   import { ui, saveSettings, ask, toast, d } from '../lib/state.svelte.js';
   import { blankIndexer } from '../lib/search.js';
+  import { isAndroid } from '../lib/platform.js';
+  import Rss from './Rss.svelte';
+
+  // En el escritorio, RSS es una pestaña de Indexadores (en Android está en Ajustes).
+  let tab = $state('indexers');
 
   let editing = $state(null);
   let isNew = $state(false);
@@ -81,6 +86,16 @@
   }
 </script>
 
+{#if !isAndroid}
+  <nav class="tabs">
+    <button class:sel={tab === 'indexers'} onclick={() => (tab = 'indexers')}><Icon name="layers" size={15} /> {t('nav.indexers')}</button>
+    <button class:sel={tab === 'rss'} onclick={() => (tab = 'rss')}><Icon name="rss" size={15} /> RSS</button>
+  </nav>
+{/if}
+
+{#if tab === 'rss' && !isAndroid}
+  <Rss />
+{:else}
 <div class="view">
   <header class="head">
     <div>
@@ -140,6 +155,7 @@
     </div>
   {/if}
 </div>
+{/if}
 
 {#if editing}
   <Modal title={isNew ? t('indexers.new') : t('indexers.edit')} subtitle={t('indexers.modalSubtitle')} icon="layers" width={640} onclose={() => (editing = null)}>
@@ -152,6 +168,11 @@
 {/if}
 
 <style>
+  .tabs { display: flex; gap: 4px; max-width: 1100px; margin: 0 auto; padding: 18px 30px 0; }
+  .tabs button { display: inline-flex; align-items: center; gap: 7px; padding: 7px 14px; border-radius: 10px; border: 1px solid transparent; background: none; color: var(--text-2); font-weight: 600; font-size: 13.5px; cursor: pointer; }
+  .tabs button:hover { color: var(--text); background: var(--panel-2); }
+  .tabs button.sel { color: var(--text); background: rgba(var(--accent-rgb), 0.14); border-color: rgba(var(--accent-rgb), 0.35); }
+  .tabs + :global(.view) { padding-top: 14px; }
   .view { padding: 26px 30px 40px; max-width: 1100px; margin: 0 auto; }
   .head { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; }
   h1 { margin: 0; font-family: var(--font-display); font-size: 26px; font-weight: 700; }
