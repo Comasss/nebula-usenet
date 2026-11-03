@@ -33,6 +33,12 @@ pub struct SearchItem {
     pub password: Option<u8>,
     pub indexer_id: String,
     pub indexer_name: String,
+    /// Fecha en que el indexador o el feed lo publicó (pubDate, unix). Solo la usa el RSS.
+    #[serde(skip)]
+    pub published: u64,
+    /// Identificador estable del elemento en el feed (guid o enlace). Solo la usa el RSS.
+    #[serde(skip)]
+    pub guid: String,
 }
 
 #[derive(Serialize, Debug)]
@@ -234,6 +240,8 @@ pub fn parse_rss(body: &str, indexer_id: &str, indexer_name: &str) -> Result<(Ve
             password: None,
             indexer_id: indexer_id.to_string(),
             indexer_name: indexer_name.to_string(),
+            published: 0,
+            guid: String::new(),
         };
         let mut pub_date = 0;
         let mut enclosure = None;
@@ -244,7 +252,12 @@ pub fn parse_rss(body: &str, indexer_id: &str, indexer_name: &str) -> Result<(Ve
                 "title" => it.title = text.to_string(),
                 "link" => it.link = text.to_string(),
                 "comments" => it.details = Some(text.split('#').next().unwrap_or(text).to_string()),
-                "guid" if c.attribute("isPermaLink") == Some("true") => guid_link = Some(text.to_string()),
+                "guid" => {
+                    it.guid = text.to_string();
+                    if c.attribute("isPermaLink") == Some("true") {
+                        guid_link = Some(text.to_string());
+                    }
+                }
                 "pubDate" => pub_date = parse_rfc2822(text).unwrap_or(0),
                 "category" => it.category = text.to_string(),
                 "size" => it.size = text.parse().unwrap_or(0),
@@ -282,11 +295,46 @@ pub fn parse_rss(body: &str, indexer_id: &str, indexer_name: &str) -> Result<(Ve
         if it.date == 0 {
             it.date = pub_date;
         }
+        it.published = if pub_date > 0 { pub_date } else { it.date };
+        if it.guid.is_empty() {
+            it.guid = it.link.clone();
+        }
         if !it.title.is_empty() && !it.link.is_empty() {
             items.push(it);
         }
     }
     Ok((items, total))
+}
+
+/// Lee un feed RSS suelto (no hace falta que sea de un indexador Newznab).
+pub async fn fetch_feed(url: &str, name: &str) -> Result<Vec<SearchItem>, String> {
+    let url = url.trim();
+    if !(url.starts_with("http://") || url.starts_with("https://")) {
+        return Err(t!("indexer.scheme"));
+    }
+    let resp = CLIENT.get(url).send().await.map_err(|e| {
+        if e.is_timeout() {
+            t!("indexer.timeout")
+        } else if e.is_connect() {
+            t!("indexer.connect")
+        } else {
+            t!("err.connection", error = e.without_url())
+        }
+    })?;
+    let status = resp.status();
+    let body = resp.text().await.map_err(|e| t!("indexer.incomplete", error = e.without_url()))?;
+    if let Some(err) = parse_error(&body) {
+        return Err(err);
+    }
+    if !status.is_success() {
+        return Err(match status.as_u16() {
+            401 | 403 => t!("indexer.denied"),
+            404 => t!("indexer.notFound"),
+            429 => t!("indexer.rateLimited"),
+            c => t!("indexer.httpError", status = c),
+        });
+    }
+    Ok(parse_rss(&body, "", name)?.0)
 }
 
 /// Convierte fechas RFC 2822 ("Tue, 29 Sep 2026 10:00:00 +0200") a tiempo unix.

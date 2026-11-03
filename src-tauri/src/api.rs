@@ -433,7 +433,7 @@ static EXT: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\.(nzb|mkv|mp4|avi)$
 static BRACKET: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\s*\[[^\]]*\]\s*$").unwrap());
 
 /// Mismo criterio que la búsqueda de la app (src/lib/search.js): nombre normalizado.
-fn normalize_title(title: &str) -> String {
+pub(crate) fn normalize_title(title: &str) -> String {
     let mut s = title.trim().to_lowercase();
     s = EXT.replace(&s, "").to_string();
     s = BRACKET.replace(&s, "").to_string();
@@ -645,6 +645,8 @@ mod tests {
             password: Some(0),
             indexer_id: indexer.into(),
             indexer_name: format!("Idx {}", indexer),
+            published: 0,
+            guid: String::new(),
         }
     }
 

@@ -319,7 +319,8 @@
     "search": "Cerca",
     "servers": "Servidors",
     "settings": "Configuració",
-    "stats": "Estadístiques"
+    "stats": "Estadístiques",
+    "rss": "RSS"
   },
   "search": {
     "adding": "S'està afegint…",
@@ -794,7 +795,8 @@
       "updates": "Cerca i instal·la versions noves",
       "api": "Newznab per a Sonarr, Radarr…",
       "transfer": "Envia o rep els teus ajustos amb un QR",
-      "remote": "Veure i gestionar les baixades d'un PC"
+      "remote": "Veure i gestionar les baixades d'un PC",
+      "rss": "Baixada automàtica amb regles"
     }
   },
   "update": {
@@ -943,5 +945,118 @@
     "pairText": "{name} ({from}) vol controlar el Nebula d'aquest PC. Accepta només si el mòbil mostra el codi {code}.",
     "approve": "Acceptar",
     "reject": "Rebutjar"
+  },
+  "rss": {
+    "subtitle": "Agafa automàticament el que publiquin els teus indexadors i feeds, segons les teves regles.",
+    "checkNow": "Comprova ara",
+    "newRule": "Nova regla",
+    "editRule": "Edita la regla",
+    "ruleSubtitle": "Què agafar, de quins feeds i com baixar-ho",
+    "androidNote": "A Android, les regles RSS només funcionen amb Nebula obert. Si tanques l'app o passa molta estona en segon pla, no es comprova res fins que tornis.",
+    "pausedNote": "La cua està en pausa: no es consulta cap feed fins que la reprenguis.",
+    "noFeedsNote": "Activa la cerca en indexadors o afegeix una URL RSS per tenir feeds.",
+    "rules": "Regles RSS",
+    "feeds": "Feeds",
+    "log": "Captures automàtiques",
+    "includesOld": "Inclou anteriors",
+    "matchesAll": "Qualsevol release",
+    "allFeeds": "Tots els feeds",
+    "noFeedLeft": "Cap dels seus feeds existeix ja",
+    "emptyTitle": "Encara no hi ha regles",
+    "emptyText": "Crea una regla amb les paraules que t'interessen i Nebula agafarà el que sigui nou tan aviat com aparegui.",
+    "addFeed": "Afegeix una URL RSS",
+    "editFeed": "Edita el feed",
+    "feedsHint": "Cada indexador ofereix el seu feed de novetats. Un feed només es consulta si alguna regla activa l'utilitza, i cada consulta compta a les estadístiques de l'indexador.",
+    "indexerFeed": "Indexador",
+    "feedOff": "Desactivat",
+    "feedUnused": "Cap regla activa l'utilitza",
+    "feedPending": "Pendent de la primera consulta",
+    "feedChecked": "Consultat {ago} · {n} elements",
+    "intervalDesc": "Minuts entre consultes (mínim {n}).",
+    "interval": "Interval (min)",
+    "minInterval": "L'interval mínim és de {n} minuts",
+    "noFeeds": "No hi ha feeds. Afegeix un indexador o una URL RSS.",
+    "colDate": "Data",
+    "colRule": "Regla",
+    "colRelease": "Release",
+    "colIndexer": "Indexador",
+    "logEmpty": "Encara no s'ha agafat res automàticament.",
+    "nothingToCheck": "No hi ha cap feed actiu que utilitzin les teves regles",
+    "checked": "{feeds} feeds comprovats · {grabbed} captures",
+    "untitled": "Regla sense nom",
+    "badRegex": "L'expressió regular no és vàlida",
+    "badSize": "La mida mínima és més gran que la màxima",
+    "ruleAdded": "Regla creada",
+    "ruleUpdated": "Regla actualitzada",
+    "removeRuleTitle": "Vols eliminar la regla?",
+    "removeRuleMessage": "«{name}» deixarà d'agafar releases. El registre es conserva.",
+    "feedAdded": "Feed afegit",
+    "feedUpdated": "Feed actualitzat",
+    "removeFeedTitle": "Vols eliminar el feed?",
+    "removeFeedMessage": "{name} deixarà de consultar-se i es traurà de les regles que l'utilitzen.",
+    "namePlaceholder": "P. ex.: La meva sèrie en 1080p",
+    "ruleFeeds": "Feeds on s'aplica",
+    "must": "Paraules que han d'aparèixer",
+    "mustRegex": "Expressió regular que ha de coincidir",
+    "mustPlaceholder": "some show 1080p",
+    "mustHelp": "Han d'aparèixer totes, com a paraules senceres, sense importar majúscules ni punts. Fes servir cometes per a frases: \"web dl\".",
+    "mustRegexHelp": "Es compara amb el títol complet, sense distingir majúscules.",
+    "exclude": "Paraules excloses",
+    "excludePlaceholder": "hevc, x265, cam",
+    "minSize": "Mida mínima (MB)",
+    "maxSize": "Mida màxima (MB)",
+    "categories": "Categories",
+    "via": "Mètode de baixada",
+    "viaDefault": "Predeterminat",
+    "dest": "Carpeta de destinació",
+    "destHelp": "Buida = la carpeta de baixades. La carpeta no es passa a altres dispositius.",
+    "onlyNew": "Només el nou",
+    "onlyNewDesc": "Agafa només el publicat després de crear la regla ({date}).",
+    "preview": "Previsualització",
+    "previewHint": "Mira quins elements dels feeds actuals coincidirien i per què.",
+    "previewCount": {
+      "one": "{n} de {total} coincideix",
+      "other": "{n} de {total} coincideixen"
+    },
+    "onlyMatches": "Coincidències",
+    "allItems": "Tots",
+    "previewEmpty": "Cap element per mostrar.",
+    "activeRules": {
+      "one": "{n} regla activa",
+      "other": "{n} regles actives"
+    },
+    "why": {
+      "must": {
+        "ok": "Conté: {detail}",
+        "no": "Falta: {detail}"
+      },
+      "regex": {
+        "ok": "Coincideix amb la regex",
+        "no": "No coincideix amb la regex"
+      },
+      "exclude": {
+        "ok": "Sense paraules excloses",
+        "no": "Exclosa: {detail}"
+      },
+      "minSize": {
+        "ok": "≥ {detail} MB",
+        "no": "Menys de {detail} MB"
+      },
+      "maxSize": {
+        "ok": "≤ {detail} MB",
+        "no": "Més de {detail} MB"
+      },
+      "category": {
+        "ok": "Categoria {detail}",
+        "no": "No és de {detail}"
+      },
+      "date": {
+        "ok": "Publicat després de crear la regla",
+        "no": "Publicat abans de crear la regla"
+      },
+      "seen": "Ja s'ha agafat: no es repeteix",
+      "duplicate": "Ja és a la cua o a l'historial: se saltarà",
+      "any": "Sense filtres: tot coincideix"
+    }
   }
 }

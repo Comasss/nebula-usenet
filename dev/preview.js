@@ -71,7 +71,53 @@ const settings = {
   apiKey: '3f9c2a7e51d84b6a9c0e7f1d2b3a4c5d',
   apiPort: 5077,
   apiLan: true,
+  rssFeeds: [{ id: 'f1', name: 'ShowRSS', url: 'https://showrss.example/feed.rss', indexer: '', intervalMin: 30, enabled: true }],
+  rssRules: params.has('norss')
+    ? []
+    : [
+        { id: 'r1', name: 'Some Show 1080p', enabled: true, feeds: [], must: 'some show 1080p', regex: false, exclude: 'hevc, x265', minSizeMb: 500, maxSizeMb: 6000, categories: '5000', via: '', destDir: 'D:\\Series\\Some Show', createdAt: now() - 5 * 86400, onlyNew: true },
+        { id: 'r2', name: 'Documentales', enabled: false, feeds: ['ix-i1'], must: '^Planet\\..*2160p', regex: true, exclude: '', minSizeMb: 0, maxSizeMb: 0, categories: '', via: 'd1', destDir: '', createdAt: now() - 86400, onlyNew: false },
+      ],
 };
+
+const rssItems = [
+  ['Some.Show.S03E05.1080p.WEB.h264-GRP', 2.1 * GB, 'NZBGeek', 'TV > HD', 3600],
+  ['Some.Show.S03E05.1080p.WEB.HEVC-OTHER', 1.2 * GB, 'NZBFinder', 'TV > HD', 4000],
+  ['Some.Show.S03E05.720p.WEB.h264-GRP', 900 * MB, 'NZBGeek', 'TV > HD', 3700],
+  ['Some.Show.S03E04.1080p.WEB.h264-GRP', 2 * GB, 'DrunkenSlug', 'TV > HD', 8 * 86400],
+  ['Another.Movie.2026.2160p.UHD.BluRay.x265-ABC', 42 * GB, 'NZBGeek', 'Movies > UHD', 7200],
+];
+const rssLog = [
+  { at: now() - 3 * 3600, ruleId: 'r1', rule: 'Some Show 1080p', title: 'Some.Show.S03E04.1080p.WEB.h264-GRP', indexer: 'NZBGeek', ok: true, error: null },
+  { at: now() - 26 * 3600, ruleId: 'r1', rule: 'Some Show 1080p', title: 'Some.Show.S03E03.1080p.WEB.h264-GRP', indexer: 'NZBFinder', ok: false, error: 'No hay ningún indexador que dé el NZB' },
+  { at: now() - 7 * 86400, ruleId: 'r1', rule: 'Some Show 1080p', title: 'Some.Show.S03E02.1080p.WEB.h264-GRP', indexer: 'DrunkenSlug', ok: true, error: null },
+];
+function rssFeedsView() {
+  const ix = settings.featureIndexers ? settings.indexers.filter((i) => i.enabled).map((i) => {
+    const saved = settings.rssFeeds.find((f) => f.id === `ix-${i.id}`);
+    return { id: `ix-${i.id}`, name: i.name, url: '', indexer: i.id, intervalMin: saved?.intervalMin ?? 15, enabled: saved?.enabled ?? true };
+  }) : [];
+  const loose = settings.rssFeeds.filter((f) => !f.indexer);
+  const rules = settings.rssRules.filter((r) => r.enabled);
+  return [...ix, ...loose].map((f, n) => ({ ...f, used: rules.some((r) => !r.feeds.length || r.feeds.includes(f.id)), lastCheck: n === 2 ? 0 : now() - 240 * (n + 1), nextCheck: 0, lastError: n === 1 ? 'El indexador ha limitado las peticiones' : null, items: 100 }));
+}
+function rssPreview(rule) {
+  const terms = (s) => s.split(/[\s,]+/).filter(Boolean).map((w) => w.toLowerCase());
+  return rssItems.map(([title, size, indexer, category, age]) => {
+    const words = ` ${title.toLowerCase().split(/[^a-z0-9]+/).join(' ')} `;
+    const checks = [];
+    if (rule.regex && rule.must) checks.push({ key: 'regex', ok: new RegExp(rule.must, 'i').test(title), detail: rule.must });
+    else if (rule.must.trim()) { const miss = terms(rule.must).filter((w) => !words.includes(` ${w} `)); checks.push({ key: 'must', ok: !miss.length, detail: miss.length ? miss.join(', ') : terms(rule.must).join(', ') }); }
+    if (rule.exclude.trim()) { const hit = terms(rule.exclude).filter((w) => words.includes(` ${w} `)); checks.push({ key: 'exclude', ok: !hit.length, detail: hit.join(', ') }); }
+    if (rule.minSizeMb) checks.push({ key: 'minSize', ok: size / MB >= rule.minSizeMb, detail: String(rule.minSizeMb) });
+    if (rule.maxSizeMb) checks.push({ key: 'maxSize', ok: size / MB <= rule.maxSizeMb, detail: String(rule.maxSizeMb) });
+    if (rule.categories.trim()) checks.push({ key: 'category', ok: category.startsWith('TV'), detail: rule.categories });
+    const date = now() - age;
+    if (rule.onlyNew) checks.push({ key: 'date', ok: date >= rule.createdAt, detail: '' });
+    const matched = checks.every((c) => c.ok);
+    return { title, feed: indexer, indexer, size, date, category, matched, checks, seen: title.includes('S03E04'), duplicate: false };
+  }).sort((a, b) => b.matched - a.matched);
+}
 if (params.has('setup')) settings.servers = [];
 
 const jobs = [
@@ -207,6 +253,10 @@ mockIPC(
   async (cmd, args) => {
     switch (cmd) {
       case 'get_settings': return structuredClone(settings);
+      case 'rss_status': return { feeds: rssFeedsView(), log: rssLog, busy: false, paused };
+      case 'rss_check_now': await sleep(900); return { feeds: rssFeedsView().filter((f) => f.used && f.enabled).length, grabbed: 1, errors: 0 };
+      case 'rss_preview': await sleep(500); return { items: rssPreview(args.rule), errors: [] };
+      case 'rss_clear_log': rssLog.length = 0; return null;
       case 'save_settings': Object.assign(settings, args.settings); return null;
       case 'get_queue': return snapshot();
       case 'get_history': return structuredClone(history);

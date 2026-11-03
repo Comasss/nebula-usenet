@@ -181,6 +181,84 @@ impl DebridConfig {
     }
 }
 
+/// Feed RSS. Los de los indexadores no se guardan hasta que se cambian: cada indexador tiene el
+/// suyo con id `ix-<id del indexador>` (ver `rss::feeds`).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct RssFeed {
+    pub id: String,
+    pub name: String,
+    /// URL de un feed suelto (vacía en los de indexador).
+    pub url: String,
+    /// Id del indexador si es su feed de novedades.
+    pub indexer: String,
+    /// Minutos entre consultas (mínimo 5).
+    pub interval_min: u32,
+    pub enabled: bool,
+}
+
+impl Default for RssFeed {
+    fn default() -> Self {
+        Self {
+            id: crate::util::new_id(),
+            name: String::new(),
+            url: String::new(),
+            indexer: String::new(),
+            interval_min: crate::rss::DEFAULT_INTERVAL,
+            enabled: true,
+        }
+    }
+}
+
+/// Regla de descarga automática por RSS.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct RssRule {
+    pub id: String,
+    pub name: String,
+    pub enabled: bool,
+    /// Feeds en los que aplica (vacío = todos).
+    pub feeds: Vec<String>,
+    /// Palabras que deben aparecer todas, o una expresión regular si `regex`.
+    pub must: String,
+    pub regex: bool,
+    /// Palabras que descartan la release si aparece cualquiera.
+    pub exclude: String,
+    /// Tamaño en MB (0 = sin límite).
+    pub min_size_mb: u64,
+    pub max_size_mb: u64,
+    /// Categorías separadas por comas: números Newznab (5000, 2040…) o texto ("TV", "Movies").
+    pub categories: String,
+    /// "" = método predeterminado, "nntp" o el id de un servicio debrid.
+    pub via: String,
+    /// Carpeta de destino (vacía = la predeterminada). No viaja a otros dispositivos.
+    pub dest_dir: String,
+    /// Fecha de creación (unix): por defecto solo se coge lo publicado después.
+    pub created_at: u64,
+    pub only_new: bool,
+}
+
+impl Default for RssRule {
+    fn default() -> Self {
+        Self {
+            id: crate::util::new_id(),
+            name: String::new(),
+            enabled: true,
+            feeds: Vec::new(),
+            must: String::new(),
+            regex: false,
+            exclude: String::new(),
+            min_size_mb: 0,
+            max_size_mb: 0,
+            categories: String::new(),
+            via: String::new(),
+            dest_dir: String::new(),
+            created_at: 0,
+            only_new: true,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default, rename_all = "camelCase")]
 pub struct Settings {
@@ -261,6 +339,9 @@ pub struct Settings {
     /// Control remoto: los móviles emparejados pueden ver y manejar la cola de este equipo.
     pub remote_enabled: bool,
     pub remote_port: u16,
+    /// Descarga automática por RSS.
+    pub rss_feeds: Vec<RssFeed>,
+    pub rss_rules: Vec<RssRule>,
 }
 
 impl Default for Settings {
@@ -324,6 +405,8 @@ impl Default for Settings {
             update_skipped: String::new(),
             remote_enabled: false,
             remote_port: crate::remote::DEFAULT_PORT,
+            rss_feeds: Vec::new(),
+            rss_rules: Vec::new(),
         }
     }
 }

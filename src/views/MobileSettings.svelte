@@ -16,13 +16,15 @@
   import Servers from './Servers.svelte';
   import Debrid from './Debrid.svelte';
   import Logs from './Logs.svelte';
+  import Rss from './Rss.svelte';
 
   const s = $derived(ui.settings);
-  const PAGES = { indexers: Indexers, servers: Servers, debrid: Debrid, logs: Logs };
+  const PAGES = { indexers: Indexers, servers: Servers, debrid: Debrid, logs: Logs, rss: Rss };
 
   const indexerCount = $derived((s?.indexers ?? []).filter((i) => i.enabled).length);
   const serverCount = $derived(nntpServers(s).length);
   const debridCount = $derived(usableDebrid(s).length);
+  const rssCount = $derived((s?.rssRules ?? []).filter((r) => r.enabled).length);
   const errorLogs = $derived(ui.logs.filter((l) => l.level === 'error').length);
 
   const sources = $derived(
@@ -30,6 +32,7 @@
       s?.featureIndexers && { id: 'indexers', icon: 'layers', hue: 265, label: t('nav.indexers'), sub: indexerCount ? tn('msettings.active', indexerCount) : t('msettings.noneYet') },
       s?.featureNntp !== false && { id: 'servers', icon: 'server', hue: 190, label: t('nav.servers'), sub: serverCount ? tn('msettings.active', serverCount) : t('msettings.noneYet') },
       s?.featureNntp !== false && { id: 'debrid', icon: 'cloud', hue: 215, label: t('nav.debrid'), sub: debridCount ? tn('msettings.active', debridCount) : t('msettings.noneYet') },
+      s?.featureNntp !== false && { id: 'rss', icon: 'rss', hue: 30, label: t('nav.rss'), sub: rssCount ? tn('rss.activeRules', rssCount) : t('msettings.desc.rss') },
     ].filter(Boolean)
   );
 

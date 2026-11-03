@@ -2,7 +2,8 @@
 //! - Enviar: el QR lleva el código de ajustes (JSON comprimido) y el otro dispositivo lo importa.
 //! - Recibir: el QR lleva la dirección de este equipo en la red local y una clave de un solo uso.
 //!   El móvil lo escanea y manda sus ajustes cifrados con esa clave; aquí se piden confirmar.
-//! Las rutas de las carpetas y las opciones propias de cada sistema no viajan.
+//! Las rutas de las carpetas y las opciones propias de cada sistema no viajan (tampoco la
+//! carpeta de destino de las reglas RSS, aunque sí los feeds y las reglas).
 use crate::config::Settings;
 use crate::engine::Engine;
 use base64::Engine as _;
@@ -65,7 +66,7 @@ pub struct QrCode {
 pub enum Preview {
     /// Ajustes para importar.
     #[serde(rename_all = "camelCase")]
-    Settings { from: String, servers: usize, indexers: usize, debrid: usize, api: bool },
+    Settings { from: String, servers: usize, indexers: usize, debrid: usize, rss: usize, api: bool },
     /// Un equipo que espera nuestros ajustes.
     #[serde(rename_all = "camelCase")]
     Receiver { address: String },
@@ -104,6 +105,15 @@ pub fn export(s: &Settings) -> Result<String, String> {
     strip_list(&mut obj, "servers", serde_json::to_value(crate::config::ServerConfig::default()).unwrap_or_default());
     strip_list(&mut obj, "indexers", serde_json::to_value(crate::config::IndexerConfig::default()).unwrap_or_default());
     strip_list(&mut obj, "debrid", serde_json::to_value(crate::config::DebridConfig::default()).unwrap_or_default());
+    strip_list(&mut obj, "rssFeeds", serde_json::to_value(crate::config::RssFeed::default()).unwrap_or_default());
+    strip_list(&mut obj, "rssRules", serde_json::to_value(crate::config::RssRule::default()).unwrap_or_default());
+    if let Some(Value::Array(rules)) = obj.get_mut("rssRules") {
+        for r in rules {
+            if let Value::Object(m) = r {
+                m.remove("destDir");
+            }
+        }
+    }
     obj.insert("_from".into(), Value::String(platform().into()));
     let json = serde_json::to_vec(&obj).map_err(|e| e.to_string())?;
     let mut z = flate2::write::DeflateEncoder::new(Vec::new(), flate2::Compression::best());
@@ -146,6 +156,7 @@ pub fn preview(code: &str) -> Result<Preview, String> {
         servers: count(&m, "servers"),
         indexers: count(&m, "indexers"),
         debrid: count(&m, "debrid"),
+        rss: count(&m, "rssRules"),
         api: m.get("apiEnabled").and_then(Value::as_bool).unwrap_or(false),
     })
 }
@@ -168,6 +179,10 @@ pub fn merge(current: &Settings, code: &str) -> Result<Settings, String> {
         }
     }
     let mut s: Settings = serde_json::from_value(Value::Object(cur)).map_err(|_| t!("transfer.invalid"))?;
+    // Las reglas RSS que ya existían aquí conservan su carpeta de destino.
+    for r in &mut s.rss_rules {
+        r.dest_dir = current.rss_rules.iter().find(|x| x.id == r.id).map(|x| x.dest_dir.clone()).unwrap_or_default();
+    }
     s.first_run_done = true;
     s.features_chosen = true;
     if !s.feature_nntp && !s.feature_indexers {
@@ -386,7 +401,7 @@ pub async fn send(s: &Settings, target: &str) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::config::{DebridConfig, IndexerConfig, ServerConfig};
+    use crate::config::{DebridConfig, IndexerConfig, RssFeed, RssRule, ServerConfig};
 
     fn sample() -> Settings {
         let mut s = Settings::default();
@@ -417,6 +432,17 @@ mod tests {
         }
         s.debrid.push(DebridConfig { api_key: uuid::Uuid::new_v4().to_string(), ..Default::default() });
         s.debrid.push(DebridConfig { kind: "premiumize".into(), api_key: uuid::Uuid::new_v4().simple().to_string(), ..Default::default() });
+        s.rss_feeds.push(RssFeed { name: "Feed suelto".into(), url: "https://feed.example/rss?key=abc".into(), interval_min: 30, ..Default::default() });
+        s.rss_rules.push(RssRule {
+            id: "regla1".into(),
+            name: "Mi serie".into(),
+            must: "some show 1080p".into(),
+            exclude: "hevc".into(),
+            max_size_mb: 4000,
+            dest_dir: "C:\\Series".into(),
+            created_at: 1_790_000_000,
+            ..Default::default()
+        });
         s
     }
 
@@ -444,9 +470,22 @@ mod tests {
         assert_eq!(serde_json::to_value(&out.servers).unwrap(), serde_json::to_value(&src.servers).unwrap());
         assert_eq!(serde_json::to_value(&out.indexers).unwrap(), serde_json::to_value(&src.indexers).unwrap());
         assert_eq!(serde_json::to_value(&out.debrid).unwrap(), serde_json::to_value(&src.debrid).unwrap());
+        assert_eq!(serde_json::to_value(&out.rss_feeds).unwrap(), serde_json::to_value(&src.rss_feeds).unwrap());
+        // Las reglas viajan, pero sin la carpeta de destino.
+        assert_eq!(out.rss_rules.len(), 1);
+        assert_eq!(out.rss_rules[0].must, "some show 1080p");
+        assert_eq!(out.rss_rules[0].created_at, 1_790_000_000);
+        assert_eq!(out.rss_rules[0].dest_dir, "");
+        assert!(parse(&code).unwrap()["rssRules"][0].get("destDir").is_none());
+        // Si la regla ya existía en el destino, conserva su carpeta.
+        let mut dst2 = Settings::default();
+        dst2.rss_rules.push(RssRule { id: "regla1".into(), dest_dir: "/storage/emulated/0/Series".into(), ..Default::default() });
+        let out2 = merge(&dst2, &code).unwrap();
+        assert_eq!(out2.rss_rules[0].dest_dir, "/storage/emulated/0/Series");
+        assert_eq!(out2.rss_rules[0].name, "Mi serie");
         assert_eq!(
             preview(&code).unwrap(),
-            Preview::Settings { from: platform().into(), servers: 3, indexers: 6, debrid: 2, api: true }
+            Preview::Settings { from: platform().into(), servers: 3, indexers: 6, debrid: 2, rss: 1, api: true }
         );
     }
 

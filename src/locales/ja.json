@@ -311,7 +311,8 @@
     "search": "検索",
     "servers": "サーバー",
     "settings": "設定",
-    "stats": "統計"
+    "stats": "統計",
+    "rss": "RSS"
   },
   "search": {
     "adding": "追加しています…",
@@ -773,7 +774,8 @@
       "updates": "新しいバージョンを探してインストール",
       "api": "Sonarr、Radarr 向け Newznab",
       "transfer": "QR コードで設定を送受信",
-      "remote": "PC のダウンロードを確認・操作"
+      "remote": "PC のダウンロードを確認・操作",
+      "rss": "ルールで自動ダウンロード"
     }
   },
   "update": {
@@ -922,5 +924,118 @@
     "pairText": "{name} ({from}) がこの PC の Nebula を操作しようとしています。スマホにコード {code} が表示されている場合のみ承認してください。",
     "approve": "承認",
     "reject": "拒否"
+  },
+  "rss": {
+    "subtitle": "ルールに従って、インデクサーやフィードの新着を自動で取得します。",
+    "checkNow": "今すぐ確認",
+    "newRule": "新しいルール",
+    "editRule": "ルールを編集",
+    "ruleSubtitle": "何を、どのフィードから、どうダウンロードするか",
+    "androidNote": "Android では、RSS ルールは Nebula を開いている間だけ動作します。アプリを閉じたり長時間バックグラウンドにすると、戻るまで何も確認されません。",
+    "pausedNote": "キューが一時停止中です。再開するまでフィードは確認されません。",
+    "noFeedsNote": "インデクサー検索を有効にするか、RSS の URL を追加してください。",
+    "rules": "RSS ルール",
+    "feeds": "フィード",
+    "log": "自動取得の記録",
+    "includesOld": "過去分も含む",
+    "matchesAll": "すべてのリリース",
+    "allFeeds": "すべてのフィード",
+    "noFeedLeft": "対象のフィードはもう存在しません",
+    "emptyTitle": "ルールはまだありません",
+    "emptyText": "気になるキーワードでルールを作ると、新着が出た時点で Nebula が取得します。",
+    "addFeed": "RSS の URL を追加",
+    "editFeed": "フィードを編集",
+    "feedsHint": "各インデクサーには新着フィードがあります。有効なルールが使うフィードだけが確認され、確認ごとにインデクサーの統計に記録されます。",
+    "indexerFeed": "インデクサー",
+    "feedOff": "オフ",
+    "feedUnused": "有効なルールが使っていません",
+    "feedPending": "初回の確認待ち",
+    "feedChecked": "{ago}に確認 · {n} 件",
+    "intervalDesc": "確認の間隔（分、最小 {n}）。",
+    "interval": "間隔（分）",
+    "minInterval": "最小間隔は {n} 分です",
+    "noFeeds": "フィードがありません。インデクサーか RSS の URL を追加してください。",
+    "colDate": "日時",
+    "colRule": "ルール",
+    "colRelease": "リリース",
+    "colIndexer": "インデクサー",
+    "logEmpty": "まだ自動取得はありません。",
+    "nothingToCheck": "ルールが使う有効なフィードがありません",
+    "checked": "{feeds} 件のフィードを確認 · {grabbed} 件取得",
+    "untitled": "名前のないルール",
+    "badRegex": "正規表現が無効です",
+    "badSize": "最小サイズが最大サイズより大きいです",
+    "ruleAdded": "ルールを作成しました",
+    "ruleUpdated": "ルールを更新しました",
+    "removeRuleTitle": "ルールを削除しますか？",
+    "removeRuleMessage": "「{name}」はリリースを取得しなくなります。記録は残ります。",
+    "feedAdded": "フィードを追加しました",
+    "feedUpdated": "フィードを更新しました",
+    "removeFeedTitle": "フィードを削除しますか？",
+    "removeFeedMessage": "{name} は確認されなくなり、使っているルールから外されます。",
+    "namePlaceholder": "例：お気に入りの番組 1080p",
+    "ruleFeeds": "対象のフィード",
+    "must": "含むべき単語",
+    "mustRegex": "一致すべき正規表現",
+    "mustPlaceholder": "some show 1080p",
+    "mustHelp": "すべて単語単位で含まれる必要があります（大文字小文字・ドットは無視）。フレーズは引用符で：\"web dl\"。",
+    "mustRegexHelp": "タイトル全体と比較します（大文字小文字は区別しません）。",
+    "exclude": "除外する単語",
+    "excludePlaceholder": "hevc, x265, cam",
+    "minSize": "最小サイズ (MB)",
+    "maxSize": "最大サイズ (MB)",
+    "categories": "カテゴリ",
+    "via": "ダウンロード方法",
+    "viaDefault": "既定",
+    "dest": "保存先フォルダー",
+    "destHelp": "空欄 = ダウンロードフォルダー。フォルダーは他のデバイスに移行されません。",
+    "onlyNew": "新着のみ",
+    "onlyNewDesc": "ルール作成（{date}）以降に公開されたものだけを取得します。",
+    "preview": "プレビュー",
+    "previewHint": "現在のフィードのどの項目が一致するか、その理由を確認できます。",
+    "previewCount": {
+      "one": "{total} 件中 {n} 件が一致",
+      "other": "{total} 件中 {n} 件が一致"
+    },
+    "onlyMatches": "一致のみ",
+    "allItems": "すべて",
+    "previewEmpty": "表示する項目がありません。",
+    "activeRules": {
+      "one": "有効なルール {n} 件",
+      "other": "有効なルール {n} 件"
+    },
+    "why": {
+      "must": {
+        "ok": "含む：{detail}",
+        "no": "不足：{detail}"
+      },
+      "regex": {
+        "ok": "正規表現に一致",
+        "no": "正規表現に不一致"
+      },
+      "exclude": {
+        "ok": "除外語なし",
+        "no": "除外：{detail}"
+      },
+      "minSize": {
+        "ok": "≥ {detail} MB",
+        "no": "{detail} MB 未満"
+      },
+      "maxSize": {
+        "ok": "≤ {detail} MB",
+        "no": "{detail} MB 超"
+      },
+      "category": {
+        "ok": "カテゴリ {detail}",
+        "no": "{detail} 以外"
+      },
+      "date": {
+        "ok": "ルール作成後に公開",
+        "no": "ルール作成前に公開"
+      },
+      "seen": "取得済み：繰り返しません",
+      "duplicate": "キューか履歴にあり：スキップします",
+      "any": "フィルターなし：すべて一致"
+    }
   }
 }
