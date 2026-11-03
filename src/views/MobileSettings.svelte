@@ -45,6 +45,7 @@
     { id: 'post', icon: 'package', hue: 20 },
     { id: 'links', icon: 'clipboard', hue: 330 },
     { id: 'windows', icon: 'smartphone', hue: 200 },
+    { id: 'finish', icon: 'bell', hue: 10 },
     { id: 'network', icon: 'wifi', hue: 140 },
     { id: 'look', icon: 'palette', hue: 300 },
     { id: 'remote', icon: 'monitor', hue: 250 },

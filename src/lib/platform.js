@@ -5,6 +5,7 @@ import { open } from '@tauri-apps/plugin-dialog';
 import { ui } from './state.svelte.js';
 
 export const isAndroid = /android/i.test(navigator.userAgent);
+export const isWindows = !isAndroid && /windows/i.test(navigator.userAgent);
 
 /** Elige una carpeta. En Android abre el selector propio de Nebula (FolderPicker). */
 export function pickFolder({ defaultPath, title } = {}) {

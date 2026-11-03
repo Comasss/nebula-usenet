@@ -938,6 +938,8 @@ pub struct Engine {
     pub stats: Mutex<Vec<StatRecord>>,
     pub indexer_stats: Mutex<Vec<IndexerEvent>>,
     pub indexer_dirty: AtomicBool,
+    /// Acciones al terminar: recuento de la cola y cuenta atrás de apagado.
+    pub finish: crate::finish::Runtime,
 }
 
 #[derive(Serialize, Clone, Debug)]
@@ -1043,6 +1045,7 @@ impl Engine {
             stats: Mutex::new(Vec::new()),
             indexer_stats: Mutex::new(Vec::new()),
             indexer_dirty: AtomicBool::new(false),
+            finish: Default::default(),
         })
     }
 
@@ -1595,6 +1598,7 @@ impl Engine {
             }
         }
         linfo!("{}{}", t!("log.added", name = name), via_label);
+        crate::finish::on_job_added(self);
         self.save_queue();
         self.work.notify_waiters();
         self.debrid_schedule();
@@ -1891,6 +1895,7 @@ impl Engine {
         }
         self.toast("success", t!("log.completed", name = job.name));
         self.record_stats(&job, &entry);
+        crate::finish::on_job(self, &job, &entry, true);
         self.push_history(entry);
         self.save_queue();
     }
@@ -1912,6 +1917,7 @@ impl Engine {
         }
         self.toast("error", format!("{}: {}", job.name, error));
         self.record_stats(&job, &entry);
+        crate::finish::on_job(self, &job, &entry, false);
         self.push_history(entry);
         self.save_queue();
     }
@@ -2026,6 +2032,7 @@ impl Engine {
             st.jobs.push(job);
         }
         linfo!("{}", t!("log.retrying", name = entry.name));
+        crate::finish::on_job_added(self);
         self.save_history();
         self.save_queue();
         self.work.notify_waiters();

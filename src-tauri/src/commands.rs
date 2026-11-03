@@ -26,8 +26,10 @@ pub fn set_language(app: AppHandle, e: Eng, lang: String) {
 }
 
 #[tauri::command]
-pub fn save_settings(e: Eng, settings: Settings) -> Result<(), String> {
-    e.inner().apply_settings(settings)
+pub fn save_settings(app: AppHandle, e: Eng, settings: Settings) -> Result<(), String> {
+    e.inner().apply_settings(settings)?;
+    crate::refresh_tray_power(&app);
+    Ok(())
 }
 
 #[tauri::command]
@@ -659,4 +661,42 @@ pub async fn rss_preview(e: Eng<'_>, rule: crate::config::RssRule) -> Result<cra
 #[tauri::command]
 pub fn rss_clear_log(e: Eng) {
     crate::rss::clear_log(e.inner());
+}
+
+// ---- Acciones al terminar ----
+
+/// Botón "Probar" de una acción: la ejecuta con una descarga de ejemplo. La de energía solo hace
+/// una cuenta atrás corta, sin apagar nada.
+#[tauri::command]
+pub async fn finish_test(app: AppHandle, e: Eng<'_>, action: crate::config::FinishAction) -> Result<(), String> {
+    if action.kind == "power" {
+        if !cfg!(windows) {
+            return Err(t!("finish.windowsOnly"));
+        }
+        crate::finish::start_power(&app, &e.finish, &action.power, true);
+        return Ok(());
+    }
+    let res = crate::finish::run(&action, &crate::finish::sample_event()).await;
+    match &res {
+        Ok(()) => crate::linfo!("{}", t!("finish.testOk", action = crate::finish::label(&action))),
+        Err(err) => crate::lerror!("{}", t!("finish.error", action = crate::finish::label(&action), error = err)),
+    }
+    res
+}
+
+#[tauri::command]
+pub fn power_status(e: Eng) -> Option<crate::finish::Countdown> {
+    crate::finish::power_status(&e.finish)
+}
+
+#[tauri::command]
+pub fn power_cancel(app: AppHandle, e: Eng) -> bool {
+    crate::finish::cancel_power(&app, &e.finish)
+}
+
+/// Apagado rápido desde el panel de velocidad: `mode` = "shutdown" / "sleep" / "hibernate", o nada para desactivarlo.
+#[tauri::command]
+pub fn power_quick(e: Eng, mode: Option<String>) -> Settings {
+    crate::finish::quick_power(&e, mode.as_deref());
+    e.settings.read().clone()
 }

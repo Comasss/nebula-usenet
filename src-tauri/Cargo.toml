@@ -1,6 +1,6 @@
 [package]
 name = "nebula"
-version = "1.8.0"
+version = "1.9.0"
 description = "Nebula — a modern Usenet (NZB) client for Windows and Android"
 authors = ["Genis"]
 license = "PolyForm-Noncommercial-1.0.0"
@@ -52,6 +52,7 @@ windows-sys = { version = "0.59", features = [
     "Win32_Security_Cryptography",
     "Win32_System_DataExchange",
     "Win32_System_JobObjects",
+    "Win32_System_Power",
     "Win32_System_Threading",
     "Win32_Storage_FileSystem",
     "Win32_UI_Shell",

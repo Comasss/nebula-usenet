@@ -524,7 +524,8 @@
       "updates": "更新",
       "api": "API",
       "transfer": "迁移到其他设备",
-      "remote": "远程控制"
+      "remote": "远程控制",
+      "finish": "完成后"
     },
     "speedLimitDesc": "单位为 MB/s。0 = 不限速。",
     "startMinimized": "启动时最小化到托盘",
@@ -775,7 +776,8 @@
       "api": "供 Sonarr、Radarr 使用的 Newznab",
       "transfer": "用二维码发送或接收设置",
       "remote": "查看和管理电脑上的下载",
-      "rss": "按规则自动下载"
+      "rss": "按规则自动下载",
+      "finish": "通知、脚本和关机"
     }
   },
   "update": {
@@ -1036,6 +1038,76 @@
       "seen": "已抓取：不会重复",
       "duplicate": "已在队列或历史中：将跳过",
       "any": "无筛选：全部匹配"
+    }
+  },
+  "finish": {
+    "title": "完成后",
+    "desc": "在下载完成、失败或队列清空时运行的操作。它们不会拖慢下载；如果出错，原因会记录在日志中。",
+    "add": "添加操作",
+    "when": "触发条件",
+    "remove": "删除操作",
+    "removeConfirm": "删除“{name}”？",
+    "on": {
+      "complete": "已完成",
+      "failed": "失败",
+      "queueEmpty": "队列已空"
+    },
+    "kind": {
+      "discord": "Discord",
+      "telegram": "Telegram",
+      "ntfy": "ntfy",
+      "webhook": "Webhook",
+      "script": "脚本或程序",
+      "power": "关闭电脑"
+    },
+    "kindDesc": {
+      "discord": "通过 Webhook 发送到频道",
+      "telegram": "由你的机器人发送到聊天",
+      "ntfy": "推送到你的 ntfy 服务器",
+      "webhook": "向任意 URL 发送 JSON POST",
+      "script": "带着下载信息运行",
+      "power": "队列清空时关机、睡眠或休眠"
+    },
+    "webhookUrl": "Webhook URL",
+    "url": "URL",
+    "webhookHint": "接收 JSON POST：event、name、status、path、size、durationSecs、avgSpeed、via、error、stage 和 message。",
+    "botToken": "机器人令牌",
+    "chatId": "Chat id",
+    "server": "服务器",
+    "topic": "Topic",
+    "accessToken": "访问令牌",
+    "script": "脚本或程序",
+    "pickScript": "选择脚本或程序",
+    "programs": "程序和脚本",
+    "timeout": "时间限制",
+    "scriptEnv": "接收以下环境变量：",
+    "powerMode": "执行操作",
+    "power": {
+      "shutdown": "关机",
+      "sleep": "睡眠",
+      "hibernate": "休眠"
+    },
+    "once": "仅此一次",
+    "onceDesc": "触发后自动关闭。",
+    "powerNote": "仅在队列清空时（没有暂停或等待中的任务）。执行前有 60 秒倒计时，可在窗口、通知或托盘中取消。",
+    "encrypted": "令牌和 URL 会加密保存。",
+    "testOk": "测试成功：{name}",
+    "testPower": "倒计时测试：这次不会关机。",
+    "quick": {
+      "title": "队列清空时",
+      "off": "不执行任何操作",
+      "once": "仅此一次：触发后自动关闭。",
+      "always": "始终启用（在 设置 › 完成后 中）。",
+      "armed": "队列清空时{action}，仅此一次",
+      "cancel": "取消倒计时",
+      "cancelIn": "取消 · {secs} 秒"
+    },
+    "countdown": {
+      "shutdown": "电脑即将关机",
+      "sleep": "电脑即将睡眠",
+      "hibernate": "电脑即将休眠",
+      "sub": "下载队列已空。将在 {secs} 秒后执行。",
+      "test": "这是测试：结束时不会发生任何事情。"
     }
   }
 }

@@ -137,6 +137,66 @@ pub fn toast(app: &tauri::AppHandle, tools_dir: &Path, title: &str, body: &str) 
     });
 }
 
+/// Notificación de la cuenta atrás de apagado, con un botón para cancelarla.
+pub fn toast_power(app: &tauri::AppHandle, tools_dir: &Path, title: &str, body: &str, cancel: &str) {
+    let app = app.clone();
+    let icon = tools_dir.join("nebula.png");
+    let (title, body, cancel) = (title.to_string(), body.to_string(), cancel.to_string());
+    std::thread::spawn(move || {
+        let handle = app.clone();
+        let mut t = tauri_winrt_notification::Toast::new(AUMID)
+            .title(&title)
+            .text1(&body)
+            .scenario(tauri_winrt_notification::Scenario::Reminder)
+            .add_button(&cancel, "cancel-power")
+            .on_activated(move |action| {
+                if let Some(e) = handle.try_state::<Arc<Engine>>() {
+                    if action.as_deref() == Some("cancel-power") {
+                        crate::finish::cancel_power(&handle, &e.finish);
+                    } else if let Some(w) = handle.get_webview_window("power") {
+                        let _ = w.show();
+                        let _ = w.set_focus();
+                    }
+                }
+                Ok(())
+            });
+        if icon.exists() {
+            t = t.icon(&icon, tauri_winrt_notification::IconCrop::Square, "Nebula");
+        }
+        if let Err(e) = t.show() {
+            crate::lwarn!("{}", t!("log.win.notifyFailed", error = format!("{:?}", e)));
+        }
+    });
+}
+
+/// Apaga, suspende o hiberna el equipo.
+pub fn power_action(mode: &str) -> Result<(), String> {
+    match mode {
+        "sleep" => {
+            use windows_sys::Win32::System::Power::SetSuspendState;
+            // Sin hibernar, sin forzar y con los eventos de reactivación permitidos.
+            if unsafe { SetSuspendState(0, 0, 0) } == 0 {
+                return Err(std::io::Error::last_os_error().to_string());
+            }
+            Ok(())
+        }
+        _ => {
+            let arg = if mode == "hibernate" { "/h" } else { "/s" };
+            let mut cmd = std::process::Command::new("shutdown.exe");
+            cmd.arg(arg);
+            if arg == "/s" {
+                cmd.args(["/t", "0"]);
+            }
+            let status = cmd.creation_flags(0x0800_0000).status().map_err(|e| e.to_string())?;
+            if status.success() {
+                Ok(())
+            } else {
+                Err(format!("shutdown.exe {}", status))
+            }
+        }
+    }
+}
+
 pub fn disk_free(path: &Path) -> Option<u64> {
     use windows_sys::Win32::Storage::FileSystem::GetDiskFreeSpaceExW;
     let mut p = path.to_path_buf();

@@ -15,6 +15,7 @@
   import { upd, checkUpdates, startUpdate, cancelDownload } from '../lib/updater.svelte.js';
   import { setContext, tick } from 'svelte';
   import { showSend, showReceive, showPaste, scanCode } from '../lib/transfer.svelte.js';
+  import FinishActions from '../components/FinishActions.svelte';
 
   // `only`: muestra solo esa sección (el móvil abre cada sección como una página).
   // `query`: búsqueda que llega de fuera (la portada de Ajustes del móvil); sin ella se usa el buscador propio.
@@ -67,6 +68,7 @@
     { id: 'post', icon: 'package' },
     { id: 'links', icon: 'clipboard' },
     { id: 'windows', icon: isAndroid ? 'smartphone' : 'monitor' },
+    { id: 'finish', icon: 'bell' },
     { id: 'network', icon: 'wifi' },
     { id: 'look', icon: 'palette' },
     { id: 'api', icon: 'plug' },
@@ -381,6 +383,13 @@
           <SettingRow label={t('settings.notifyFailed')} checked={s.notifyFailed} onchange={set('notifyFailed')} />
           <SettingRow label={t('settings.confirmDelete')} checked={s.confirmDelete} onchange={set('confirmDelete')} />
         </div>
+      </section>
+      {/if}
+
+      {#if show('finish')}
+      <section id="sec-finish" class:hit={secHit('finish')}>
+        <h2><Icon name="bell" size={18} /> {t('settings.section.finish')}</h2>
+        <FinishActions />
       </section>
       {/if}
 

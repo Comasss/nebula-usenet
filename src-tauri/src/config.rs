@@ -210,6 +210,64 @@ impl Default for RssFeed {
     }
 }
 
+/// Acción que se ejecuta al terminar una descarga, al fallar o al quedarse vacía la cola (ver finish.rs).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct FinishAction {
+    pub id: String,
+    /// "discord", "telegram", "ntfy", "webhook", "script" o "power".
+    pub kind: String,
+    pub name: String,
+    pub enabled: bool,
+    pub on_complete: bool,
+    pub on_failed: bool,
+    pub on_queue_empty: bool,
+    /// URL del webhook (Discord / genérico) o del servidor ntfy.
+    pub url: String,
+    /// URL cifrada (solo en disco).
+    pub url_enc: String,
+    /// Token del bot de Telegram o token de acceso de ntfy (opcional).
+    pub token: String,
+    /// Token cifrado (solo en disco).
+    pub token_enc: String,
+    /// Chat de Telegram.
+    pub chat_id: String,
+    /// Tema de ntfy.
+    pub topic: String,
+    /// Script o programa a ejecutar.
+    pub path: String,
+    /// Tiempo máximo del script, en segundos.
+    pub timeout_secs: u32,
+    /// Energía: "shutdown", "sleep" o "hibernate".
+    pub power: String,
+    /// Energía: se desactiva sola al dispararse.
+    pub once: bool,
+}
+
+impl Default for FinishAction {
+    fn default() -> Self {
+        Self {
+            id: crate::util::new_id(),
+            kind: "discord".into(),
+            name: String::new(),
+            enabled: true,
+            on_complete: true,
+            on_failed: true,
+            on_queue_empty: false,
+            url: String::new(),
+            url_enc: String::new(),
+            token: String::new(),
+            token_enc: String::new(),
+            chat_id: String::new(),
+            topic: String::new(),
+            path: String::new(),
+            timeout_secs: 120,
+            power: "shutdown".into(),
+            once: false,
+        }
+    }
+}
+
 /// Regla de descarga automática por RSS.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default, rename_all = "camelCase")]
@@ -256,6 +314,13 @@ impl Default for RssRule {
             created_at: 0,
             only_new: true,
         }
+    }
+}
+
+impl FinishAction {
+    /// Notificaciones: las únicas que existen en Android y que se pasan a otro dispositivo.
+    pub fn is_notification(&self) -> bool {
+        matches!(self.kind.as_str(), "discord" | "telegram" | "ntfy" | "webhook")
     }
 }
 
@@ -342,6 +407,8 @@ pub struct Settings {
     /// Descarga automática por RSS.
     pub rss_feeds: Vec<RssFeed>,
     pub rss_rules: Vec<RssRule>,
+    /// Acciones al terminar una descarga, al fallar o al vaciarse la cola.
+    pub finish_actions: Vec<FinishAction>,
 }
 
 impl Default for Settings {
@@ -407,6 +474,7 @@ impl Default for Settings {
             remote_port: crate::remote::DEFAULT_PORT,
             rss_feeds: Vec::new(),
             rss_rules: Vec::new(),
+            finish_actions: Vec::new(),
         }
     }
 }
@@ -451,6 +519,20 @@ impl Settings {
             }
         }
         s.api_key_enc.clear();
+        for a in &mut s.finish_actions {
+            if !a.url_enc.is_empty() {
+                if let Some(v) = unprotect(&a.url_enc) {
+                    a.url = v;
+                }
+            }
+            if !a.token_enc.is_empty() {
+                if let Some(v) = unprotect(&a.token_enc) {
+                    a.token = v;
+                }
+            }
+            a.url_enc.clear();
+            a.token_enc.clear();
+        }
         // Siempre debe quedar al menos una función activa.
         if !s.feature_nntp && !s.feature_indexers {
             s.feature_nntp = true;
@@ -478,6 +560,12 @@ impl Settings {
         }
         disk.api_key_enc = if disk.api_key.is_empty() { String::new() } else { protect(&disk.api_key).unwrap_or_default() };
         disk.api_key.clear();
+        for a in &mut disk.finish_actions {
+            a.url_enc = if a.url.is_empty() { String::new() } else { protect(&a.url).unwrap_or_default() };
+            a.url.clear();
+            a.token_enc = if a.token.is_empty() { String::new() } else { protect(&a.token).unwrap_or_default() };
+            a.token.clear();
+        }
         let json = serde_json::to_string_pretty(&disk).map_err(|e| e.to_string())?;
         write_atomic(&paths.config_file(), json.as_bytes())
     }

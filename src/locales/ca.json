@@ -542,7 +542,8 @@
       "updates": "Actualitzacions",
       "api": "API",
       "transfer": "Passar a un altre dispositiu",
-      "remote": "Control remot"
+      "remote": "Control remot",
+      "finish": "En acabar"
     },
     "speedLimitDesc": "En MB/s. 0 = sense límit.",
     "startMinimized": "Inicia minimitzat a la safata",
@@ -796,7 +797,8 @@
       "api": "Newznab per a Sonarr, Radarr…",
       "transfer": "Envia o rep els teus ajustos amb un QR",
       "remote": "Veure i gestionar les baixades d'un PC",
-      "rss": "Baixada automàtica amb regles"
+      "rss": "Baixada automàtica amb regles",
+      "finish": "Avisos, scripts i apagada"
     }
   },
   "update": {
@@ -1057,6 +1059,76 @@
       "seen": "Ja s'ha agafat: no es repeteix",
       "duplicate": "Ja és a la cua o a l'historial: se saltarà",
       "any": "Sense filtres: tot coincideix"
+    }
+  },
+  "finish": {
+    "title": "En acabar",
+    "desc": "Accions que s'executen quan una baixada acaba, quan falla o quan la cua es queda buida. Mai no frenen les baixades i, si alguna cosa falla, el motiu queda al Registre.",
+    "add": "Afegeix una acció",
+    "when": "S'activa amb",
+    "remove": "Elimina l'acció",
+    "removeConfirm": "Vols eliminar «{name}»?",
+    "on": {
+      "complete": "Completada",
+      "failed": "Fallida",
+      "queueEmpty": "Cua buida"
+    },
+    "kind": {
+      "discord": "Discord",
+      "telegram": "Telegram",
+      "ntfy": "ntfy",
+      "webhook": "Webhook",
+      "script": "Script o programa",
+      "power": "Apagar l'equip"
+    },
+    "kindDesc": {
+      "discord": "Missatge a un canal amb un webhook",
+      "telegram": "Missatge del teu bot a un xat",
+      "ntfy": "Notificació push al teu servidor ntfy",
+      "webhook": "POST amb JSON a qualsevol URL",
+      "script": "S'executa amb les dades de la baixada",
+      "power": "Apagar, suspendre o hibernar amb la cua buida"
+    },
+    "webhookUrl": "URL del webhook",
+    "url": "URL",
+    "webhookHint": "Rep un POST amb JSON: event, name, status, path, size, durationSecs, avgSpeed, via, error, stage i message.",
+    "botToken": "Token del bot",
+    "chatId": "Chat id",
+    "server": "Servidor",
+    "topic": "Topic",
+    "accessToken": "Token d'accés",
+    "script": "Script o programa",
+    "pickScript": "Tria l'script o programa",
+    "programs": "Programes i scripts",
+    "timeout": "Temps límit",
+    "scriptEnv": "Rep aquestes variables d'entorn:",
+    "powerMode": "Què cal fer",
+    "power": {
+      "shutdown": "Apagar",
+      "sleep": "Suspendre",
+      "hibernate": "Hibernar"
+    },
+    "once": "Només aquesta vegada",
+    "onceDesc": "Es desactiva sola després d'activar-se.",
+    "powerNote": "Només amb la cua buida (sense feines en pausa ni en espera). Abans hi ha un compte enrere de 60 s que pots cancel·lar des de la finestra, la notificació o la safata.",
+    "encrypted": "Els tokens i les URL es desen xifrats.",
+    "testOk": "Prova correcta: {name}",
+    "testPower": "Prova del compte enrere: aquesta vegada no s'apagarà res.",
+    "quick": {
+      "title": "En buidar-se la cua",
+      "off": "No fer res",
+      "once": "Només aquesta vegada: es desactiva sola en activar-se.",
+      "always": "Activat sempre (des d'Opcions › En acabar).",
+      "armed": "{action} en buidar-se la cua, només aquesta vegada",
+      "cancel": "Cancel·la el compte enrere",
+      "cancelIn": "Cancel·la · {secs} s"
+    },
+    "countdown": {
+      "shutdown": "L'equip s'apagarà",
+      "sleep": "L'equip se suspendrà",
+      "hibernate": "L'equip s'hibernarà",
+      "sub": "La cua de baixades és buida. Passarà d'aquí a {secs} s.",
+      "test": "Això és una prova: en acabar no passarà res."
     }
   }
 }

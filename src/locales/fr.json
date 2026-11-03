@@ -542,7 +542,8 @@
       "updates": "Mises à jour",
       "api": "API",
       "transfer": "Transférer vers un autre appareil",
-      "remote": "Contrôle à distance"
+      "remote": "Contrôle à distance",
+      "finish": "À la fin"
     },
     "speedLimitDesc": "En MB/s. 0 = illimitée.",
     "startMinimized": "Démarrer réduit dans la zone de notification",
@@ -796,7 +797,8 @@
       "api": "Newznab pour Sonarr, Radarr…",
       "transfer": "Envoyez ou recevez vos réglages avec un QR code",
       "remote": "Voir et gérer les téléchargements d'un PC",
-      "rss": "Téléchargement automatique par règles"
+      "rss": "Téléchargement automatique par règles",
+      "finish": "Alertes, scripts et extinction"
     }
   },
   "update": {
@@ -1057,6 +1059,76 @@
       "seen": "Déjà récupéré : pas de doublon",
       "duplicate": "Déjà dans la file ou l'historique : sera ignoré",
       "any": "Sans filtre : tout correspond"
+    }
+  },
+  "finish": {
+    "title": "À la fin",
+    "desc": "Actions lancées quand un téléchargement se termine, échoue ou quand la file devient vide. Elles ne ralentissent jamais les téléchargements et, en cas d'échec, la raison figure dans le Journal.",
+    "add": "Ajouter une action",
+    "when": "Se déclenche si",
+    "remove": "Supprimer l'action",
+    "removeConfirm": "Supprimer « {name} » ?",
+    "on": {
+      "complete": "Terminé",
+      "failed": "Échoué",
+      "queueEmpty": "File vide"
+    },
+    "kind": {
+      "discord": "Discord",
+      "telegram": "Telegram",
+      "ntfy": "ntfy",
+      "webhook": "Webhook",
+      "script": "Script ou programme",
+      "power": "Éteindre le PC"
+    },
+    "kindDesc": {
+      "discord": "Message dans un salon via un webhook",
+      "telegram": "Message de votre bot vers un chat",
+      "ntfy": "Notification push sur votre serveur ntfy",
+      "webhook": "POST JSON vers n'importe quelle URL",
+      "script": "Lancé avec les infos du téléchargement",
+      "power": "Éteindre, mettre en veille ou en veille prolongée quand la file est vide"
+    },
+    "webhookUrl": "URL du webhook",
+    "url": "URL",
+    "webhookHint": "Reçoit un POST JSON : event, name, status, path, size, durationSecs, avgSpeed, via, error, stage et message.",
+    "botToken": "Jeton du bot",
+    "chatId": "Chat id",
+    "server": "Serveur",
+    "topic": "Topic",
+    "accessToken": "Jeton d'accès",
+    "script": "Script ou programme",
+    "pickScript": "Choisir le script ou programme",
+    "programs": "Programmes et scripts",
+    "timeout": "Délai maximal",
+    "scriptEnv": "Reçoit ces variables d'environnement :",
+    "powerMode": "Que faire",
+    "power": {
+      "shutdown": "Éteindre",
+      "sleep": "Mettre en veille",
+      "hibernate": "Veille prolongée"
+    },
+    "once": "Une seule fois",
+    "onceDesc": "Se désactive après s'être déclenchée.",
+    "powerNote": "Uniquement quand la file est vide (aucune tâche en pause ou en attente). Un compte à rebours de 60 s, annulable depuis la fenêtre, la notification ou la zone de notification, a lieu avant.",
+    "encrypted": "Les jetons et les URL sont stockés chiffrés.",
+    "testOk": "Test réussi : {name}",
+    "testPower": "Test du compte à rebours : rien ne s'éteindra cette fois.",
+    "quick": {
+      "title": "Quand la file est vide",
+      "off": "Ne rien faire",
+      "once": "Une seule fois : se désactive après s'être déclenchée.",
+      "always": "Toujours actif (depuis Paramètres › À la fin).",
+      "armed": "{action} quand la file est vide, une seule fois",
+      "cancel": "Annuler le compte à rebours",
+      "cancelIn": "Annuler · {secs} s"
+    },
+    "countdown": {
+      "shutdown": "Le PC va s'éteindre",
+      "sleep": "Le PC va se mettre en veille",
+      "hibernate": "Le PC va passer en veille prolongée",
+      "sub": "La file de téléchargement est vide. Dans {secs} s.",
+      "test": "Ceci est un test : rien ne se passera à la fin."
     }
   }
 }
