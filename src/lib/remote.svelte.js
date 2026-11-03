@@ -7,6 +7,7 @@ import { listen } from '@tauri-apps/api/event';
 import { t } from './i18n.svelte.js';
 import { ui, ask, closeDialog, toast, queueAdd } from './state.svelte.js';
 import { actionSheet, haptic } from './feedback.js';
+import { viaOptions } from './debrid.js';
 
 const isAndroid = /android/i.test(navigator.userAgent);
 
@@ -151,6 +152,30 @@ export async function sendToPc(items, pcId = remote.active?.id) {
       toast('error', String(e), 8000);
     }
   }
+}
+
+/**
+ * Formas de descargar del PC controlado (sus servidores NNTP y servicios debrid), con el mismo
+ * formato que viaOptions. El PC no manda contraseñas ni API keys, solo nombres e ids.
+ */
+export async function pcViaOptions() {
+  if (!remote.active) return [];
+  try {
+    const v = await invoke('remote_call', { op: 'get_vias', args: {} });
+    const settings = {
+      servers: (v?.servers ?? []).map((s) => ({ ...s, enabled: true })),
+      debrid: (v?.debrid ?? []).map((d) => ({ ...d, enabled: true, apiKey: '-' })),
+    };
+    return viaOptions(settings);
+  } catch {
+    // PC con una versión anterior: solo su método por defecto.
+    return [];
+  }
+}
+
+/** Manda un resultado de búsqueda (su enlace) al PC controlado, con `via` o el método por defecto del PC. */
+export async function sendLinkToPc(url, name, via = null) {
+  return invoke('remote_send', { id: remote.active?.id, kind: 'url', value: url, via, name });
 }
 
 /** Añadir desde Descargas: al PC si se le está controlando, si no a este móvil. */

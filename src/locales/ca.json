@@ -946,7 +946,8 @@
     "pairTitle": "Vols aparellar {name}?",
     "pairText": "{name} ({from}) vol controlar el Nebula d'aquest PC. Accepta només si el mòbil mostra el codi {code}.",
     "approve": "Acceptar",
-    "reject": "Rebutjar"
+    "reject": "Rebutjar",
+    "pcDefault": "Mètode per defecte del PC"
   },
   "rss": {
     "subtitle": "Agafa automàticament el que publiquin els teus indexadors i feeds, segons les teves regles.",

@@ -408,7 +408,7 @@ mockIPC(
         }, 700);
         return { id: args.id, name: 'SOBREMESA', status: 'connecting', error: null };
       case 'remote_call': {
-        const m = { get_queue: snapshot(), get_history: history, get_stats: stats, get_indexer_stats: indexerStats, get_job_files: files };
+        const m = { get_vias: { servers: [{ id: 'ps1', name: 'Eweka', host: 'news.eweka.nl', priority: 0 }], debrid: [{ id: 'pd1', kind: 'torbox', name: '' }] }, get_queue: snapshot(), get_history: history, get_stats: stats, get_indexer_stats: indexerStats, get_job_files: files };
         return m[args.op] ?? null;
       }
       case 'remote_send': await sleep(700); return { id: 'x', name: 'Nasa.Earth.From.Space.2160p.HDR' };

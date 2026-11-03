@@ -946,7 +946,8 @@
     "pairTitle": "Parear {name}?",
     "pairText": "{name} ({from}) quer controlar o Nebula neste PC. Aceite só se o celular mostrar o código {code}.",
     "approve": "Aceitar",
-    "reject": "Recusar"
+    "reject": "Recusar",
+    "pcDefault": "Método padrão do PC"
   },
   "rss": {
     "subtitle": "Obtém automaticamente o que os teus indexadores e feeds publicam, segundo as tuas regras.",

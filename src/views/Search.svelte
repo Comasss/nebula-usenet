@@ -11,6 +11,7 @@
   import * as f from '../lib/format.js';
   import { haptic, longpress, flyTo, chooseVia } from '../lib/feedback.js';
   import { viaOptions, viaLabel } from '../lib/debrid.js';
+  import { remote, pcViaOptions, sendLinkToPc } from '../lib/remote.svelte.js';
 
   const STORE = 'nebula.search';
   function loadPrefs() {
@@ -37,7 +38,8 @@
   // Estado de acciones por enlace: 'working' | 'queued' | 'saving' | 'saved' | 'error'
   let actions = $state({});
 
-  const nntp = $derived(ui.settings?.featureNntp);
+  // Controlando un PC desde el móvil se puede descargar en él aunque aquí no haya Usenet.
+  const nntp = $derived(ui.settings?.featureNntp || !!remote.active);
   const indexers = $derived((ui.settings?.indexers ?? []).filter((i) => i.enabled));
   const order = $derived(indexers.map((i) => i.id));
   const active = $derived(selected ? indexers.filter((i) => selected.includes(i.id)) : indexers);
@@ -158,6 +160,12 @@
 
   // Mantener pulsado Descargar: elegir con qué se descarga (si hay más de una forma).
   async function downloadWith(g, sources, el) {
+    if (remote.active) {
+      seenViaHint();
+      const choice = await chooseRemote(g, el);
+      if (choice) download(g, sources, choice.via, el, choice.target);
+      return;
+    }
     if (vias.length < 2) {
       toast('info', t('via.onlyOne'), 3000);
       return;
@@ -167,7 +175,45 @@
     if (via) download(g, sources, via, el);
   }
 
-  async function download(g, sources = g.sources, via = null, el = null) {
+  // Controlando un PC: el menú ofrece el PC (sus métodos) y este móvil (los suyos, si los hay).
+  async function chooseRemote(g, el) {
+    const pc = await pcViaOptions();
+    const pcName = remote.active.name;
+    const local = ui.settings?.featureNntp ? vias : [];
+    const options = [
+      ...(pc.length ? pc : [{ value: '', group: 'nntp', icon: 'monitor', label: t('remote.pcDefault'), sub: pcName }]).map((o) => ({
+        ...o,
+        value: `pc|${o.value}`,
+        section: t('remote.onPc', { name: pcName }),
+        sectionIcon: 'monitor',
+      })),
+      ...local.map((o) => ({ ...o, value: `phone|${o.value}`, section: t('remote.thisPhone'), sectionIcon: 'smartphone' })),
+    ];
+    const v = await chooseVia({ title: g.title, anchor: el, options });
+    if (!v) return null;
+    const [target, via] = v.split('|');
+    return { target, via: via || null };
+  }
+
+  async function downloadOnPc(g, sources, via, el) {
+    setAct(g, 'working');
+    haptic('tap');
+    try {
+      await tryEach(sources, (src) => sendLinkToPc(src.link, g.title, via));
+      setAct(g, 'queued');
+      haptic('success');
+      flyTo(el, 'downloads');
+      toast('success', t('remote.sent', { name: g.title, pc: remote.active?.name ?? '' }), 3000);
+    } catch (e) {
+      setAct(g, 'error');
+      haptic('error');
+      toast('error', `${g.title}: ${e}`);
+    }
+  }
+
+  // `target`: 'pc' o 'phone'. Sin indicarlo, mientras se controla un PC se descarga en el PC.
+  async function download(g, sources = g.sources, via = null, el = null, target = null) {
+    if (target === 'pc' || (!target && remote.active)) return downloadOnPc(g, sources, via, el);
     setAct(g, 'working');
     haptic('tap');
     const s = ui.settings;
@@ -306,7 +352,7 @@
         <Select class="sort" bind:value={sort} options={SORTS.map((s) => ({ value: s.id, label: s.label }))} />
       </div>
 
-      {#if nntp && vias.length > 1 && viaHint && groups.length}
+      {#if nntp && (vias.length > 1 || remote.active) && viaHint && groups.length}
         <div class="via-hint" out:slide={{ duration: d(200) }}>
           <Icon name="zap" size={15} />
           <span>{t('via.hint')}</span>

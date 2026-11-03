@@ -635,8 +635,14 @@ pub async fn remote_call(op: String, args: Option<serde_json::Value>) -> Result<
 
 /// Móvil: manda un .nzb (`kind` "file", ruta) o un enlace (`kind` "url") a un PC emparejado.
 #[tauri::command]
-pub async fn remote_send(id: String, kind: String, value: String) -> Result<serde_json::Value, String> {
-    crate::remote::send_nzb(&id, &kind, &value).await
+pub async fn remote_send(
+    id: String,
+    kind: String,
+    value: String,
+    via: Option<String>,
+    name: Option<String>,
+) -> Result<serde_json::Value, String> {
+    crate::remote::send_nzb(&id, &kind, &value, via, name).await
 }
 
 // ---- Descarga automática por RSS ----
