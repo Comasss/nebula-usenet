@@ -946,7 +946,8 @@
     "pairTitle": "Associare {name}?",
     "pairText": "{name} ({from}) vuole controllare Nebula su questo PC. Accetta solo se il telefono mostra il codice {code}.",
     "approve": "Accetta",
-    "reject": "Rifiuta"
+    "reject": "Rifiuta",
+    "pcDefault": "Metodo predefinito del PC"
   },
   "rss": {
     "subtitle": "Prende automaticamente ciò che pubblicano i tuoi indexer e feed, secondo le tue regole.",

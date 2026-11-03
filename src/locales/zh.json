@@ -925,7 +925,8 @@
     "pairTitle": "配对 {name}？",
     "pairText": "{name}（{from}）想要控制这台电脑上的 Nebula。只有当手机显示配对码 {code} 时才接受。",
     "approve": "接受",
-    "reject": "拒绝"
+    "reject": "拒绝",
+    "pcDefault": "电脑的默认方式"
   },
   "rss": {
     "subtitle": "按照你的规则，自动抓取索引器和订阅源发布的内容。",

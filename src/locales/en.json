@@ -946,7 +946,8 @@
     "pairTitle": "Pair {name}?",
     "pairText": "{name} ({from}) wants to control Nebula on this PC. Accept only if the phone shows the code {code}.",
     "approve": "Accept",
-    "reject": "Reject"
+    "reject": "Reject",
+    "pcDefault": "The PC's default method"
   },
   "rss": {
     "subtitle": "Automatically grab what your indexers and feeds publish, based on your rules.",

@@ -925,7 +925,8 @@
     "pairTitle": "{name} をペアリングしますか?",
     "pairText": "{name} ({from}) がこの PC の Nebula を操作しようとしています。スマホにコード {code} が表示されている場合のみ承認してください。",
     "approve": "承認",
-    "reject": "拒否"
+    "reject": "拒否",
+    "pcDefault": "PC の既定の方法"
   },
   "rss": {
     "subtitle": "ルールに従って、インデクサーやフィードの新着を自動で取得します。",

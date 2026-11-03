@@ -946,7 +946,8 @@
     "pairTitle": "{name} koppeln?",
     "pairText": "{name} ({from}) möchte Nebula auf diesem PC steuern. Bestätige nur, wenn das Handy den Code {code} zeigt.",
     "approve": "Annehmen",
-    "reject": "Ablehnen"
+    "reject": "Ablehnen",
+    "pcDefault": "Standardmethode des PCs"
   },
   "rss": {
     "subtitle": "Holt automatisch, was deine Indexer und Feeds veröffentlichen – nach deinen Regeln.",

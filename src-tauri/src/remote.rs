@@ -59,6 +59,7 @@ const OPS: &[&str] = &[
     "clear_history",
     "add_url",
     "add_nzb",
+    "get_vias",
 ];
 
 fn b64() -> base64::engine::GeneralPurpose {
@@ -748,15 +749,44 @@ async fn handle_op(e: &Arc<Engine>, dev_name: &str, op: &str, a: &Value) -> Resu
                 return Err(t!("err.invalidLink"));
             }
             let (data, f) = crate::commands::grab_nzb(e, &url, None).await?;
-            add_nzb(e, dev_name, data, f.filename.unwrap_or_default(), f.strong, url).await
+            // Desde la búsqueda del móvil llega el título del resultado: manda sobre el del archivo.
+            let (name, strong) = match arg_str(a, "name").trim() {
+                "" => (f.filename.unwrap_or_default(), f.strong),
+                n => (n.to_string(), true),
+            };
+            add_nzb(e, dev_name, data, name, strong, url, arg_via(a)).await
         }
         "add_nzb" => {
             let data = b64().decode(arg_str(a, "data")).map_err(|_| t!("remote.protocol"))?;
             let name = arg_str(a, "name").to_string();
-            add_nzb(e, dev_name, data, name.clone(), true, name).await
+            add_nzb(e, dev_name, data, name.clone(), true, name, arg_via(a)).await
         }
+        "get_vias" => Ok(vias(e)),
         _ => Err(t!("remote.notAllowed")),
     }
+}
+
+/// Método pedido por el móvil: "nntp", "nntp:<servidor>" o el id de un servicio debrid de este PC.
+fn arg_via(a: &Value) -> Option<String> {
+    a["via"].as_str().map(str::trim).filter(|v| !v.is_empty() && v.len() <= 80).map(str::to_string)
+}
+
+/// Formas de descargar que tiene este PC (sin contraseñas ni API keys), para el menú del móvil.
+fn vias(e: &Engine) -> Value {
+    let s = e.settings.read();
+    let servers: Vec<Value> = s
+        .servers
+        .iter()
+        .filter(|x| x.enabled && !x.host.trim().is_empty())
+        .map(|x| json!({ "id": x.id, "name": x.name, "host": x.host, "priority": x.priority }))
+        .collect();
+    let debrid: Vec<Value> = s
+        .debrid
+        .iter()
+        .filter(|d| d.usable())
+        .map(|d| json!({ "id": d.id, "kind": d.kind, "name": d.name }))
+        .collect();
+    json!({ "servers": servers, "debrid": debrid, "downloadVia": s.download_via })
 }
 
 fn to_val<T: Serialize>(v: &T) -> Value {
@@ -769,7 +799,15 @@ fn history_changed(e: &Engine) {
 }
 
 /// Añade un NZB a la cola del PC con las opciones por defecto (como "Añadir con un clic").
-async fn add_nzb(e: &Arc<Engine>, dev_name: &str, data: Vec<u8>, name: String, strong: bool, source: String) -> Result<Value, String> {
+async fn add_nzb(
+    e: &Arc<Engine>,
+    dev_name: &str,
+    data: Vec<u8>,
+    name: String,
+    strong: bool,
+    source: String,
+    via: Option<String>,
+) -> Result<Value, String> {
     let engine = e.clone();
     let preview = tokio::task::spawn_blocking(move || engine.register_pending(data, &name, strong, source))
         .await
@@ -789,7 +827,7 @@ async fn add_nzb(e: &Arc<Engine>, dev_name: &str, data: Vec<u8>, name: String, s
             delete_par2: s.delete_par2,
             create_folder: s.create_job_folder,
         },
-        via: None,
+        via,
     };
     let id = e.add_job(req)?;
     crate::linfo!("{}", t!("log.remote.added", device = dev_name, name = preview.name));
@@ -1346,14 +1384,14 @@ async fn call_once(pc: &Pc, op: &str, args: Value) -> Result<Value, String> {
 }
 
 /// Manda un NZB (`kind` "file" con su ruta, o "url") al PC `id`.
-pub async fn send_nzb(id: &str, kind: &str, value: &str) -> Result<Value, String> {
+pub async fn send_nzb(id: &str, kind: &str, value: &str, via: Option<String>, name: Option<String>) -> Result<Value, String> {
     let pc = find_pc(id).ok_or_else(|| t!("remote.notPaired"))?;
     let (op, args) = if kind == "url" {
-        ("add_url", json!({ "url": value }))
+        ("add_url", json!({ "url": value, "via": via, "name": name }))
     } else {
         let data = tokio::fs::read(value).await.map_err(|err| t!("err.readFile", error = err))?;
         let name = std::path::Path::new(value).file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default();
-        ("add_nzb", json!({ "name": name, "data": b64().encode(data) }))
+        ("add_nzb", json!({ "name": name, "data": b64().encode(data), "via": via }))
     };
     let active = SESSION.lock().as_ref().is_some_and(|s| s.pc_id == id && s.state.lock().status == "online");
     if active {

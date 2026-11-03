@@ -47,7 +47,9 @@
   </div>
   <div class="v-items">
     {#each m.options as o, i (o.value)}
-      {#if i > 0 && o.group !== m.options[i - 1].group}<div class="v-sep"></div>{/if}
+      {#if o.section && o.section !== m.options[i - 1]?.section}
+        <div class="v-sec"><Icon name={o.sectionIcon ?? 'download'} size={12} /> {o.section}</div>
+      {:else if i > 0 && o.group !== m.options[i - 1].group}<div class="v-sep"></div>{/if}
       <button
         type="button"
         class="v-opt"
@@ -103,6 +105,8 @@
   .v-titles strong { font-size: 14.5px; }
   .v-titles span { font-size: 12px; color: var(--muted); }
   .v-items { display: flex; flex-direction: column; gap: 2px; }
+  .v-sec { display: flex; align-items: center; gap: 6px; margin: 10px 10px 4px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); }
+  .v-sec:first-child { margin-top: 2px; }
   .v-sep { height: 1px; background: rgba(255, 255, 255, 0.07); margin: 6px 8px; }
   .v-opt {
     display: flex; align-items: center; gap: 12px;
