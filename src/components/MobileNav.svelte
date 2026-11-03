@@ -5,6 +5,7 @@
   import { t } from '../lib/i18n.svelte.js';
   import Icon from './Icon.svelte';
   import { ui } from '../lib/state.svelte.js';
+  import { remote } from '../lib/remote.svelte.js';
   import { upd } from '../lib/updater.svelte.js';
   import { haptic } from '../lib/feedback.js';
   import { onMount } from 'svelte';
@@ -28,7 +29,7 @@
   const IN_SETTINGS = ['settings', 'indexers', 'servers', 'debrid', 'logs'];
 
   const items = $derived(
-    ALL.filter((i) => !i.feature || (i.feature === 'nntp' ? ui.settings?.featureNntp !== false : ui.settings?.featureIndexers))
+    ALL.filter((i) => !i.feature || (i.feature === 'nntp' ? !!remote.active || ui.settings?.featureNntp !== false : ui.settings?.featureIndexers))
   );
   const activeId = $derived(IN_SETTINGS.includes(ui.view) ? 'settings' : ui.view);
   const active = $derived(Math.max(0, items.findIndex((i) => i.id === activeId)));

@@ -1,6 +1,7 @@
 <script>
   import { t, tn } from '../lib/i18n.svelte.js';
   import { invoke } from '@tauri-apps/api/core';
+  import { remote, call } from '../lib/remote.svelte.js';
   import { fly, fade, slide } from 'svelte/transition';
   import { flip } from 'svelte/animate';
   import { cubicOut } from 'svelte/easing';
@@ -13,10 +14,12 @@
   // Móvil: mantener pulsada una entrada abre sus acciones.
   async function menu(h) {
     const ok = h.status === 'completed';
+    // En un PC controlado desde el móvil no se abren carpetas ni se reintenta (solo ver y borrar).
+    const local = !remote.active;
     const actions = [
-      ...(ok ? [{ id: 'open', label: t('common.open'), icon: 'folder' }] : []),
-      ...(!ok && h.canRetryExtract ? [{ id: 'extract', label: t('history.retryExtract'), icon: 'key' }] : []),
-      ...(!ok ? [{ id: 'retry', label: t('common.retry'), icon: 'refresh' }] : []),
+      ...(ok && local ? [{ id: 'open', label: t('common.open'), icon: 'folder' }] : []),
+      ...(!ok && local && h.canRetryExtract ? [{ id: 'extract', label: t('history.retryExtract'), icon: 'key' }] : []),
+      ...(!ok && local ? [{ id: 'retry', label: t('common.retry'), icon: 'refresh' }] : []),
       { id: 'details', label: t('common.details'), icon: 'info' },
       { id: 'remove', label: t('history.removeTitle'), icon: 'trash', danger: true },
     ];
@@ -89,7 +92,7 @@
       if (!r.ok) return;
       deleteFiles = r.checked;
     }
-    await invoke('remove_history', { id: h.id, deleteFiles });
+    await call('remove_history', { id: h.id, deleteFiles });
     await refreshHistory();
   }
 
@@ -102,7 +105,7 @@
       icon: 'trash',
     });
     if (!r.ok) return;
-    await invoke('clear_history', { onlyCompleted });
+    await call('clear_history', { onlyCompleted });
     await refreshHistory();
   }
 </script>
@@ -153,7 +156,9 @@
             </div>
           </div>
           <div class="h-actions" onclick={(e) => e.stopPropagation()} role="presentation">
-            {#if ok}
+            {#if remote.active}
+              <!-- PC controlado: solo borrar. -->
+            {:else if ok}
               <button class="btn sm" onclick={() => invoke('open_path', { path: h.dest })}><Icon name="folder" size={14} /> {t('common.open')}</button>
             {:else}
               {#if h.canRetryExtract}

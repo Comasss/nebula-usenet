@@ -1,6 +1,6 @@
 <script>
   import { t, tn, th, locale, num } from '../lib/i18n.svelte.js';
-  import { invoke } from '@tauri-apps/api/core';
+  import { remote, call, addItems } from '../lib/remote.svelte.js';
   import { pickNzbFiles, isAndroid } from '../lib/platform.js';
   import { haptic } from '../lib/feedback.js';
   import { fly, fade, scale } from 'svelte/transition';
@@ -21,7 +21,7 @@
   const activeJobs = $derived(jobs.filter((j) => j.status === 'downloading').length);
   const totalConns = $derived(ui.queue.servers.reduce((a, s) => a + s.maxConns, 0));
   const peak = $derived(Math.max(...ui.speedHistory));
-  const noServerConfigured = $derived(!ui.settings?.servers?.length && !usableDebrid(ui.settings).length);
+  const noServerConfigured = $derived(!remote.active && !ui.settings?.servers?.length && !usableDebrid(ui.settings).length);
   const serverErrors = $derived(ui.queue.servers.filter((s) => ['auth', 'down', 'warn'].includes(s.state) && s.lastError));
 
   const LIMITS = [
@@ -40,7 +40,7 @@
       toast('error', t('downloads.invalidUrl'));
       return;
     }
-    queueAdd([{ kind: 'url', value: u }]);
+    addItems([{ kind: 'url', value: u }]);
     url = '';
   }
 
@@ -49,7 +49,7 @@
     const lines = text.split(/\s+/).filter((l) => /^https?:\/\/\S+$/i.test(l));
     if (lines.length && lines.length === text.split(/\s+/).length) {
       e.preventDefault();
-      queueAdd(lines.map((value) => ({ kind: 'url', value })));
+      addItems(lines.map((value) => ({ kind: 'url', value })));
       url = '';
     }
   }
@@ -68,12 +68,16 @@
       toast('error', String(e));
       return;
     }
-    queueAdd(arr.map((p) => ({ kind: 'file', value: p })));
+    addItems(arr.map((p) => ({ kind: 'file', value: p })));
   }
 
   async function setLimit(kbps) {
-    await invoke('set_speed_limit', { kbps });
-    if (ui.settings) ui.settings.speedLimitKbps = kbps;
+    try {
+      await call('set_speed_limit', { kbps });
+    } catch {
+      return;
+    }
+    if (ui.settings && !remote.active) ui.settings.speedLimitKbps = kbps;
     limitOpen = false;
     toast('info', kbps ? t('downloads.limitSet', { speed: f.speed(kbps * 1024) }) : t('downloads.limitOff'), 2500);
   }
@@ -101,7 +105,7 @@
     </div>
     {#if !isAndroid}
     <div class="head-actions">
-      <button class="btn" onclick={() => invoke('set_paused', { paused: !ui.queue.paused })} disabled={!jobs.length && !ui.queue.paused}>
+      <button class="btn" onclick={() => call('set_paused', { paused: !ui.queue.paused })} disabled={!jobs.length && !ui.queue.paused}>
         <Icon name={ui.queue.paused ? 'play' : 'pause'} size={16} />
         {ui.queue.paused ? t('downloads.resumeAll') : t('downloads.pauseAll')}
       </button>
@@ -144,7 +148,7 @@
           <div><strong>{s.name}:</strong> {s.lastError ?? t('downloads.noConnection')}</div>
         {/each}
       </div>
-      <button class="btn sm" onclick={() => (ui.view = 'servers')}>{t('downloads.viewServers')}</button>
+      {#if !remote.active}<button class="btn sm" onclick={() => (ui.view = 'servers')}>{t('downloads.viewServers')}</button>{/if}
     </div>
   {/if}
 

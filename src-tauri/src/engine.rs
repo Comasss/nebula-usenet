@@ -1059,6 +1059,7 @@ impl Engine {
         let e = self.clone();
         tauri::async_runtime::spawn(async move { e.sampler().await });
         crate::api::restart(self);
+        crate::remote::restart(self);
         linfo!("{}", t!("log.started", version = env!("CARGO_PKG_VERSION")));
     }
 
@@ -1873,6 +1874,7 @@ impl Engine {
         }
         self.save_history();
         let _ = self.app.emit("history", ());
+        crate::remote::publish_history();
     }
 
     pub fn finish_job(&self, id: &str, warning: Option<String>) {
@@ -2193,6 +2195,7 @@ impl Engine {
             };
             if changed {
                 let _ = self.app.emit("queue", &snap);
+                crate::remote::publish_queue(&snap);
             }
             self.debrid_schedule();
             if tick % 4 == 0 {
@@ -2473,9 +2476,13 @@ impl Engine {
         let servers_changed = serde_json::to_string(&old.servers).ok() != serde_json::to_string(&new.servers).ok()
             || old.timeout_secs != new.timeout_secs;
         let api_changed = old.api_enabled != new.api_enabled || old.api_port != new.api_port || old.api_lan != new.api_lan;
+        let remote_changed = old.remote_enabled != new.remote_enabled || old.remote_port != new.remote_port;
         *self.settings.write() = new;
         if api_changed {
             crate::api::restart(self);
+        }
+        if remote_changed {
+            crate::remote::restart(self);
         }
         if servers_changed {
             linfo!("{}", t!("log.serversUpdated"));
