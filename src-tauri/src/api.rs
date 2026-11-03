@@ -313,7 +313,7 @@ fn caps() -> String {
     let mut x = String::from("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<caps>\n");
     let _ = writeln!(
         x,
-        "  <server version=\"{}\" title=\"Nebula\" strapline=\"Nebula · Newznab API\" url=\"https://github.com/Comasss/nebula\"/>",
+        "  <server version=\"{}\" title=\"Nebula\" strapline=\"Nebula · Newznab API\" url=\"https://github.com/Comasss/nebula-usenet\"/>",
         env!("CARGO_PKG_VERSION")
     );
     x.push_str("  <limits max=\"500\" default=\"100\"/>\n  <registration available=\"no\" open=\"no\"/>\n  <searching>\n");

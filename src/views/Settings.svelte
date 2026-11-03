@@ -133,7 +133,7 @@
   }
 
   // ---- API Newznab ----
-  const DOCS_URL = 'https://github.com/Comasss/nebula/blob/main/docs/API.md';
+  const DOCS_URL = 'https://github.com/Comasss/nebula-usenet/blob/main/docs/API.md';
   let apiStatus = $state(null);
   let showKey = $state(false);
   const apiIndexers = $derived((s?.indexers ?? []).filter((i) => i.enabled).length);

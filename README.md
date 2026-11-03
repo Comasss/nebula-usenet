@@ -7,15 +7,15 @@
 **A modern Usenet (NZB) client for Windows and Android.**<br>
 Search all your indexers, download over NNTP or debrid, repair and extract automatically, all from one fast, dark, animated app. An alternative to SABnzbd and NZBGet.
 
-[![Latest release](https://img.shields.io/github/v/release/Comasss/nebula?label=release&color=7c5cff)](https://github.com/Comasss/nebula/releases/latest)
-[![Downloads](https://img.shields.io/github/downloads/Comasss/nebula/total?color=22c3e6)](https://github.com/Comasss/nebula/releases)
-[![Build](https://img.shields.io/github/actions/workflow/status/Comasss/nebula/build.yml?branch=main&label=build)](https://github.com/Comasss/nebula/actions/workflows/build.yml)
+[![Latest release](https://img.shields.io/github/v/release/Comasss/nebula-usenet?label=release&color=7c5cff)](https://github.com/Comasss/nebula-usenet/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/Comasss/nebula-usenet/total?color=22c3e6)](https://github.com/Comasss/nebula-usenet/releases)
+[![Build](https://img.shields.io/github/actions/workflow/status/Comasss/nebula-usenet/build.yml?branch=main&label=build)](https://github.com/Comasss/nebula-usenet/actions/workflows/build.yml)
 ![Platforms](https://img.shields.io/badge/platforms-Windows%20%7C%20Android-555)
 [![License: PolyForm Noncommercial](https://img.shields.io/badge/license-PolyForm%20Noncommercial-orange)](LICENSE.md)
 
-[**Download**](https://github.com/Comasss/nebula/releases/latest) · [Features](#features) · [Screenshots](#screenshots) · [Newznab API](docs/API.md) · [Building](#building)
+[**Download**](https://github.com/Comasss/nebula-usenet/releases/latest) · [Features](#features) · [Screenshots](#screenshots) · [Newznab API](docs/API.md) · [Building](#building)
 
-<img src="https://github.com/Comasss/nebula/raw/screenshots/downloads.png" alt="Nebula Usenet: Downloads view with live speed graph, queue and post-processing" width="900">
+<img src="https://github.com/Comasss/nebula-usenet/raw/screenshots/downloads.png" alt="Nebula Usenet: Downloads view with live speed graph, queue and post-processing" width="900">
 
 </div>
 
@@ -39,11 +39,11 @@ Search all your indexers, download over NNTP or debrid, repair and extract autom
 
 | Search every indexer at once | Statistics per server and indexer | History, retries and repairs |
 |:---:|:---:|:---:|
-| <img src="https://github.com/Comasss/nebula/raw/screenshots/search.png" alt="Search across several Newznab indexers with merged duplicates"> | <img src="https://github.com/Comasss/nebula/raw/screenshots/stats.png" alt="Success rate statistics per NNTP server and debrid service"> | <img src="https://github.com/Comasss/nebula/raw/screenshots/history.png" alt="History with completed and failed downloads and retry actions"> |
+| <img src="https://github.com/Comasss/nebula-usenet/raw/screenshots/search.png" alt="Search across several Newznab indexers with merged duplicates"> | <img src="https://github.com/Comasss/nebula-usenet/raw/screenshots/stats.png" alt="Success rate statistics per NNTP server and debrid service"> | <img src="https://github.com/Comasss/nebula-usenet/raw/screenshots/history.png" alt="History with completed and failed downloads and retry actions"> |
 
 **Android:** the same engine and features, with a phone layout and a floating tab bar.
 
-<p align="center"><img src="https://github.com/Comasss/nebula/raw/screenshots/android.png" alt="Nebula Usenet on Android: downloads, search and statistics" width="760"></p>
+<p align="center"><img src="https://github.com/Comasss/nebula-usenet/raw/screenshots/android.png" alt="Nebula Usenet on Android: downloads, search and statistics" width="760"></p>
 
 <sub>Screenshots use demo data from the built-in preview (<code>dev/preview.html</code>).</sub>
 

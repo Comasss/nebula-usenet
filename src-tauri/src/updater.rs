@@ -19,7 +19,7 @@ use std::time::{Duration, Instant};
 use tauri::{AppHandle, Emitter};
 use tokio::io::AsyncWriteExt;
 
-const REPO: &str = "Comasss/nebula";
+const REPO: &str = "Comasss/nebula-usenet";
 const CURRENT: &str = env!("CARGO_PKG_VERSION");
 
 static CLIENT: LazyLock<reqwest::Client> = LazyLock::new(|| {
