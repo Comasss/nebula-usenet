@@ -1,6 +1,25 @@
-# Nebula
+<div align="center">
 
-A modern Usenet (NZB) client for Windows and Android: an alternative to SABnzbd with a dark, animated interface.
+<img src="src/assets/logo.svg" width="96" alt="Nebula Usenet logo">
+
+# Nebula Usenet
+
+**A modern Usenet (NZB) client for Windows and Android.**<br>
+Search all your indexers, download over NNTP or debrid, repair and extract automatically, all from one fast, dark, animated app. An alternative to SABnzbd and NZBGet.
+
+[![Latest release](https://img.shields.io/github/v/release/Comasss/nebula?label=release&color=7c5cff)](https://github.com/Comasss/nebula/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/Comasss/nebula/total?color=22c3e6)](https://github.com/Comasss/nebula/releases)
+[![Build](https://img.shields.io/github/actions/workflow/status/Comasss/nebula/build.yml?branch=main&label=build)](https://github.com/Comasss/nebula/actions/workflows/build.yml)
+![Platforms](https://img.shields.io/badge/platforms-Windows%20%7C%20Android-555)
+[![License: PolyForm Noncommercial](https://img.shields.io/badge/license-PolyForm%20Noncommercial-orange)](LICENSE.md)
+
+[**Download**](https://github.com/Comasss/nebula/releases/latest) · [Features](#features) · [Screenshots](#screenshots) · [Newznab API](docs/API.md) · [Building](#building)
+
+<img src="https://github.com/Comasss/nebula/raw/screenshots/downloads.png" alt="Nebula Usenet: Downloads view with live speed graph, queue and post-processing" width="900">
+
+</div>
+
+## Features
 
 - **Rust engine** (Tauri 2 + tokio): NNTP with TLS, multiple connections, backup servers by priority, yEnc decoding with CRC checks, direct-to-disk writes and resuming after the app is closed.
 - **Built-in post-processing**: PAR2 verification and repair (par2cmdline-turbo) that downloads only the recovery blocks it needs, and RAR/7z/ZIP extraction (7-Zip), with a progress bar, percentage and speed. Both tools ship **inside the .exe**.
@@ -12,6 +31,18 @@ A modern Usenet (NZB) client for Windows and Android: an alternative to SABnzbd 
 - **Pick your features** on first launch (at least one): indexers only (save `.nzb` files), indexers + NNTP, or NNTP only.
 - **12 languages**: English, Spanish, Simplified Chinese, Hindi, Portuguese (Brazil), French, German, Russian, Japanese, Arabic, Italian and Catalan. On startup it uses the Windows language (or English if it isn't available), and you can change it in **Settings → Language**; the tray menu, notifications and error messages are translated too.
 - **Svelte 5 interface**: first-run NNTP credentials wizard, Downloads / History / Statistics / Servers / Settings / Log tabs, `.nzb` drag and drop, link pasting, configurable clipboard watching, tray icon and notifications.
+
+## Screenshots
+
+| Search every indexer at once | Statistics per server and indexer | History, retries and repairs |
+|:---:|:---:|:---:|
+| <img src="https://github.com/Comasss/nebula/raw/screenshots/search.png" alt="Search across several Newznab indexers with merged duplicates"> | <img src="https://github.com/Comasss/nebula/raw/screenshots/stats.png" alt="Success rate statistics per NNTP server and debrid service"> | <img src="https://github.com/Comasss/nebula/raw/screenshots/history.png" alt="History with completed and failed downloads and retry actions"> |
+
+**Android:** the same engine and features, with a phone layout and a floating tab bar.
+
+<p align="center"><img src="https://github.com/Comasss/nebula/raw/screenshots/android.png" alt="Nebula Usenet on Android: downloads, search and statistics" width="760"></p>
+
+<sub>Screenshots use demo data from the built-in preview (<code>dev/preview.html</code>).</sub>
 
 ## Download
 
@@ -136,7 +167,13 @@ To check the connection to a real server without credentials (TCP + TLS + greeti
 cd src-tauri && NEBULA_PROBE=news.server.com:563:ssl cargo test probe -- --ignored --nocapture
 ```
 
-## Third-party licenses
+## License
+
+Nebula Usenet is source-available under the [PolyForm Noncommercial License 1.0.0](LICENSE.md). You can use it, study it, modify it and share it for any noncommercial purpose (personal use, hobby projects, research, education, charities and public institutions). Selling it, or using it to make money, is not allowed without the author's permission; if you want a commercial license, open an issue.
+
+### Third-party licenses
+
+The bundled tools keep their own licenses:
 
 - 7-Zip © Igor Pavlov — GNU LGPL + unRAR restriction (`src-tauri/bin/7zip-License.txt`).
 - par2cmdline-turbo — GNU GPL v2 (https://github.com/animetosho/par2cmdline-turbo).
