@@ -193,9 +193,8 @@ export async function init() {
     });
   }
 
-  // En el móvil se abre en la primera pestaña: Buscar si los indexadores están activos.
-  const mobile = /android/i.test(navigator.userAgent);
-  ui.view = mobile ? (settings.featureIndexers ? 'search' : 'downloads') : settings.featureNntp ? 'downloads' : 'search';
+  // Se abre en la primera pestaña: Buscar si los indexadores están activos.
+  ui.view = settings.featureIndexers ? 'search' : 'downloads';
   if (!settings.firstRunDone || !settings.featuresChosen) ui.setupOpen = true;
   ui.ready = true;
   await invoke('app_ready');

@@ -17,9 +17,10 @@
   let dir = $state(1);
   let saving = $state(false);
 
+  // La primera vez vienen activadas las dos: descargas y búsqueda.
   let features = $state({
     nntp: s0.featuresChosen ? s0.featureNntp : true,
-    indexers: s0.featuresChosen ? s0.featureIndexers : false,
+    indexers: s0.featuresChosen ? s0.featureIndexers : firstTime || s0.featureIndexers,
   });
   let server = $state(
     s0.servers[0]

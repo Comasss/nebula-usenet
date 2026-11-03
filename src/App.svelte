@@ -51,7 +51,7 @@
     const need = NEEDS[ui.view];
     // Controlando un PC desde el móvil, Descargas e Historial son las del PC.
     if (remote.active && (ui.view === 'downloads' || ui.view === 'history')) return;
-    if (need && !s[need]) ui.view = s.featureNntp ? 'downloads' : 'search';
+    if (need && !s[need]) ui.view = s.featureIndexers ? 'search' : 'downloads';
   });
   let prevIndex = 0;
   let direction = $state(1);
