@@ -12,6 +12,8 @@
   import { haptic, longpress, flyTo, chooseVia } from '../lib/feedback.js';
   import { viaOptions, viaLabel } from '../lib/debrid.js';
   import { remote, pcViaOptions, sendLinkToPc } from '../lib/remote.svelte.js';
+  import { untrack } from 'svelte';
+  import { session as S, run } from '../lib/searchSession.svelte.js';
 
   const STORE = 'nebula.search';
   function loadPrefs() {
@@ -23,31 +25,21 @@
   }
   const saved = loadPrefs();
 
-  let query = $state('');
   let category = $state(saved.category ?? '');
   let sort = $state(saved.sort ?? 'date');
   let selected = $state(saved.selected ?? null); // null = todos
   let pickerOpen = $state(false);
-  let expanded = $state(null);
-  let searched = $state(false);
-  let lastQuery = '';
-  let generation = 0;
-
-  // Por indexador: { state: 'loading'|'ok'|'error', items, total, offset, count, ms, error }
-  let perIndexer = $state({});
-  // Estado de acciones por enlace: 'working' | 'queued' | 'saving' | 'saved' | 'error'
-  let actions = $state({});
 
   // Controlando un PC desde el móvil se puede descargar en él aunque aquí no haya Usenet.
   const nntp = $derived(ui.settings?.featureNntp || !!remote.active);
   const indexers = $derived((ui.settings?.indexers ?? []).filter((i) => i.enabled));
   const order = $derived(indexers.map((i) => i.id));
   const active = $derived(selected ? indexers.filter((i) => selected.includes(i.id)) : indexers);
-  const allItems = $derived(Object.values(perIndexer).flatMap((r) => r.items ?? []));
+  const allItems = $derived(Object.values(S.perIndexer).flatMap((r) => r.items ?? []));
   const groups = $derived(sortGroups(groupResults(allItems, ui.settings?.searchDedup ?? true, order), sort));
   const merged = $derived(allItems.length - groups.length);
-  const loading = $derived(Object.values(perIndexer).some((r) => r.state === 'loading'));
-  const hasMore = $derived(Object.values(perIndexer).some((r) => r.state === 'ok' && r.more));
+  const loading = $derived(Object.values(S.perIndexer).some((r) => r.state === 'loading'));
+  const hasMore = $derived(Object.values(S.perIndexer).some((r) => r.state === 'ok' && r.more));
   const pickerLabel = $derived(
     active.length === indexers.length
       ? t('search.allCount', { n: indexers.length })
@@ -71,18 +63,28 @@
     selected = next.length === indexers.length ? null : next;
   }
 
-  // Agrupa en las estadísticas las peticiones de una misma búsqueda.
-  let searchId = null;
+  // Al volver a la pestaña se recupera también la posición en la lista de resultados.
+  let viewEl;
+  $effect(() => {
+    const page = viewEl?.closest('.page');
+    if (!page) return;
+    untrack(() => {
+      if (S.searched && S.scroll) page.scrollTop = S.scroll;
+    });
+    const onScroll = () => (S.scroll = page.scrollTop);
+    page.addEventListener('scroll', onScroll, { passive: true });
+    return () => page.removeEventListener('scroll', onScroll);
+  });
 
   async function runIndexer(ix, gen, offset) {
-    perIndexer[ix.id] = { ...(perIndexer[ix.id] ?? { items: [] }), state: 'loading', name: ix.name };
+    S.perIndexer[ix.id] = { ...(S.perIndexer[ix.id] ?? { items: [] }), state: 'loading', name: ix.name };
     try {
-      const r = await invoke('search_indexer', { id: ix.id, query: lastQuery, category: category || null, offset, searchId });
-      if (gen !== generation) return;
-      const prev = offset > 0 ? perIndexer[ix.id]?.items ?? [] : [];
+      const r = await invoke('search_indexer', { id: ix.id, query: S.lastQuery, category: category || null, offset, searchId: run.searchId });
+      if (gen !== run.generation) return;
+      const prev = offset > 0 ? S.perIndexer[ix.id]?.items ?? [] : [];
       const items = [...prev, ...r.items];
       const limit = ui.settings.searchLimit ?? 100;
-      perIndexer[ix.id] = {
+      S.perIndexer[ix.id] = {
         state: 'ok',
         name: ix.name,
         items,
@@ -92,8 +94,8 @@
         more: r.total != null ? items.length < r.total : r.items.length >= limit,
       };
     } catch (e) {
-      if (gen !== generation) return;
-      perIndexer[ix.id] = { state: 'error', name: ix.name, items: perIndexer[ix.id]?.items ?? [], error: String(e) };
+      if (gen !== run.generation) return;
+      S.perIndexer[ix.id] = { state: 'error', name: ix.name, items: S.perIndexer[ix.id]?.items ?? [], error: String(e) };
     }
   }
 
@@ -103,29 +105,30 @@
       toast('warn', t('search.selectOne'));
       return;
     }
-    generation++;
-    searchId = crypto.randomUUID();
-    lastQuery = query.trim();
-    searched = true;
-    expanded = null;
-    perIndexer = {};
-    for (const ix of active) runIndexer(ix, generation, 0);
+    run.generation++;
+    run.searchId = crypto.randomUUID();
+    S.lastQuery = S.query.trim();
+    S.searched = true;
+    S.expanded = null;
+    S.perIndexer = {};
+    S.scroll = 0;
+    for (const ix of active) runIndexer(ix, run.generation, 0);
   }
 
   function loadMore() {
     const limit = ui.settings.searchLimit ?? 100;
     for (const ix of active) {
-      const r = perIndexer[ix.id];
-      if (r?.state === 'ok' && r.more) runIndexer(ix, generation, r.offset + limit);
+      const r = S.perIndexer[ix.id];
+      if (r?.state === 'ok' && r.more) runIndexer(ix, run.generation, r.offset + limit);
     }
   }
 
   function actOf(g) {
-    for (const s of g.sources) if (actions[s.link]) return actions[s.link];
+    for (const s of g.sources) if (S.actions[s.link]) return S.actions[s.link];
     return null;
   }
   function setAct(g, v) {
-    for (const s of g.sources) actions[s.link] = v;
+    for (const s of g.sources) S.actions[s.link] = v;
   }
 
   // Prueba cada fuente (indexador) en orden hasta que una funcione.
@@ -270,7 +273,7 @@
 
 <svelte:window onclick={() => (pickerOpen = false)} />
 
-<div class="view">
+<div class="view" bind:this={viewEl}>
   <header class="head">
     <div>
       <h1>{t('nav.search')}</h1>
@@ -295,7 +298,7 @@
   {:else}
     <form class="bar" onsubmit={search}>
       <Icon name="search" size={18} />
-      <input class="q" placeholder={t('search.placeholder')} bind:value={query} spellcheck="false" />
+      <input class="q" placeholder={t('search.placeholder')} bind:value={S.query} spellcheck="false" />
       <div class="picker-wrap">
         <button type="button" class="pill" class:partial={selected} onclick={(e) => { e.stopPropagation(); pickerOpen = !pickerOpen; }}>
           <Icon name="layers" size={14} /> {pickerLabel} <Icon name="chevron-down" size={13} />
@@ -317,15 +320,15 @@
         {/if}
       </div>
       <Select class="cat" bind:value={category} title={t('search.category')} options={CATEGORIES.map((c) => ({ value: c.id, label: c.label }))} />
-      <button class="btn primary" type="submit" disabled={loading && !searched}>
+      <button class="btn primary" type="submit" disabled={loading && !S.searched}>
         {#if loading}<Icon name="loader" size={15} class="spin" />{:else}<Icon name="search" size={15} />{/if} {t('nav.search')}
       </button>
     </form>
 
-    {#if searched}
+    {#if S.searched}
       <div class="status" in:fade={{ duration: d(200) }}>
         {#each active as ix (ix.id)}
-          {@const r = perIndexer[ix.id]}
+          {@const r = S.perIndexer[ix.id]}
           <span class="ist {r?.state ?? 'loading'}" title={r?.error ?? ''}>
             {#if !r || r.state === 'loading'}
               <Icon name="loader" size={12} class="spin" />
@@ -363,9 +366,9 @@
       <div class="list">
         {#each groups as g, i (g.key)}
           {@const a = actOf(g)}
-          <article class="res card" class:open={expanded === g.key} in:fly={{ y: 10, duration: d(260), delay: d(Math.min(i, 15) * 18), easing: cubicOut }}>
+          <article class="res card" class:open={S.expanded === g.key} in:fly={{ y: 10, duration: d(260), delay: d(Math.min(i, 15) * 18), easing: cubicOut }}>
             <div class="r-row">
-              <div class="r-main" onclick={() => (expanded = expanded === g.key ? null : g.key)} role="presentation">
+              <div class="r-main" onclick={() => (S.expanded = S.expanded === g.key ? null : g.key)} role="presentation">
                 <div class="r-title selectable" title={g.title}>{g.title}</div>
                 <div class="r-meta">
                   {#if g.category}<span class="chip muted">{g.category}</span>{/if}
@@ -394,10 +397,10 @@
                   {:else}<Icon name="file" size={14} />{/if}
                   {nntp ? '.nzb' : a === 'saved' ? t('search.saved') : t('common.saveNzb')}
                 </button>
-                <button class="icon-btn chev" class:rot={expanded === g.key} onclick={() => (expanded = expanded === g.key ? null : g.key)} title={t('common.details')}><Icon name="chevron-down" size={16} /></button>
+                <button class="icon-btn chev" class:rot={S.expanded === g.key} onclick={() => (S.expanded = S.expanded === g.key ? null : g.key)} title={t('common.details')}><Icon name="chevron-down" size={16} /></button>
               </div>
             </div>
-            {#if expanded === g.key}
+            {#if S.expanded === g.key}
               <div class="sources" transition:slide={{ duration: d(220) }}>
                 {#each g.sources as s}
                   <div class="src">
@@ -420,7 +423,7 @@
           {#if !loading}
             <div class="empty-inline" in:fade={{ duration: d(200) }}>
               <Icon name="search" size={30} stroke={1.6} />
-              <p>{lastQuery ? t('search.noResultsFor', { query: lastQuery }) : t('search.noResults')}</p>
+              <p>{S.lastQuery ? t('search.noResultsFor', { query: S.lastQuery }) : t('search.noResults')}</p>
             </div>
           {:else}
             {#each Array(6) as _, i}
