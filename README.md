@@ -28,6 +28,7 @@ Search all your indexers, download over NNTP or debrid, repair and extract autom
 - **Statistics**: overall NZB success rate and one per NNTP server (plus debrid services), for the last 7, 30 or 90 days, the last year, all time or a custom date range. Each server also shows how many of the articles it was asked for it actually had. An **Indexers** tab shows each indexer's average response time, average results per search (and for all of them combined), error rate, NZBs grabbed and how many of those downloaded successfully.
 - **Newznab API compatible with NZBHydra2**: optional, with its own API key. Sonarr, Radarr, Prowlarr and other apps can search all your indexers at once through Nebula as if it were a single indexer. See [docs/API.md](docs/API.md).
 - **Move your settings between devices with a QR code**: in **Settings → Move to another device** the PC shows a QR code that you scan with Nebula on your phone. To go the other way, the PC shows a QR code with its address on your Wi-Fi and a one-time key; the phone scans it and sends its settings encrypted over the local network. Servers, indexers, debrid services, the API and preferences travel; folders, history and system-specific options (tray, start with Windows, vibration…) stay as they are. If you can't scan, copy the code and paste it on the other device.
+- **Control your PC from your phone**: the Android app finds Nebula on your PC over the Wi-Fi, pairs with a 6-digit code you approve on the PC, and then shows the PC's downloads, history and statistics live. From the phone you can add NZBs, pause, resume, move and delete jobs and change the speed limit (never settings or passwords). See [Remote control](#remote-control-from-your-phone).
 - **Pick your features** on first launch (at least one): indexers only (save `.nzb` files), indexers + NNTP, or NNTP only.
 - **12 languages**: English, Spanish, Simplified Chinese, Hindi, Portuguese (Brazil), French, German, Russian, Japanese, Arabic, Italian and Catalan. On startup it uses the Windows language (or English if it isn't available), and you can change it in **Settings → Language**; the tray menu, notifications and error messages are translated too.
 - **Svelte 5 interface**: first-run NNTP credentials wizard, Downloads / History / Statistics / Servers / Settings / Log tabs, `.nzb` drag and drop, link pasting, configurable clipboard watching, tray icon and notifications.
@@ -71,6 +72,36 @@ The Android app is the same program: the Rust engine and the Svelte interface ru
 - Add NZBs with the **Add NZB** button, by opening a `.nzb` from a file manager or browser, by sharing a file or link to Nebula, or by copying a link (Nebula offers it when you come back to the app if clipboard watching is enabled).
 - PAR2 and 7-Zip are compiled for Android and ship inside the APK (`lib7zz.so`, `libpar2.so`).
 - The APK is signed with a key kept only in the repository secrets `ANDROID_KEYSTORE_BASE64` (the `.jks` in base64), `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS` and `ANDROID_KEY_PASSWORD`. Builds on `main` and `v*` tags fail without them. Without the secrets (pull requests from forks, local builds) the APK is signed with the Android debug key: it works for testing but won't install over the official app.
+
+## Remote control from your phone
+
+The Android app can show and manage the downloads of Nebula on a Windows PC. Everything goes directly between the phone and the PC: there's no account, no cloud server and no port to open on your router.
+
+### At home (same Wi-Fi)
+
+1. On the PC, open **Settings → Remote control** and turn on **Remote control** (it's off by default).
+2. **The first time, Windows Defender Firewall asks whether Nebula may use the network.** Allow it on **private networks**. If you dismissed the prompt, allow Nebula in *Windows Security → Firewall & network protection → Allow an app through firewall* (TCP 5078 for commands and UDP 5078 so the phone can find the PC). Your Wi-Fi must be set as a *private* network in Windows.
+3. On the phone, open **Settings → Control a PC**. Nebula searches the network and lists the PCs it finds. Tap **Pair**.
+4. The PC shows a window with the phone's name and a 6-digit code, and the phone shows a code too. If both are the same, press **Accept** on the PC. Both devices keep a key, so this only happens once.
+5. Tap **Control**. Downloads, History and Statistics now show the PC's, with a bar on top saying **Controlling &lt;name&gt;** and a **Back to phone** button.
+
+While you control a PC, the add button and the link bar send NZBs to the PC. When you share an `.nzb` or a link to Nebula and you have a paired PC, Nebula asks whether to download it on the phone or on the PC. If the PC goes to sleep or is turned off, the bar says so and the phone keeps retrying; it reconnects by itself (also when the PC's IP changes on the same network).
+
+If the PC doesn't show up in the list (some routers block broadcasts), type its address in **Add by hand**: the IP and port shown on the PC under **Settings → Remote control**, for example `192.168.1.20:5078`.
+
+On the PC, **Settings → Remote control** lists the paired phones; **Revoke** disconnects a phone and makes it pair again before it can control the PC.
+
+Security: pairing uses an X25519 key exchange and the 6-digit code is derived from it, so a device in the middle would produce a different code. After pairing, every message is encrypted and authenticated (ChaCha20-Poly1305 with a key derived from the token each device stored). The phone can only see the queue, history and statistics, add NZBs, pause, resume, move and delete jobs and change the speed limit.
+
+### Control from outside your home network
+
+Use [Tailscale](https://tailscale.com), a free private network between your own devices. Nothing needs to be opened on your router and no server is involved: the phone talks straight to your PC through an encrypted tunnel.
+
+1. Install Tailscale on the PC and on the phone and sign in on both **with the same account**.
+2. On the PC, open Tailscale and note its IP, which starts with `100.` (for example `100.101.102.103`).
+3. On the phone, with Tailscale connected, open Nebula → **Settings → Control a PC** → **Add by hand** and type `100.101.102.103:5078` (the PC's 100.x IP). Approve the code on the PC as at home.
+
+From then on the phone reaches the PC wherever you are, as long as Tailscale is on both. If it doesn't connect, check that Windows Firewall allows Nebula on the network type of the Tailscale adapter too.
 
 ## Usage
 

@@ -200,6 +200,7 @@ const indexerStats = (() => {
 })();
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const remotePcs = params.has('pcs') ? [{ id: 'pc1', name: 'SOBREMESA', addr: '192.168.1.20:5078', pairedAt: now() - 86400 * 9 }] : [];
 
 mockWindows('main');
 mockIPC(
@@ -311,6 +312,36 @@ mockIPC(
         return null;
       }
       case 'update_install': await sleep(300); return { started: true, needsPermission: false };
+      // Control remoto (en Android, con ?android; ?pcs = ya hay un PC emparejado)
+      case 'remote_status': return settings.remoteEnabled ? { running: true, error: null, warning: null, port: 5078, name: 'SOBREMESA', addresses: ['192.168.1.20:5078'] } : { running: false, port: 5078, name: 'SOBREMESA', addresses: [] };
+      case 'remote_devices': return settings.remoteEnabled ? [{ id: 'm1', name: 'Pixel 8', pairedAt: now() - 86400 * 9, lastSeen: now() - 60, online: true }, { id: 'm2', name: 'SM-S918B', pairedAt: now() - 86400 * 40, lastSeen: now() - 86400 * 3, online: false }] : [];
+      case 'remote_pcs': return remotePcs;
+      case 'remote_discover':
+        await sleep(1500);
+        return [
+          { id: 'pc1', name: 'SOBREMESA', version: '1.7.0', addr: '192.168.1.20:5078', paired: remotePcs.some((p) => p.id === 'pc1') },
+          { id: 'pc2', name: 'PORTATIL-GENIS', version: '1.7.0', addr: '192.168.1.34:5078', paired: false },
+        ];
+      case 'remote_pair': {
+        await sleep(600);
+        emit('remote-pair-code', { code: '482913', name: args.addr.includes('34') ? 'PORTATIL-GENIS' : 'SOBREMESA' });
+        await sleep(params.has('pairwait') ? 600000 : 2500);
+        const pc = { id: args.addr.includes('34') ? 'pc2' : 'pc1', name: args.addr.includes('34') ? 'PORTATIL-GENIS' : 'SOBREMESA', addr: args.addr, pairedAt: now() };
+        remotePcs.push(pc);
+        return pc;
+      }
+      case 'remote_forget': remotePcs.splice(remotePcs.findIndex((p) => p.id === args.id), 1); return null;
+      case 'remote_connect':
+        setTimeout(() => {
+          emit('remote-state', { id: args.id, name: 'SOBREMESA', status: params.has('offline') ? 'offline' : 'online', error: params.has('offline') ? 'No hay conexión con SOBREMESA: puede que esté apagado, dormido o con Nebula cerrado.' : null });
+          if (!params.has('offline')) { emit('remote-queue', snapshot()); emit('remote-history', history); }
+        }, 700);
+        return { id: args.id, name: 'SOBREMESA', status: 'connecting', error: null };
+      case 'remote_call': {
+        const m = { get_queue: snapshot(), get_history: history, get_stats: stats, get_indexer_stats: indexerStats, get_job_files: files };
+        return m[args.op] ?? null;
+      }
+      case 'remote_send': await sleep(700); return { id: 'x', name: 'Nasa.Earth.From.Space.2160p.HDR' };
       default: return null;
     }
   },

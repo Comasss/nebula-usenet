@@ -552,3 +552,87 @@ pub async fn transfer_send(e: Eng<'_>, target: String) -> Result<(), String> {
     let s = e.settings.read().clone();
     crate::transfer::send(&s, &target).await
 }
+
+// ---- Control remoto ----
+
+/// PC: estado del control remoto (si escucha, en qué puerto y direcciones).
+#[tauri::command]
+pub fn remote_status() -> crate::remote::RemoteStatus {
+    crate::remote::status()
+}
+
+/// PC: móviles emparejados.
+#[tauri::command]
+pub fn remote_devices() -> Vec<crate::remote::DeviceView> {
+    crate::remote::devices()
+}
+
+#[tauri::command]
+pub fn remote_revoke(app: AppHandle, id: String) {
+    crate::remote::revoke(&app, &id);
+}
+
+/// PC: el usuario acepta o rechaza el emparejamiento de un móvil.
+#[tauri::command]
+pub fn remote_pair_answer(req: String, ok: bool) {
+    crate::remote::answer_pairing(&req, ok);
+}
+
+/// Móvil: PCs con Nebula en la red local.
+#[tauri::command]
+pub async fn remote_discover() -> Vec<crate::remote::Found> {
+    crate::remote::discover(std::time::Duration::from_millis(2200)).await
+}
+
+/// Móvil: PCs emparejados.
+#[tauri::command]
+pub fn remote_pcs() -> Vec<crate::remote::PcView> {
+    crate::remote::pcs()
+}
+
+#[tauri::command]
+pub async fn remote_pair(app: AppHandle, addr: String, name: String) -> Result<crate::remote::PcView, String> {
+    crate::remote::pair(&app, &addr, &name).await
+}
+
+#[tauri::command]
+pub fn remote_pair_cancel() {
+    crate::remote::cancel_pairing();
+}
+
+#[tauri::command]
+pub fn remote_forget(id: String) {
+    crate::remote::forget(&id);
+}
+
+#[tauri::command]
+pub fn remote_connect(app: AppHandle, id: String) -> Result<crate::remote::SessionState, String> {
+    crate::remote::connect(&app, &id)
+}
+
+#[tauri::command]
+pub fn remote_disconnect() {
+    crate::remote::disconnect();
+}
+
+#[tauri::command]
+pub fn remote_session() -> Option<crate::remote::SessionState> {
+    crate::remote::session_state()
+}
+
+#[tauri::command]
+pub fn remote_wake() {
+    crate::remote::wake();
+}
+
+/// Móvil: pide algo al PC que se está controlando (solo lo permitido: cola, historial…).
+#[tauri::command]
+pub async fn remote_call(op: String, args: Option<serde_json::Value>) -> Result<serde_json::Value, String> {
+    crate::remote::call(&op, args.unwrap_or(serde_json::Value::Null)).await
+}
+
+/// Móvil: manda un .nzb (`kind` "file", ruta) o un enlace (`kind` "url") a un PC emparejado.
+#[tauri::command]
+pub async fn remote_send(id: String, kind: String, value: String) -> Result<serde_json::Value, String> {
+    crate::remote::send_nzb(&id, &kind, &value).await
+}

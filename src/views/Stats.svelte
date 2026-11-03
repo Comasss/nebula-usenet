@@ -5,7 +5,7 @@
 
 <script>
   import { t, tn, num, locale } from '../lib/i18n.svelte.js';
-  import { invoke } from '@tauri-apps/api/core';
+  import { call } from '../lib/remote.svelte.js';
   import { fly, fade } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
   import Icon from '../components/Icon.svelte';
@@ -34,7 +34,7 @@
   const tab = $derived(sel.tab === 'indexers' && idx ? 'indexers' : sel.tab === 'downloads' && nntp ? 'downloads' : nntp ? 'downloads' : 'indexers');
 
   async function load() {
-    const [r, e] = await Promise.all([invoke('get_stats').catch(() => []), invoke('get_indexer_stats').catch(() => [])]);
+    const [r, e] = await Promise.all([call('get_stats').catch(() => []), call('get_indexer_stats').catch(() => [])]);
     records = r ?? [];
     events = e ?? [];
     loaded = true;

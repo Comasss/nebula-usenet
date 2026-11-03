@@ -15,6 +15,7 @@ mod nntp;
 mod nzb;
 mod os;
 mod postproc;
+mod remote;
 mod stats;
 #[cfg(windows)]
 mod tools;
@@ -196,6 +197,7 @@ pub fn run() {
             }
             let (paths, settings) = early.take().expect("arranque");
             updater::cleanup(&paths.data);
+            remote::init(&paths.data);
             logger::set_app(app.handle().clone());
             #[cfg(desktop)]
             build_tray(app)?;
@@ -289,6 +291,21 @@ pub fn run() {
             commands::transfer_receive_start,
             commands::transfer_receive_stop,
             commands::transfer_send,
+            commands::remote_status,
+            commands::remote_devices,
+            commands::remote_revoke,
+            commands::remote_pair_answer,
+            commands::remote_discover,
+            commands::remote_pcs,
+            commands::remote_pair,
+            commands::remote_pair_cancel,
+            commands::remote_forget,
+            commands::remote_connect,
+            commands::remote_disconnect,
+            commands::remote_session,
+            commands::remote_wake,
+            commands::remote_call,
+            commands::remote_send,
         ])
         .build(tauri::generate_context!())
         .expect("no se pudo iniciar Nebula");

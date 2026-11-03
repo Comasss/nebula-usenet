@@ -1,6 +1,7 @@
 <script>
   import { t, tn } from '../lib/i18n.svelte.js';
   import { invoke } from '@tauri-apps/api/core';
+  import { remote as rc, call } from '../lib/remote.svelte.js';
   import { slide } from 'svelte/transition';
   import Icon from './Icon.svelte';
   import ProgressBar from './ProgressBar.svelte';
@@ -49,7 +50,7 @@
     const load = async () => {
       if (!alive) return;
       try {
-        files = await invoke('get_job_files', { id: job.id });
+        files = await call('get_job_files', { id: job.id });
       } catch {}
     };
     load();
@@ -62,7 +63,7 @@
 
   function togglePause() {
     haptic('tap');
-    invoke(job.status === 'paused' ? 'resume_job' : 'pause_job', { id: job.id });
+    call(job.status === 'paused' ? 'resume_job' : 'pause_job', { id: job.id });
   }
 
   // Móvil: todas las acciones en una hoja (botón ⋯ o mantener pulsada la tarjeta).
@@ -78,7 +79,7 @@
           ]
         : []),
       { id: 'details', label: expanded ? t('job.hideDetails') : t('common.details'), icon: 'info' },
-      { id: 'open', label: t('job.openDest'), icon: 'folder' },
+      ...(!rc.active ? [{ id: 'open', label: t('job.openDest'), icon: 'folder' }] : []),
       { id: 'remove', label: t('common.remove'), icon: 'trash', danger: true },
     ];
     const a = await actionSheet({ title: job.name, subtitle: `${f.bytes(job.total)} · ${st.label}`, actions });
@@ -106,12 +107,12 @@
       if (!r.ok) return;
       deleteFiles = r.checked;
     }
-    await invoke('remove_job', { id: job.id, deleteFiles });
+    await call('remove_job', { id: job.id, deleteFiles });
     toast('info', t('job.removed', { name: job.name }));
   }
 
   function move(to) {
-    invoke('move_job', { id: job.id, to });
+    call('move_job', { id: job.id, to });
   }
 
   // Fase del post-procesado (clave de traducción; las colas antiguas pueden traer el texto ya escrito).
@@ -201,7 +202,7 @@
           <Icon name={job.status === 'paused' ? 'play' : 'pause'} size={16} />
         </button>
       {/if}
-      <button class="icon-btn" onclick={() => invoke('open_path', { path: job.dest })} title={t('job.openDest')}><Icon name="folder" size={16} /></button>
+      {#if !rc.active}<button class="icon-btn" onclick={() => invoke('open_path', { path: job.dest })} title={t('job.openDest')}><Icon name="folder" size={16} /></button>{/if}
       <button class="icon-btn danger" onclick={remove} title={t('common.remove')}><Icon name="trash" size={16} /></button>
       <button class="icon-btn chevron" class:open={expanded} onclick={() => (expanded = !expanded)} title={t('common.details')}><Icon name="chevron-down" size={17} /></button>
     </div>

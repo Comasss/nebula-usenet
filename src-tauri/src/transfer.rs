@@ -46,6 +46,8 @@ const LOCAL_KEYS: &[&str] = &[
     "featuresChosen",
     "updateSkipped",
     "apiKeyEnc",
+    "remoteEnabled",
+    "remotePort",
 ];
 /// Campos que solo existen en disco (claves cifradas).
 const DISK_KEYS: &[&str] = &["passwordEnc", "apiKeyEnc"];

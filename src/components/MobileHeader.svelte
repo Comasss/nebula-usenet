@@ -2,14 +2,14 @@
   // Cabecera de la versión móvil: ocupa el lugar de la barra de título y del panel de velocidad
   // de la barra lateral.
   import { t } from '../lib/i18n.svelte.js';
-  import { invoke } from '@tauri-apps/api/core';
+  import { remote, call } from '../lib/remote.svelte.js';
   import Icon from './Icon.svelte';
   import logo from '../assets/logo.svg';
   import { ui } from '../lib/state.svelte.js';
   import { speed } from '../lib/format.js';
 
   const downloading = $derived(!ui.queue.paused && ui.queue.speed > 0);
-  const nntp = $derived(ui.settings?.featureNntp !== false);
+  const nntp = $derived(!!remote.active || ui.settings?.featureNntp !== false);
 </script>
 
 <header class="mhead">
@@ -27,7 +27,7 @@
       <button
         class="pause-btn"
         class:paused={ui.queue.paused}
-        onclick={() => invoke('set_paused', { paused: !ui.queue.paused })}
+        onclick={() => call('set_paused', { paused: !ui.queue.paused })}
         aria-label={ui.queue.paused ? t('sidebar.resumeAll') : t('sidebar.pauseAll')}>
         <Icon name={ui.queue.paused ? 'play' : 'pause'} size={15} stroke={2.4} />
       </button>

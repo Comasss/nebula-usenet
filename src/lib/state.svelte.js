@@ -2,6 +2,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { t, setLanguage } from './i18n.svelte.js';
 import { haptic } from './feedback.js';
+import { remote, call, initRemote, routeShared } from './remote.svelte.js';
 
 export const ui = $state({
   ready: false,
@@ -105,7 +106,7 @@ export async function saveSettings(patch) {
 }
 
 export async function refreshHistory() {
-  ui.history = await invoke('get_history');
+  ui.history = await call('get_history');
 }
 
 function handleOpenItems(items) {
@@ -126,7 +127,8 @@ async function resumed() {
   try {
     const r = await invoke('app_resumed');
     ui.storage = r.storage;
-    queueAdd([...r.files.map((value) => ({ kind: 'file', value })), ...r.urls.map((value) => ({ kind: 'url', value }))]);
+    // Si hay PCs emparejados, se pregunta si descargarlo aquí o en uno de ellos.
+    routeShared([...r.files.map((value) => ({ kind: 'file', value })), ...r.urls.map((value) => ({ kind: 'url', value }))]);
     // Cada enlace se ofrece una sola vez, aunque siga en el portapapeles.
     for (const u of r.clipboard) {
       if (seenClip.has(u)) continue;
@@ -153,10 +155,13 @@ export async function init() {
   ui.logs = logs;
   ui.info = info;
 
+  // Mientras el móvil controla un PC, la cola y el historial que se ven son los del PC.
   await listen('queue', (e) => {
-    ui.queue = e.payload;
+    if (!remote.active) ui.queue = e.payload;
   });
-  await listen('history', () => refreshHistory());
+  await listen('history', () => {
+    if (!remote.active) refreshHistory();
+  });
   await listen('log', (e) => {
     ui.logs.push(e.payload);
     if (ui.logs.length > 2000) ui.logs.splice(0, ui.logs.length - 2000);
@@ -174,6 +179,8 @@ export async function init() {
     ui.speedHistory.push(ui.queue.paused ? 0 : ui.queue.speed);
     if (ui.speedHistory.length > 120) ui.speedHistory.shift();
   }, 500);
+
+  await initRemote().catch(console.error);
 
   if (/android/i.test(navigator.userAgent)) {
     await resumed();

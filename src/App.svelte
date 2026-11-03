@@ -37,6 +37,8 @@
   import Debrid from './views/Debrid.svelte';
   import Stats from './views/Stats.svelte';
   import { ui, init, queueAdd, toast, d } from './lib/state.svelte.js';
+  import RemoteBanner from './components/RemoteBanner.svelte';
+  import { remote } from './lib/remote.svelte.js';
 
   const VIEWS = { search: Search, downloads: Downloads, history: History, stats: Stats, indexers: Indexers, servers: Servers, debrid: Debrid, settings: Settings, logs: Logs };
   const ORDER = ['search', 'downloads', 'history', 'stats', 'indexers', 'servers', 'debrid', 'settings', 'logs'];
@@ -47,6 +49,8 @@
     const s = ui.settings;
     if (!s) return;
     const need = NEEDS[ui.view];
+    // Controlando un PC desde el móvil, Descargas e Historial son las del PC.
+    if (remote.active && (ui.view === 'downloads' || ui.view === 'history')) return;
     if (need && !s[need]) ui.view = s.featureNntp ? 'downloads' : 'search';
   });
   let prevIndex = 0;
@@ -164,7 +168,9 @@
   <div class="body">
     {#if !isAndroid}<Sidebar />{/if}
     <main>
-      {#if isAndroid && ui.ready && !ui.storage && !storageLater}
+      {#if isAndroid && ui.ready && remote.active && ['downloads', 'history', 'stats'].includes(ui.view)}
+        <RemoteBanner />
+      {:else if isAndroid && ui.ready && !ui.storage && !storageLater}
         <div class="storage alert warn">
           <Icon name="folder" size={18} />
           <div class="spacer">

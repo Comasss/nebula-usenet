@@ -258,6 +258,9 @@ pub struct Settings {
     pub update_check: bool,
     /// Versión que el usuario decidió omitir: no se vuelve a avisar de ella.
     pub update_skipped: String,
+    /// Control remoto: los móviles emparejados pueden ver y manejar la cola de este equipo.
+    pub remote_enabled: bool,
+    pub remote_port: u16,
 }
 
 impl Default for Settings {
@@ -319,6 +322,8 @@ impl Default for Settings {
             api_lan: false,
             update_check: true,
             update_skipped: String::new(),
+            remote_enabled: false,
+            remote_port: crate::remote::DEFAULT_PORT,
         }
     }
 }
@@ -415,7 +420,7 @@ fn default_download_root() -> PathBuf {
 // ---- DPAPI: cifra la contraseña ligada al usuario de Windows ----
 
 #[cfg(windows)]
-fn protect(plain: &str) -> Option<String> {
+pub(crate) fn protect(plain: &str) -> Option<String> {
     use windows_sys::Win32::Foundation::LocalFree;
     use windows_sys::Win32::Security::Cryptography::{CryptProtectData, CRYPT_INTEGER_BLOB};
     let data = plain.as_bytes();
@@ -441,7 +446,7 @@ fn protect(plain: &str) -> Option<String> {
 }
 
 #[cfg(windows)]
-fn unprotect(enc: &str) -> Option<String> {
+pub(crate) fn unprotect(enc: &str) -> Option<String> {
     use windows_sys::Win32::Foundation::LocalFree;
     use windows_sys::Win32::Security::Cryptography::{CryptUnprotectData, CRYPT_INTEGER_BLOB};
     let data = base64::engine::general_purpose::STANDARD.decode(enc).ok()?;
@@ -469,12 +474,12 @@ fn unprotect(enc: &str) -> Option<String> {
 // Fuera de Windows no hay DPAPI. En Android config.json vive en la carpeta privada de la app,
 // a la que no llegan otras apps, así que basta con no guardar las claves en texto plano.
 #[cfg(not(windows))]
-fn protect(plain: &str) -> Option<String> {
+pub(crate) fn protect(plain: &str) -> Option<String> {
     Some(base64::engine::general_purpose::STANDARD.encode(plain.as_bytes()))
 }
 
 #[cfg(not(windows))]
-fn unprotect(enc: &str) -> Option<String> {
+pub(crate) fn unprotect(enc: &str) -> Option<String> {
     let v = base64::engine::general_purpose::STANDARD.decode(enc).ok()?;
     String::from_utf8(v).ok()
 }

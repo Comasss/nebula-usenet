@@ -10,6 +10,7 @@
   import { ui, saveSettings, toast, d } from '../lib/state.svelte.js';
   import { usableDebrid, debridLabel, hasNntp } from '../lib/debrid.js';
   import ProgressBar from '../components/ProgressBar.svelte';
+  import RemoteSettings from '../components/RemoteSettings.svelte';
   import * as f from '../lib/format.js';
   import { upd, checkUpdates, startUpdate, cancelDownload } from '../lib/updater.svelte.js';
   import { setContext, tick } from 'svelte';
@@ -32,6 +33,7 @@
     if (id === 'search') return t('settings.searchTitle');
     if (id === 'windows') return isAndroid ? t('mobile.appTitle') : t('settings.windowsTitle');
     if (id === 'api') return `${t('api.title')} NZBHydra2`;
+    if (id === 'remote') return isAndroid ? t('remote.mobileTitle') : t('settings.section.remote');
     return t(`settings.section.${id}`);
   }
   // Si coincide el título de la sección, se muestra entera.
@@ -68,6 +70,7 @@
     { id: 'network', icon: 'wifi' },
     { id: 'look', icon: 'palette' },
     { id: 'api', icon: 'plug' },
+    { id: 'remote', icon: isAndroid ? 'monitor' : 'smartphone' },
     { id: 'transfer', icon: 'qr' },
     { id: 'updates', icon: 'refresh' },
     { id: 'about', icon: 'info' },
@@ -202,7 +205,7 @@
       <nav>
         {#each SECTIONS as sec}
           <button class:sel={section === sec.id} onclick={() => scrollTo(sec.id)}>
-            <Icon name={sec.icon} size={16} /> {sec.id === 'windows' && isAndroid ? t('mobile.appTitle') : t(`settings.section.${sec.id}`)}
+            <Icon name={sec.icon} size={16} /> {sec.id === 'windows' && isAndroid ? t('mobile.appTitle') : sec.id === 'remote' ? titleOf('remote') : t(`settings.section.${sec.id}`)}
           </button>
         {/each}
       </nav>
@@ -471,6 +474,13 @@
             <button class="btn sm" onclick={() => invoke('open_url', { url: DOCS_URL })}>{t('common.open')} <Icon name="chevron-right" size={14} /></button>
           </SettingRow>
         </div>
+      </section>
+      {/if}
+
+      {#if show('remote')}
+      <section id="sec-remote" class:hit={secHit('remote')}>
+        <h2><Icon name={isAndroid ? 'monitor' : 'smartphone'} size={18} /> {titleOf('remote')}</h2>
+        <RemoteSettings />
       </section>
       {/if}
 

@@ -44,6 +44,7 @@
     { id: 'windows', icon: 'smartphone', hue: 200 },
     { id: 'network', icon: 'wifi', hue: 140 },
     { id: 'look', icon: 'palette', hue: 300 },
+    { id: 'remote', icon: 'monitor', hue: 250 },
     { id: 'api', icon: 'plug', hue: 100 },
     { id: 'transfer', icon: 'qr', hue: 50 },
   ];
@@ -54,6 +55,7 @@
     if (id === 'search') return t('settings.searchTitle');
     if (id === 'windows') return t('mobile.appTitle');
     if (id === 'api') return t('api.title');
+    if (id === 'remote') return t('remote.mobileTitle');
     return t(`settings.section.${id}`);
   }
 
