@@ -16,6 +16,7 @@ pub mod debrid_job;
 pub mod engine;
 pub mod facade;
 pub mod fetch;
+pub mod import;
 pub mod finish;
 pub mod indexer;
 pub mod nntp;

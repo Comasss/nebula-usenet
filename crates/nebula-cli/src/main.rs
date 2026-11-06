@@ -147,6 +147,14 @@ pub enum Command {
     },
     /// Speed, queue and server status.
     Status,
+    /// Import servers, categories, settings and scheduled tasks from sabnzbd.ini or nzbget.conf.
+    Import {
+        /// The sabnzbd.ini or nzbget.conf file.
+        file: PathBuf,
+        /// Only show what would be imported.
+        #[arg(long)]
+        dry_run: bool,
+    },
     /// Download an NZB without a server and wait until it finishes.
     Get {
         /// The .nzb file.
@@ -209,6 +217,12 @@ mod tests {
     #[test]
     fn cli_definition_is_valid() {
         Cli::command().debug_assert();
+    }
+
+    #[test]
+    fn parses_import() {
+        let c = Cli::try_parse_from(["nebula", "import", "sabnzbd.ini", "--dry-run"]).unwrap();
+        assert!(matches!(c.command, Command::Import { dry_run: true, .. }));
     }
 
     #[test]

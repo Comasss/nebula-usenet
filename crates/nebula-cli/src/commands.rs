@@ -15,6 +15,7 @@ pub async fn run(cli: &Cli, c: Client) -> Res {
             add(&c, json, sources, cat, priority, via, name, *paused).await
         }
         Command::Queue => queue(&c, json).await,
+        Command::Import { file, dry_run } => import(&c, json, file, *dry_run).await,
         Command::History { limit, failed } => history(&c, json, *limit, *failed).await,
         Command::Pause { id } => pause(&c, json, id.as_deref(), true).await,
         Command::Resume { id } => pause(&c, json, id.as_deref(), false).await,
@@ -474,4 +475,60 @@ mod tests {
         assert!(find(&items, "zz", true).unwrap().is_none());
         assert!(find(&items, "2", false).unwrap().is_none());
     }
+}
+
+/// `nebula import`: lee el archivo, enseña lo que hay y lo añade todo (salvo con --dry-run).
+async fn import(c: &Client, json: bool, file: &std::path::Path, dry_run: bool) -> Res {
+    let bytes = std::fs::read(file).map_err(|e| Fail::new(format!("{}: {}", file.display(), e)))?;
+    let text = String::from_utf8_lossy(&bytes).into_owned();
+    let imp = c.invoke("import_preview", json!({ "text": text })).await?;
+    let names = |key: &str, f: &dyn Fn(&Value) -> String| -> Vec<String> {
+        imp[key].as_array().map(|a| a.iter().map(f).collect()).unwrap_or_default()
+    };
+    let servers = names("servers", &|s| format!("{}:{}", str(s, "host"), num(s, "port")));
+    let categories = names("categories", &|c| str(c, "name").to_string());
+    let settings: Vec<String> = imp["settings"].as_object().map(|m| m.keys().cloned().collect()).unwrap_or_default();
+    let schedule = imp["schedule"].as_array().map_or(0, |a| a.len());
+    let applied = if dry_run {
+        None
+    } else {
+        let choice = json!({
+            "servers": imp["servers"].as_array().map(|a| a.iter().map(|s| s["id"].clone()).collect::<Vec<_>>()).unwrap_or_default(),
+            "categories": categories,
+            "settings": settings,
+            "schedule": true,
+        });
+        Some(c.invoke("import_apply", json!({ "imported": imp, "choice": choice })).await?)
+    };
+    if json {
+        println!("{}", serde_json::to_string_pretty(&json!({ "preview": imp, "applied": applied })).unwrap_or_default());
+        return Ok(());
+    }
+    println!("{}", t!("cli.imp.source", source = str(&imp, "source")));
+    if !servers.is_empty() {
+        println!("{}", t!("cli.imp.servers", n = servers.len(), list = servers.join(", ")));
+    }
+    if !categories.is_empty() {
+        println!("{}", t!("cli.imp.categories", n = categories.len(), list = categories.join(", ")));
+    }
+    if !settings.is_empty() {
+        println!("{}", t!("cli.imp.settings", n = settings.len(), list = settings.join(", ")));
+    }
+    if schedule > 0 {
+        println!("{}", t!("cli.imp.schedule", n = schedule));
+    }
+    for w in imp["warnings"].as_array().into_iter().flatten() {
+        println!("{}", t!("cli.imp.warning", text = w.as_str().unwrap_or_default()));
+    }
+    match applied {
+        None => println!("{}", t!("cli.imp.dryRun")),
+        Some(a) => {
+            let n = |k: &str| a[k].as_u64().unwrap_or(0);
+            println!("{}", t!("imp.applied", servers = n("servers"), categories = n("categories"), settings = n("settings"), schedule = n("schedule")));
+            if n("skipped") > 0 {
+                println!("{}", t!("cli.imp.skipped", n = n("skipped")));
+            }
+        }
+    }
+    Ok(())
 }

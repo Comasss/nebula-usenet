@@ -251,6 +251,24 @@ pub async fn test_indexer(indexer: IndexerConfig) -> indexer::IndexerTest {
     indexer::test(&indexer).await
 }
 
+/// Indexadores de un Prowlarr o un NZBHydra2.
+#[tauri::command]
+pub async fn indexer_discover(url: String, api_key: String) -> Result<Vec<IndexerConfig>, String> {
+    nebula_core::import::discover_indexers(&url, &api_key).await
+}
+
+/// Lee un sabnzbd.ini o nzbget.conf sin cambiar nada.
+#[tauri::command]
+pub fn import_preview(e: Eng, kind: Option<String>, text: String) -> Result<nebula_core::import::Imported, String> {
+    e.import_preview(&kind.unwrap_or_default(), &text)
+}
+
+/// Añade a los ajustes lo elegido de una importación.
+#[tauri::command]
+pub fn import_apply(e: Eng, imported: nebula_core::import::Imported, choice: nebula_core::import::Choice) -> Result<nebula_core::import::Applied, String> {
+    e.import_apply(&imported, &choice)
+}
+
 /// Descarga un NZB desde un enlace y lo guarda en una carpeta del PC.
 #[tauri::command]
 pub async fn save_nzb_url(e: Eng<'_>, url: String, dir: String, name: String, indexer_id: Option<String>) -> Result<String, String> {

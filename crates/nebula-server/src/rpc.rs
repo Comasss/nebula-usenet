@@ -94,6 +94,9 @@ pub async fn call(e: &Arc<Engine>, cmd: &str, a: &Value) -> Result<Value, String
             )
             .await?),
         "test_indexer" => ok(indexer::test(&arg::<IndexerConfig>(a, "indexer")?).await),
+        "indexer_discover" => ok(nebula_core::import::discover_indexers(&arg::<String>(a, "url")?, &arg::<String>(a, "apiKey")?).await?),
+        "import_preview" => ok(e.import_preview(&arg::<Option<String>>(a, "kind")?.unwrap_or_default(), &arg::<String>(a, "text")?)?),
+        "import_apply" => ok(e.import_apply(&arg(a, "imported")?, &arg(a, "choice")?)?),
         "test_debrid" => ok(debrid::test(&arg::<DebridConfig>(a, "provider")?).await),
         "debrid_cached" => ok(e.debrid_cached(&arg::<String>(a, "token")?).await?),
 

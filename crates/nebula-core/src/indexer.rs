@@ -200,6 +200,11 @@ pub async fn test(ix: &IndexerConfig) -> IndexerTest {
     }
 }
 
+/// Nombre que da el indexador en sus capacidades (`<server title="…">`).
+pub async fn caps_title(ix: &IndexerConfig) -> Option<String> {
+    get(ix, &[("t", "caps".into())]).await.ok().and_then(|b| parse_caps(&b).0)
+}
+
 fn parse_caps(body: &str) -> (Option<String>, Option<u32>) {
     let Ok(doc) = roxmltree::Document::parse(body.trim_start()) else { return (None, None) };
     let mut title = None;

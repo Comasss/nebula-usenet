@@ -256,6 +256,19 @@ impl Engine {
         Ok(())
     }
 
+    /// Lee un `sabnzbd.ini` o `nzbget.conf` sin cambiar nada. `kind`: "sabnzbd", "nzbget" o vacío.
+    pub fn import_preview(&self, kind: &str, text: &str) -> Result<crate::import::Imported, String> {
+        crate::import::parse(kind, text)
+    }
+
+    /// Añade a los ajustes lo elegido de una importación y los guarda.
+    pub fn import_apply(self: &Arc<Self>, imported: &crate::import::Imported, choice: &crate::import::Choice) -> Result<crate::import::Applied, String> {
+        let (settings, done) = crate::import::apply(&self.settings.read().clone(), imported, choice)?;
+        self.save_settings(settings)?;
+        crate::linfo!("{}", t!("imp.applied", servers = done.servers, categories = done.categories, settings = done.settings, schedule = done.schedule));
+        Ok(done)
+    }
+
     /// par2 y 7-Zip que se usarán y si existen.
     pub fn tools_status(&self) -> Vec<crate::tools::ToolStatus> {
         crate::tools::status(&self.settings.read(), &self.paths.tools)
