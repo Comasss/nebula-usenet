@@ -13,7 +13,7 @@ Search all your indexers, download over NNTP or debrid, repair and extract autom
 ![Platforms](https://img.shields.io/badge/platforms-Windows%20%7C%20Android%20%7C%20Linux%20server-555)
 [![License: PolyForm Noncommercial](https://img.shields.io/badge/license-PolyForm%20Noncommercial-orange)](LICENSE.md)
 
-[**Download**](https://github.com/Comasss/nebula-usenet/releases/latest) · [Features](#features) · [Screenshots](#screenshots) · [Categories](docs/CATEGORIES.md) · [Newznab API](docs/API.md) · [SABnzbd API](docs/SABNZBD.md) · [Server](docs/SERVER.md) · [Docker](docs/DOCKER.md) · [CLI](docs/CLI.md) · [Download options](docs/DOWNLOADING.md) · [Moving from SABnzbd/NZBGet](docs/IMPORT.md) · [Building](#building)
+[**Download**](https://github.com/Comasss/nebula-usenet/releases/latest) · [Features](#features) · [Screenshots](#screenshots) · [Categories](docs/CATEGORIES.md) · [Newznab API](docs/API.md) · [SABnzbd API](docs/SABNZBD.md) · [Server](docs/SERVER.md) · [Docker](docs/DOCKER.md) · [CLI](docs/CLI.md) · [Download options](docs/DOWNLOADING.md) · [Moving from SABnzbd/NZBGet](docs/IMPORT.md) · [Benchmarks](docs/BENCHMARKS.md) · [Building](#building)
 
 <img src="https://github.com/Comasss/nebula-usenet/raw/screenshots/downloads.png" alt="Nebula Usenet: Downloads view with live speed graph, queue and post-processing" width="900">
 
@@ -218,6 +218,8 @@ cargo test --workspace
 ```bash
 python dev/mock_nntp.py --src folder_to_publish --nzb test.nzb --missing 3 --kbps 1500
 ```
+
+`dev/bench.py` compares Nebula's speed, CPU and memory with SABnzbd and NZBGet against `dev/nntp-bench`, a fast local NNTP server; results and how it was optimized are in [docs/BENCHMARKS.md](docs/BENCHMARKS.md).
 
 `dev/sonarr_sim.py` repeats against a running Nebula what Sonarr does with a SABnzbd download client (version, get_config, addfile, queue and history until it completes). See [docs/SABNZBD.md](docs/SABNZBD.md#testing-it).
 
