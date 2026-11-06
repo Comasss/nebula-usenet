@@ -251,7 +251,7 @@ jobs:
 
       - uses: docker/setup-buildx-action@v3
 
-      - name: Compilar nebula-server (binario estático)
+      - name: Compilar nebula-server y la CLI (binarios estáticos)
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -266,9 +266,11 @@ jobs:
           set -euo pipefail
           mkdir -p release
           cp out/nebula-server "release/nebula-server_${VERSION}_linux_${{ matrix.arch }}"
+          cp out/nebula "release/nebula_${VERSION}_linux_${{ matrix.arch }}"
           chmod 755 release/*
           file release/*
           "release/nebula-server_${VERSION}_linux_${{ matrix.arch }}" --version
+          "release/nebula_${VERSION}_linux_${{ matrix.arch }}" --version
 
       - uses: actions/upload-artifact@v4
         with:
@@ -290,7 +292,7 @@ jobs:
       - name: Probar la imagen
         run: |
           set -euo pipefail
-          docker run --rm --entrypoint sh nebula:ci -c 'par2 -V && 7zz i | head -2 && nebula-server --version'
+          docker run --rm --entrypoint sh nebula:ci -c 'par2 -V && 7zz i | head -2 && nebula-server --version && nebula --version'
           mkdir -p "$RUNNER_TEMP/config" "$RUNNER_TEMP/downloads"
           docker run -d --name neb -p 5080:5080 -e PUID=1001 -e PGID=1001 \
             -v "$RUNNER_TEMP/config:/config" -v "$RUNNER_TEMP/downloads:/downloads" nebula:ci
@@ -303,6 +305,9 @@ jobs:
           curl -fsS http://127.0.0.1:5080/ | grep -q '<div id="app">'
           [ "$(docker inspect -f '{{.State.Health.Status}}' neb)" = healthy ]
           [ "$(stat -c %u "$RUNNER_TEMP/config/config.json")" = 1001 ]
+          # La CLI dentro del contenedor encuentra el servidor y su clave sola.
+          docker exec neb nebula status
+          docker exec neb nebula queue --json
           docker stop neb
           [ "$(docker inspect -f '{{.State.ExitCode}}' neb)" = 0 ]
 
@@ -405,7 +410,7 @@ jobs:
           v=$(jq -r .version src-tauri/tauri.conf.json)
           tag="v$v"
           short="${GITHUB_SHA::7}"
-          (cd release && sha256sum *.exe *.apk nebula-server_* > SHA256SUMS.txt)
+          (cd release && sha256sum *.exe *.apk nebula-server_* nebula_* > SHA256SUMS.txt)
           cat > notes.md <<EOF
           <!-- nebula-autobuild -->
           Automatic build of **Nebula $v** from commit [\`$short\`](https://github.com/$GITHUB_REPOSITORY/commit/$GITHUB_SHA).
@@ -416,6 +421,7 @@ jobs:
           | \`Nebula_${v}_x64_portable.exe\` | A single executable, no installation. Stores its data in \`%APPDATA%\\Nebula\`. |
           | \`Nebula_${v}_android_arm64.apk\` | Android app (arm64, Android 7.0 or later). Open it on the phone to install it. |
           | \`nebula-server_${v}_linux_x64\`, \`nebula-server_${v}_linux_arm64\` | nebula-server for Linux servers and NAS: web interface and SABnzbd/Newznab APIs. A single static binary; see [docs/SERVER.md](https://github.com/$GITHUB_REPOSITORY/blob/main/docs/SERVER.md). |
+          | \`nebula_${v}_linux_x64\`, \`nebula_${v}_linux_arm64\` | The \`nebula\` command line: control nebula-server or download an NZB on its own; see [docs/CLI.md](https://github.com/$GITHUB_REPOSITORY/blob/main/docs/CLI.md). |
           | \`SHA256SUMS.txt\` | SHA-256 checksums to verify the files. |
 
           Docker: \`docker pull ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/nebula:v$v\` (amd64 and arm64), see [docs/DOCKER.md](https://github.com/$GITHUB_REPOSITORY/blob/main/docs/DOCKER.md).

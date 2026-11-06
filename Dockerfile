@@ -21,7 +21,7 @@ COPY index.html vite.config.js ./
 COPY src src
 RUN npm run build
 
-# ---- nebula-server (estático, con la interfaz dentro) ----
+# ---- nebula-server (estático, con la interfaz dentro) y la CLI ----
 FROM ${RUST_IMAGE} AS server
 RUN apt-get update \
  && apt-get install -y --no-install-recommends musl-tools perl make \
@@ -39,12 +39,13 @@ ARG TARGETARCH
 RUN --mount=type=cache,id=cargo-registry,target=/usr/local/cargo/registry \
     --mount=type=cache,id=nebula-target-${TARGETARCH},target=/src/target \
     target="$(uname -m)-unknown-linux-musl" \
- && cargo build --release --locked -p nebula-server --target "$target" \
- && install -Dm755 "target/$target/release/nebula-server" /out/nebula-server
+ && cargo build --release --locked -p nebula-server -p nebula-cli --target "$target" \
+ && install -Dm755 "target/$target/release/nebula-server" /out/nebula-server \
+ && install -Dm755 "target/$target/release/nebula-cli" /out/nebula
 
-# Solo el binario: `docker buildx build --target server-bin --output type=local,dest=out .`
+# Solo los binarios: `docker buildx build --target server-bin --output type=local,dest=out .`
 FROM scratch AS server-bin
-COPY --from=server /out/nebula-server /
+COPY --from=server /out/nebula-server /out/nebula /
 
 # ---- par2cmdline-turbo y 7-Zip (con RAR) ----
 FROM ${BASE_IMAGE} AS tools
@@ -71,7 +72,8 @@ RUN apt-get update \
  && apt-get install -y --no-install-recommends ca-certificates tzdata libstdc++6 libgomp1 \
  && rm -rf /var/lib/apt/lists/*
 COPY --from=tools /out/par2 /out/7zz /usr/local/bin/
-COPY --from=server /out/nebula-server /usr/local/bin/
+# nebula-server y la CLI: `docker exec nebula nebula status`
+COPY --from=server /out/nebula-server /out/nebula /usr/local/bin/
 COPY deploy/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 ENV NEBULA_DOCKER=1 \
     NEBULA_DATA_DIR=/config \
