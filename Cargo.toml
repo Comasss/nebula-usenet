@@ -3,9 +3,10 @@
 # - crates/nebula-server: el motor con interfaz web, sin ventana (servidores, NAS, Docker).
 # - crates/nebula-cli: la línea de comandos (controla nebula-server o descarga un NZB sola).
 # - src-tauri: la app de escritorio y Android (Tauri) sobre nebula-core.
+# - dev/nntp-bench: servidor NNTP simulado rápido para dev/bench.py (no se publica).
 [workspace]
 resolver = "2"
-members = ["crates/nebula-core", "crates/nebula-server", "crates/nebula-cli", "src-tauri"]
+members = ["crates/nebula-core", "crates/nebula-server", "crates/nebula-cli", "src-tauri", "dev/nntp-bench"]
 
 [workspace.package]
 version = "1.10.1"
