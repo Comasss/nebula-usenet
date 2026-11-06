@@ -36,6 +36,7 @@ nebula-server creates an API key on first start, so there's always one even whil
 | `nebula speed [LIMIT]` | Shows or sets the limit: `10` (MB/s), `2.5M`, `500K`, `1G`, `0` or `off`. |
 | `nebula search <words>… [-i indexer] [--newznab 5000] [-n 25] [--grab N] [--cat C]` | Searches every enabled indexer (or the ones given) and lists the newest first. `--grab N` adds result number `N`; its category comes from its Newznab category unless `--cat` is given. |
 | `nebula status` | Version, speed, queue, limit, free space, servers and missing tools. |
+| `nebula import <file> [--dry-run]` | Imports servers, categories, folders, options and scheduled tasks from `sabnzbd.ini` or `nzbget.conf`, skipping what already exists. With `--dry-run` it only shows them. See [IMPORT.md](IMPORT.md). |
 | `nebula tui` | The queue in the terminal, updated every second: arrows to choose, `p` pause/resume, space pause everything, `d` remove, `q` quit. |
 | `nebula completions <shell>` | Completion script for `bash`, `zsh`, `fish`, `powershell` or `elvish`. |
 | `nebula get <file.nzb> -o <folder>` | Downloads without a server (below). |
