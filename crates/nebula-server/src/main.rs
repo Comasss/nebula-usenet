@@ -115,11 +115,17 @@ async fn main() {
         std::env::set_var("NEBULA_DOWNLOAD_DIR", d);
     }
     let first_run = !paths.config_file().exists();
-    let settings = Settings::load(&paths);
+    let mut settings = Settings::load(&paths);
     if settings.language.is_empty() || !i18n::set(&settings.language) {
         i18n::set(i18n::system_language());
     }
-    if first_run {
+    // La API key sirve también para la CLI (`nebula status` dentro del contenedor): que siempre
+    // haya una, aunque la API para Sonarr/Radarr siga apagada hasta que se active en Ajustes.
+    let new_key = settings.api_key.trim().is_empty();
+    if new_key {
+        settings.api_key = uuid::Uuid::new_v4().simple().to_string();
+    }
+    if first_run || new_key {
         if let Err(e) = settings.save(&paths) {
             lerror!("{}", e);
         }
