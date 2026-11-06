@@ -12,7 +12,7 @@ src                  the interface (Svelte), shared by every host
 
 ## nebula-core
 
-Everything that downloads and processes: the queue and the NNTP workers (`engine.rs`, `nntp.rs`, `yenc.rs`), NZB parsing, post-processing with par2 and 7-Zip, categories, debrid services, indexers, RSS, actions on finish, statistics, the Newznab and SABnzbd APIs, remote control, moving settings to another device, settings and their files, the log and the engine's translations (`locales/`).
+Everything that downloads and processes: the queue and the NNTP workers (`engine.rs`, `nntp.rs`, `yenc.rs`), NZB parsing, post-processing with par2 and 7-Zip (`postproc.rs`, with deobfuscation in `deobfuscate.rs`), the scheduler (`schedule.rs`) and per-server quotas (`quota.rs`), categories, debrid services, indexers, RSS, actions on finish, statistics, the Newznab and SABnzbd APIs, remote control, moving settings to another device, settings and their files, the log and the engine's translations (`locales/`).
 
 It depends on tokio, reqwest and the like, never on Tauri; CI checks that `cargo build -p nebula-core` works and that `cargo tree -p nebula-core` has no `tauri`.
 

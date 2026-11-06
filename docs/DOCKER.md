@@ -45,7 +45,7 @@ More about the SABnzbd API in [SABNZBD.md](SABNZBD.md).
 |---|---|---|
 | `PUID`, `PGID` | `1000` | User and group Nebula runs as. Use the ones that own your folders (`id <user>` on the host). |
 | `UMASK` | `022` | Permissions of what Nebula creates. `002` lets the group write too (handy if Sonarr runs as another user in the same group). |
-| `TZ` | `Etc/UTC` | Time zone (`Europe/Madrid`, `America/New_York`…). |
+| `TZ` | `Etc/UTC` | Time zone (`Europe/Madrid`, `America/New_York`…). The [scheduler](DOWNLOADING.md#scheduler) and the [quota](DOWNLOADING.md#download-quota-per-server) resets use it. |
 | `NEBULA_PORT` | `5080` | Port inside the container. Usually you change only the host side of `-p`. |
 | `NEBULA_DOWNLOAD_DIR` | `/downloads` | Default download folder, used until you choose another one in **Settings → Folders**. |
 

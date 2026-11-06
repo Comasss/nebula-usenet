@@ -28,7 +28,7 @@ nebula-server creates an API key on first start, so there's always one even whil
 
 | Command | What it does |
 |---|---|
-| `nebula add <file.nzb or URL>… [--cat tv] [--priority high] [--via nntp] [--name N] [--paused]` | Adds to the queue. Priority: `low`, `normal`, `high`, `force`. `--via`: `nntp`, `debrid`, or the id of a server or debrid service. A category Nebula doesn't have goes to Default, with a warning. |
+| `nebula add <file.nzb or URL>… [--cat tv] [--priority high] [--via nntp] [--name N] [--paused] [--force]` | Adds to the queue. `--force` adds it even if it looks like a [duplicate](DOWNLOADING.md#duplicate-downloads). Priority: `low`, `normal`, `high`, `force`. `--via`: `nntp`, `debrid`, or the id of a server or debrid service. A category Nebula doesn't have goes to Default, with a warning. |
 | `nebula queue` | The queue: position, short id, status, priority, progress, size, speed, time left, category and name. |
 | `nebula history [-n 20] [--failed]` | The latest history entries (dates in UTC), with the error of the failed ones. |
 | `nebula pause [ID]`, `nebula resume [ID]` | The whole queue, or one download. |

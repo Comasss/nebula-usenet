@@ -74,6 +74,7 @@ Like SABnzbd, a download leaves the queue when its post-processing starts and sh
 |---|---|---|
 | Queued | queue | `Queued` |
 | Paused | queue | `Paused` |
+| Checking articles before downloading ([pre-check](DOWNLOADING.md#check-before-downloading)) | queue | `Checking` |
 | Downloading (NNTP) | queue | `Downloading` |
 | Debrid: sending the NZB to the service | queue | `Grabbing` |
 | Debrid: the service is downloading it | queue | `Downloading` (with the service's progress and time left) |
