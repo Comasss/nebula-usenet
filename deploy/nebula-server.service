@@ -1,0 +1,41 @@
+# Unidad de systemd para nebula-server.
+#
+#   sudo install -m755 nebula-server_<versión>_linux_x64 /usr/local/bin/nebula-server
+#   sudo useradd --system --create-home --home-dir /var/lib/nebula --shell /usr/sbin/nologin nebula
+#   sudo cp nebula-server.service /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now nebula-server
+#
+# Abre http://<servidor>:5080 y crea el usuario. Para descargar en otra carpeta, cambia
+# NEBULA_DOWNLOAD_DIR (o elígela luego en Ajustes → Carpetas) y dale permisos al usuario nebula.
+# Más en docs/SERVER.md.
+
+[Unit]
+Description=Nebula Usenet downloader (web interface and SABnzbd/Newznab APIs)
+Documentation=https://github.com/Comasss/nebula-usenet/blob/main/docs/SERVER.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=nebula
+Group=nebula
+UMask=0002
+Environment=NEBULA_DATA_DIR=/var/lib/nebula
+Environment=NEBULA_DOWNLOAD_DIR=/var/lib/nebula/downloads
+Environment=NEBULA_PORT=5080
+ExecStart=/usr/local/bin/nebula-server
+# SIGTERM: Nebula guarda la cola y el historial y sale; le damos margen de sobra.
+KillSignal=SIGTERM
+TimeoutStopSec=30
+Restart=on-failure
+RestartSec=5
+
+# Endurecimiento: solo puede escribir en su carpeta de datos (añade aquí tus carpetas de descargas).
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=true
+ReadWritePaths=/var/lib/nebula
+
+[Install]
+WantedBy=multi-user.target

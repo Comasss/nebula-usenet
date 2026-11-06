@@ -1,0 +1,48 @@
+# Nebula con Sonarr y Radarr. Copia este archivo a una carpeta, ajusta PUID/PGID (los de `id`
+# del usuario dueño de tus carpetas), TZ y las rutas, y arranca con `docker compose up -d`.
+#
+# Las tres usan la misma carpeta de descargas montada en /downloads: así la ruta que Nebula
+# le da a Sonarr/Radarr existe también dentro de sus contenedores y no hace falta ningún
+# "Remote Path Mapping". Guía completa: docs/DOCKER.md
+name: nebula
+
+x-common: &common
+  restart: unless-stopped
+  environment: &env
+    PUID: "1000"
+    PGID: "1000"
+    TZ: Europe/Madrid
+    UMASK: "002"
+
+services:
+  nebula:
+    <<: *common
+    image: ghcr.io/comasss/nebula:latest
+    container_name: nebula
+    ports:
+      - "5080:5080"
+    volumes:
+      - ./nebula:/config
+      - ./downloads:/downloads
+
+  sonarr:
+    <<: *common
+    image: lscr.io/linuxserver/sonarr:latest
+    container_name: sonarr
+    ports:
+      - "8989:8989"
+    volumes:
+      - ./sonarr:/config
+      - ./downloads:/downloads
+      - ./media/tv:/tv
+
+  radarr:
+    <<: *common
+    image: lscr.io/linuxserver/radarr:latest
+    container_name: radarr
+    ports:
+      - "7878:7878"
+    volumes:
+      - ./radarr:/config
+      - ./downloads:/downloads
+      - ./media/movies:/movies

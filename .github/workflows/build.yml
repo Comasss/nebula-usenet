@@ -1,7 +1,9 @@
-# Compila Nebula para Windows y Android en cada push / PR.
-# - Artefactos: instalador NSIS, ejecutable portable y APK de Android (pestaña Actions → ejecución → Artifacts).
+# Compila Nebula para Windows, Android y Linux (nebula-server y su imagen de Docker) en cada push / PR.
+# - Artefactos: instalador NSIS, ejecutable portable, APK de Android y nebula-server para Linux x64 y arm64
+#   (pestaña Actions → ejecución → Artifacts).
 # - Cada push a main publica la Release vX.Y.Z de la versión de src-tauri/tauri.conf.json con los dos .exe,
-#   el .apk y SHA256SUMS.txt. Si esa Release ya la creó este workflow, se actualiza con la nueva compilación; si se
+#   el .apk, los dos nebula-server y SHA256SUMS.txt, y la imagen ghcr.io/<dueño>/nebula con las etiquetas
+#   latest y vX.Y.Z (amd64 y arm64). Si esa Release ya la creó este workflow, se actualiza con la nueva compilación; si se
 #   publicó a mano, no se toca (sube la versión para publicar otra). También funciona subiendo una etiqueta vX.Y.Z.
 name: Build
 
@@ -219,10 +221,163 @@ jobs:
           path: release/*.apk
           if-no-files-found: error
 
+  # nebula-server para Linux: el binario estático y la imagen de Docker salen del mismo Dockerfile,
+  # compilado en un runner de cada arquitectura (sin emulación).
+  server:
+    name: Server Linux ${{ matrix.arch }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            platform: linux/amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            platform: linux/arm64
+            runner: ubuntu-24.04-arm
+    permissions:
+      contents: read
+      packages: write
+    env:
+      PUBLISHES: ${{ github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')) }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Versión e imagen
+        run: |
+          echo "VERSION=$(jq -r .version src-tauri/tauri.conf.json)" >> "$GITHUB_ENV"
+          echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/nebula" >> "$GITHUB_ENV"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Compilar nebula-server (binario estático)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: server-bin
+          platforms: ${{ matrix.platform }}
+          outputs: type=local,dest=out
+          cache-from: type=gha,scope=server-${{ matrix.arch }}
+          cache-to: type=gha,mode=max,scope=server-${{ matrix.arch }}
+
+      - name: Preparar binario
+        run: |
+          set -euo pipefail
+          mkdir -p release
+          cp out/nebula-server "release/nebula-server_${VERSION}_linux_${{ matrix.arch }}"
+          chmod 755 release/*
+          file release/*
+          "release/nebula-server_${VERSION}_linux_${{ matrix.arch }}" --version
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nebula-server_${{ env.VERSION }}_linux_${{ matrix.arch }}
+          path: release/*
+          if-no-files-found: error
+
+      - name: Construir la imagen
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: ${{ matrix.platform }}
+          load: true
+          tags: nebula:ci
+          cache-from: type=gha,scope=server-${{ matrix.arch }}
+          cache-to: type=gha,mode=max,scope=server-${{ matrix.arch }}
+
+      # La imagen arranca, responde a /health, el healthcheck pasa y trae par2 y 7-Zip.
+      - name: Probar la imagen
+        run: |
+          set -euo pipefail
+          docker run --rm --entrypoint sh nebula:ci -c 'par2 -V && 7zz i | head -2 && nebula-server --version'
+          mkdir -p "$RUNNER_TEMP/config" "$RUNNER_TEMP/downloads"
+          docker run -d --name neb -p 5080:5080 -e PUID=1001 -e PGID=1001 \
+            -v "$RUNNER_TEMP/config:/config" -v "$RUNNER_TEMP/downloads:/downloads" nebula:ci
+          for i in $(seq 30); do
+            [ "$(docker inspect -f '{{.State.Health.Status}}' neb)" = healthy ] && break
+            sleep 2
+          done
+          docker logs neb
+          curl -fsS http://127.0.0.1:5080/health
+          curl -fsS http://127.0.0.1:5080/ | grep -q '<div id="app">'
+          [ "$(docker inspect -f '{{.State.Health.Status}}' neb)" = healthy ]
+          [ "$(stat -c %u "$RUNNER_TEMP/config/config.json")" = 1001 ]
+          docker stop neb
+          [ "$(docker inspect -f '{{.State.ExitCode}}' neb)" = 0 ]
+
+      - name: Entrar en GHCR
+        if: env.PUBLISHES == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Subir la imagen de esta arquitectura
+        id: push
+        if: env.PUBLISHES == 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: ${{ matrix.platform }}
+          outputs: type=image,name=${{ env.IMAGE }},push-by-digest=true,name-canonical=true,push=true
+          cache-from: type=gha,scope=server-${{ matrix.arch }}
+
+      - name: Guardar el digest
+        if: env.PUBLISHES == 'true'
+        run: |
+          mkdir -p digests
+          d="${{ steps.push.outputs.digest }}"
+          touch "digests/${d#sha256:}"
+
+      - uses: actions/upload-artifact@v4
+        if: env.PUBLISHES == 'true'
+        with:
+          name: digest-${{ matrix.arch }}
+          path: digests/*
+          if-no-files-found: error
+
+  docker:
+    name: Publicar imagen Docker
+    if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+    needs: [test, server]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: digests
+          pattern: digest-*
+          merge-multiple: true
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Una sola etiqueta para amd64 y arm64: latest y vX.Y.Z.
+      - name: Etiquetar latest y la versión
+        run: |
+          set -euo pipefail
+          v=$(jq -r .version src-tauri/tauri.conf.json)
+          image="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/nebula"
+          docker buildx imagetools create -t "$image:latest" -t "$image:v$v" \
+            $(cd digests && printf "$image@sha256:%s " *)
+          docker buildx imagetools inspect "$image:v$v"
+          echo "::notice::Imagen publicada: $image:v$v y $image:latest"
+
   release:
     name: Publicar release
     if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
-    needs: [test, build, android]
+    needs: [test, build, android, server]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -232,6 +387,13 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           path: release
+          pattern: Nebula_*
+          merge-multiple: true
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: release
+          pattern: nebula-server_*
           merge-multiple: true
 
       - name: Publicar o actualizar la release de esta versión
@@ -243,7 +405,7 @@ jobs:
           v=$(jq -r .version src-tauri/tauri.conf.json)
           tag="v$v"
           short="${GITHUB_SHA::7}"
-          (cd release && sha256sum *.exe *.apk > SHA256SUMS.txt)
+          (cd release && sha256sum *.exe *.apk nebula-server_* > SHA256SUMS.txt)
           cat > notes.md <<EOF
           <!-- nebula-autobuild -->
           Automatic build of **Nebula $v** from commit [\`$short\`](https://github.com/$GITHUB_REPOSITORY/commit/$GITHUB_SHA).
@@ -253,7 +415,10 @@ jobs:
           | \`Nebula_${v}_x64-setup.exe\` | Installer: shortcut, uninstaller and \`.nzb\` file association. |
           | \`Nebula_${v}_x64_portable.exe\` | A single executable, no installation. Stores its data in \`%APPDATA%\\Nebula\`. |
           | \`Nebula_${v}_android_arm64.apk\` | Android app (arm64, Android 7.0 or later). Open it on the phone to install it. |
+          | \`nebula-server_${v}_linux_x64\`, \`nebula-server_${v}_linux_arm64\` | nebula-server for Linux servers and NAS: web interface and SABnzbd/Newznab APIs. A single static binary; see [docs/SERVER.md](https://github.com/$GITHUB_REPOSITORY/blob/main/docs/SERVER.md). |
           | \`SHA256SUMS.txt\` | SHA-256 checksums to verify the files. |
+
+          Docker: \`docker pull ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/nebula:v$v\` (amd64 and arm64), see [docs/DOCKER.md](https://github.com/$GITHUB_REPOSITORY/blob/main/docs/DOCKER.md).
 
           Requirements: Windows 10/11 x64 with WebView2 (included in Windows 11; the installer downloads it if missing). Android 7.0+ on a 64-bit ARM phone or tablet.
           EOF
