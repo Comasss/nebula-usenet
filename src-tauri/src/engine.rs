@@ -169,6 +169,10 @@ pub struct Job {
     pub server: Option<String>,
     /// Nombre de ese servidor (para el historial).
     pub server_name: Option<String>,
+    /// Categoría (`*` = Default).
+    pub category: String,
+    /// Prioridad: -1 baja, 0 normal, 1 alta, 2 forzar (descarga aunque la cola esté en pausa).
+    pub priority: i32,
 }
 
 impl Job {
@@ -235,6 +239,8 @@ impl Job {
             indexer: None,
             server: None,
             server_name: None,
+            category: crate::categories::default_name(),
+            priority: crate::categories::PRIO_NORMAL,
             id,
             name,
             nzb_path,
@@ -285,6 +291,8 @@ impl Job {
             indexer: None,
             server: None,
             server_name: None,
+            category: crate::categories::default_name(),
+            priority: crate::categories::PRIO_NORMAL,
             id,
             name,
             nzb_path,
@@ -351,6 +359,8 @@ impl Job {
             indexer: e.indexer.clone(),
             server: None,
             server_name: None,
+            category: e.category.clone(),
+            priority: crate::categories::PRIO_NORMAL,
         }
     }
 
@@ -539,6 +549,8 @@ impl Job {
             added_at: self.added_at,
             debrid,
             server: self.server_name.clone(),
+            category: self.category.clone(),
+            priority: self.priority,
         }
     }
 
@@ -623,6 +635,8 @@ pub struct HistoryEntry {
     pub stats_id: Option<String>,
     /// Indexador del que se obtuvo el NZB.
     pub indexer: Option<String>,
+    /// Categoría (`*` = Default; las entradas de versiones anteriores cargan así).
+    pub category: String,
 }
 
 impl Default for HistoryEntry {
@@ -650,6 +664,7 @@ impl Default for HistoryEntry {
             via_name: None,
             stats_id: None,
             indexer: None,
+            category: crate::categories::default_name(),
         }
     }
 }
@@ -688,6 +703,8 @@ pub struct JobView {
     pub debrid: Option<DebridView>,
     /// Servidor NNTP elegido para este trabajo, si se eligió uno.
     pub server: Option<String>,
+    pub category: String,
+    pub priority: i32,
 }
 
 #[derive(Serialize, Clone, PartialEq)]
@@ -772,10 +789,40 @@ pub struct AddRequest {
     pub password: Option<String>,
     pub paused: bool,
     pub top: bool,
-    pub options: JobOptions,
-    /// "nntp", "debrid", id de un servicio debrid o nada (método por defecto).
+    /// Sin opciones se usan las de la categoría (o las globales).
+    #[serde(default)]
+    pub options: Option<JobOptions>,
+    /// "nntp", "debrid", id de un servicio debrid o nada (el de la categoría o el predeterminado).
     #[serde(default)]
     pub via: Option<String>,
+    /// Categoría; sin ella se usa el mapeo de categorías Newznab (`newznab`) o Default.
+    #[serde(default)]
+    pub category: Option<String>,
+    /// Prioridad (-1 baja, 0 normal, 1 alta, 2 forzar); sin ella, la de la categoría.
+    #[serde(default)]
+    pub priority: Option<i32>,
+    /// Categorías Newznab del resultado del indexador, para elegir la categoría.
+    #[serde(default)]
+    pub newznab: Vec<u32>,
+}
+
+impl AddRequest {
+    /// Petición con todo por defecto (lo decide la categoría) para un NZB ya en vista previa.
+    pub fn with_defaults(preview: &NzbPreview, paused: bool) -> Self {
+        AddRequest {
+            token: preview.token.clone(),
+            name: preview.name.clone(),
+            dest_dir: String::new(),
+            password: preview.password.clone(),
+            paused,
+            top: false,
+            options: None,
+            via: None,
+            category: None,
+            priority: None,
+            newznab: Vec::new(),
+        }
+    }
 }
 
 #[derive(Serialize, Clone)]
@@ -823,6 +870,10 @@ struct SavedJob {
     server: Option<String>,
     #[serde(default)]
     server_name: Option<String>,
+    #[serde(default = "crate::categories::default_name")]
+    category: String,
+    #[serde(default)]
+    priority: i32,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -1014,6 +1065,15 @@ pub(crate) fn write_all_at(f: &File, mut buf: &[u8], mut off: u64) -> std::io::R
     Ok(())
 }
 
+/// Dónde entra en la cola un trabajo de prioridad `priority`: detrás de los que tienen la misma
+/// o más prioridad, delante de los de menos. Con `top`, delante de todos los de su prioridad.
+/// Los trabajos en post-procesado no se adelantan.
+pub(crate) fn queue_position(jobs: &[Job], priority: i32, top: bool) -> usize {
+    jobs.iter()
+        .position(|j| !j.status.is_pp() && if top { j.priority <= priority } else { j.priority < priority })
+        .unwrap_or(jobs.len())
+}
+
 impl Engine {
     pub fn new(app: AppHandle, paths: AppPaths, settings: Settings) -> Arc<Self> {
         let limiter = RateLimiter::new();
@@ -1144,14 +1204,16 @@ impl Engine {
     pub fn next_task(&self, s: usize) -> Option<Task> {
         let mut guard = self.st.lock();
         let st = &mut *guard;
-        if st.paused {
+        // En pausa solo se descargan los trabajos forzados.
+        let paused = st.paused;
+        if paused && !st.jobs.iter().any(|j| j.priority >= crate::categories::PRIO_FORCE && j.status.is_download()) {
             return None;
         }
         let (_avail, higher, top) = eligibility(&st.servers, s)?;
         let bit = 1u64 << s;
         let servers = &st.servers;
         for job in st.jobs.iter_mut() {
-            if !job.status.is_download() || job.debrid.is_some() {
+            if !job.status.is_download() || job.debrid.is_some() || (paused && job.priority < crate::categories::PRIO_FORCE) {
                 continue;
             }
             // Un trabajo limitado a un servidor solo lo descarga ese servidor, sea cual sea su prioridad.
@@ -1552,10 +1614,14 @@ impl Engine {
             .pending
             .remove(&req.token)
             .ok_or_else(|| t!("err.previewExpiredReAdd"))?;
-        let dest = if req.dest_dir.trim().is_empty() {
-            PathBuf::from(self.settings.read().download_dir.clone())
-        } else {
-            PathBuf::from(req.dest_dir.trim())
+        // La categoría pone lo que la petición no trae: carpeta, método, prioridad y post-procesado.
+        let cat = crate::categories::resolve(&self.settings.read(), req.category.as_deref(), &req.newznab);
+        let dest = if req.dest_dir.trim().is_empty() { cat.dest_dir.clone() } else { PathBuf::from(req.dest_dir.trim()) };
+        let req = AddRequest {
+            via: req.via.filter(|v| !v.trim().is_empty()).or(cat.via.clone()),
+            options: Some(req.options.clone().unwrap_or(cat.options.clone())),
+            priority: Some(crate::categories::clamp_priority(req.priority.unwrap_or(cat.priority))),
+            ..req
         };
         std::fs::create_dir_all(&dest)
             .map_err(|e| t!("err.createDest", path = dest.display(), error = e))?;
@@ -1565,14 +1631,15 @@ impl Engine {
         let name = if req.name.trim().is_empty() { pending.name.clone() } else { util::sanitize_filename(req.name.trim()) };
         let work_dir = self.work_dir_for(&dest, &name, &id);
         let password = req.password.filter(|p| !p.trim().is_empty());
+        let options = req.options.clone().unwrap_or_default();
         let via = crate::debrid_job::resolve(&self.settings.read(), req.via.as_deref());
         let via_label = via.as_ref().map(|(c, _)| format!(" ({})", t!("log.via", name = c.label()))).unwrap_or_default();
         let mut job = match via {
             Some((cfg, auto)) => {
                 let estimate = pending.nzb.files.iter().filter(|f| !f.is_par2()).map(|f| f.bytes).sum();
-                Job::new_debrid(id.clone(), name.clone(), nzb_path, dest, work_dir, password, req.options, DebridJob::new(&cfg, auto, estimate))
+                Job::new_debrid(id.clone(), name.clone(), nzb_path, dest, work_dir, password, options, DebridJob::new(&cfg, auto, estimate))
             }
-            None => Job::build(id.clone(), name.clone(), nzb_path, dest, work_dir, password, req.options, &pending.nzb),
+            None => Job::build(id.clone(), name.clone(), nzb_path, dest, work_dir, password, options, &pending.nzb),
         };
         let pin = if job.debrid.is_none() { pinned_server(&self.settings.read(), req.via.as_deref()) } else { None };
         let via_label = match &pin {
@@ -1587,17 +1654,16 @@ impl Engine {
             job.status = JobStatus::Paused;
         }
         job.indexer = pending.indexer.clone();
+        job.category = cat.category.clone();
+        job.priority = req.priority.unwrap_or(crate::categories::PRIO_NORMAL);
         let empty = job.download_done();
         {
             let mut st = self.st.lock();
-            if req.top {
-                let pos = st.jobs.iter().position(|j| !j.status.is_pp()).unwrap_or(st.jobs.len());
-                st.jobs.insert(pos, job);
-            } else {
-                st.jobs.push(job);
-            }
+            let pos = queue_position(&st.jobs, job.priority, req.top);
+            st.jobs.insert(pos, job);
         }
-        linfo!("{}{}", t!("log.added", name = name), via_label);
+        let cat_label = if crate::categories::is_default(&cat.category) { String::new() } else { format!(" [{}]", cat.category) };
+        linfo!("{}{}{}", t!("log.added", name = name), cat_label, via_label);
         crate::finish::on_job_added(self);
         self.save_queue();
         self.work.notify_waiters();
@@ -1687,6 +1753,33 @@ impl Engine {
         let to = to.min(st.jobs.len());
         st.jobs.insert(to, job);
         self.dirty.store(true, Ordering::Relaxed);
+    }
+
+    /// Cambia la prioridad de un trabajo y lo recoloca en la cola según ella.
+    pub fn set_job_priority(&self, id: &str, priority: i32) -> bool {
+        let priority = crate::categories::clamp_priority(priority);
+        {
+            let mut st = self.st.lock();
+            let Some(pos) = st.jobs.iter().position(|j| j.id == id) else { return false };
+            let mut job = st.jobs.remove(pos);
+            let changed = job.priority != priority;
+            job.priority = priority;
+            let to = if changed { queue_position(&st.jobs, priority, false) } else { pos.min(st.jobs.len()) };
+            st.jobs.insert(to, job);
+        }
+        self.dirty.store(true, Ordering::Relaxed);
+        self.work.notify_waiters();
+        true
+    }
+
+    /// Cambia la categoría de un trabajo de la cola (no mueve lo ya descargado).
+    pub fn set_job_category(&self, id: &str, category: &str) -> bool {
+        let name = crate::categories::canonical(&self.settings.read(), Some(category));
+        let mut st = self.st.lock();
+        let Some(j) = st.jobs.iter_mut().find(|j| j.id == id) else { return false };
+        j.category = name;
+        self.dirty.store(true, Ordering::Relaxed);
+        true
     }
 
     pub fn job_files(&self, id: &str) -> Vec<FileView> {
@@ -1859,6 +1952,7 @@ impl Engine {
             via_name: job.debrid.as_ref().map(|d| d.label.clone()).or_else(|| job.server_name.clone()),
             stats_id: Some(job.stats_id.clone()),
             indexer: job.indexer.clone(),
+            category: job.category.clone(),
         }
     }
 
@@ -2020,6 +2114,8 @@ impl Engine {
         job.added_at = util::now_secs();
         job.stats_id = entry.stats_id.clone().unwrap_or_else(|| entry.id.clone());
         job.indexer = entry.indexer.clone();
+        job.category = entry.category.clone();
+        job.priority = crate::categories::find(&self.settings.read(), &entry.category).map_or(0, |c| c.priority);
         if job.debrid.is_none() {
             if let Some((sid, sname)) = pinned_server(&self.settings.read(), entry.via.as_deref()) {
                 job.server = Some(sid);
@@ -2029,7 +2125,8 @@ impl Engine {
         {
             let mut st = self.st.lock();
             st.history.retain(|h| h.id != id);
-            st.jobs.push(job);
+            let pos = queue_position(&st.jobs, job.priority, false);
+            st.jobs.insert(pos, job);
         }
         linfo!("{}", t!("log.retrying", name = entry.name));
         crate::finish::on_job_added(self);
@@ -2255,6 +2352,8 @@ impl Engine {
                         indexer: j.indexer.clone(),
                         server: j.server.clone(),
                         server_name: j.server_name.clone(),
+                        category: j.category.clone(),
+                        priority: j.priority,
                         files: j
                             .files
                             .iter()
@@ -2302,10 +2401,12 @@ impl Engine {
                     added_at: sj.added_at,
                     stats_id: sj.stats_id.clone(),
                     indexer: sj.indexer.clone(),
+                    category: sj.category.clone(),
                     ..Default::default()
                 };
                 let mut job = Job::pp_only_job(&entry, sj.password.clone());
                 job.id = sj.id.clone();
+                job.priority = sj.priority;
                 pp.push(job.id.clone());
                 jobs.push(job);
                 continue;
@@ -2327,6 +2428,8 @@ impl Engine {
                 job.stats_id = sj.stats_id.clone().unwrap_or_else(|| sj.id.clone());
                 job.server_use = sj.servers.clone();
                 job.indexer = sj.indexer.clone();
+                job.category = sj.category.clone();
+                job.priority = sj.priority;
                 if fetch {
                     job.files = sj
                         .files
@@ -2378,6 +2481,8 @@ impl Engine {
             job.indexer = sj.indexer.clone();
             job.server = sj.server.clone();
             job.server_name = sj.server_name.clone();
+            job.category = sj.category.clone();
+            job.priority = sj.priority;
             if sj.files.len() == job.files.len() {
                 for (f, sf) in job.files.iter_mut().zip(sj.files.iter()) {
                     let n = f.segments.len();
@@ -2460,7 +2565,8 @@ impl Engine {
         }
     }
 
-    pub fn apply_settings(self: &Arc<Self>, new: Settings) -> Result<(), String> {
+    pub fn apply_settings(self: &Arc<Self>, mut new: Settings) -> Result<(), String> {
+        crate::categories::validate(&mut new.categories)?;
         for s in &new.servers {
             if s.enabled && s.host.trim().is_empty() {
                 return Err(t!("err.serverNoHost"));
@@ -2657,5 +2763,72 @@ impl Engine {
             let _ = w.unminimize();
             let _ = w.set_focus();
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn job(id: &str, priority: i32, status: JobStatus) -> Job {
+        let xml = r#"<nzb><file subject="&quot;a.rar&quot; yEnc (1/1)"><groups><group>a.b</group></groups>
+            <segments><segment bytes="10" number="1">a@x</segment></segments></file></nzb>"#;
+        let nzb = nzb::parse(xml.as_bytes()).unwrap();
+        let mut j = Job::build(id.into(), id.into(), "x.nzb".into(), "d".into(), "w".into(), None, JobOptions::default(), &nzb);
+        j.priority = priority;
+        j.status = status;
+        j
+    }
+
+    fn order(jobs: &[Job]) -> Vec<&str> {
+        jobs.iter().map(|j| j.id.as_str()).collect()
+    }
+
+    #[test]
+    fn priority_orders_the_queue() {
+        let mut jobs = vec![job("pp", 0, JobStatus::Extracting), job("n1", 0, JobStatus::Queued), job("low", -1, JobStatus::Queued)];
+        let ins = |jobs: &mut Vec<Job>, j: Job, top: bool| {
+            let pos = queue_position(jobs, j.priority, top);
+            jobs.insert(pos, j);
+        };
+        ins(&mut jobs, job("n2", 0, JobStatus::Queued), false);
+        assert_eq!(order(&jobs), ["pp", "n1", "n2", "low"]);
+        ins(&mut jobs, job("high", 1, JobStatus::Queued), false);
+        assert_eq!(order(&jobs), ["pp", "high", "n1", "n2", "low"]);
+        // "Arriba del todo" no adelanta a los de más prioridad.
+        ins(&mut jobs, job("top", 0, JobStatus::Queued), true);
+        assert_eq!(order(&jobs), ["pp", "high", "top", "n1", "n2", "low"]);
+        ins(&mut jobs, job("force", 2, JobStatus::Queued), false);
+        assert_eq!(order(&jobs), ["pp", "force", "high", "top", "n1", "n2", "low"]);
+        ins(&mut jobs, job("low2", -1, JobStatus::Queued), false);
+        assert_eq!(order(&jobs).last(), Some(&"low2"));
+    }
+
+    /// La cola y el historial de versiones anteriores (sin categoría ni prioridad) cargan como Default.
+    #[test]
+    fn legacy_queue_and_history_load_as_default() {
+        let q = r#"{"paused":false,"jobs":[{"id":"a","name":"x","nzbPath":"n","destDir":"d","workDir":"w",
+            "password":null,"options":{},"status":"queued","addedAt":1,"startedAt":null,"files":[]}]}"#;
+        let saved: SavedQueue = serde_json::from_str(q).unwrap();
+        assert_eq!(saved.jobs[0].category, "*");
+        assert_eq!(saved.jobs[0].priority, 0);
+        let h = r#"[{"id":"a","name":"x","status":"completed","size":5}]"#;
+        let hist: Vec<HistoryEntry> = serde_json::from_str(h).unwrap();
+        assert_eq!(hist[0].category, "*");
+        // Y se guarda con la categoría.
+        let back = serde_json::to_value(&hist[0]).unwrap();
+        assert_eq!(back["category"], "*");
+    }
+
+    #[test]
+    fn add_request_without_options_or_category() {
+        let r: AddRequest = serde_json::from_str(r#"{"token":"t","name":"","destDir":"","password":null,"paused":false,"top":false}"#).unwrap();
+        assert!(r.options.is_none() && r.category.is_none() && r.priority.is_none() && r.newznab.is_empty());
+        let r: AddRequest = serde_json::from_str(
+            r#"{"token":"t","name":"","destDir":"","password":null,"paused":false,"top":false,"options":{"par2":false},"category":"tv","priority":1}"#,
+        )
+        .unwrap();
+        assert!(!r.options.unwrap().par2);
+        assert_eq!((r.category.as_deref(), r.priority), (Some("tv"), Some(1)));
     }
 }

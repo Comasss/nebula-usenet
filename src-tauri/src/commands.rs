@@ -141,6 +141,16 @@ pub fn move_job(e: Eng, id: String, to: usize) {
 }
 
 #[tauri::command]
+pub fn set_job_priority(e: Eng, id: String, priority: i32) {
+    e.set_job_priority(&id, priority);
+}
+
+#[tauri::command]
+pub fn set_job_category(e: Eng, id: String, category: String) {
+    e.set_job_category(&id, &category);
+}
+
+#[tauri::command]
 pub fn set_paused(e: Eng, paused: bool) {
     e.set_paused(paused);
 }
@@ -641,8 +651,10 @@ pub async fn remote_send(
     value: String,
     via: Option<String>,
     name: Option<String>,
+    category: Option<String>,
+    newznab: Option<Vec<u32>>,
 ) -> Result<serde_json::Value, String> {
-    crate::remote::send_nzb(&id, &kind, &value, via, name).await
+    crate::remote::send_nzb(&id, &kind, &value, via, name, category, newznab.unwrap_or_default()).await
 }
 
 // ---- Descarga automática por RSS ----

@@ -10,7 +10,7 @@
 //!   El móvil pide cosas (`{"id", "op", "args"}`) y el PC empuja la cola y el historial en directo.
 //! - El móvil solo puede ver la cola, el historial y las estadísticas, añadir NZB, pausar,
 //!   reanudar, mover y borrar trabajos y cambiar el límite de velocidad. Nada de ajustes.
-use crate::engine::{AddRequest, Engine, JobOptions};
+use crate::engine::{AddRequest, Engine};
 use base64::Engine as _;
 use chacha20poly1305::aead::{Aead, KeyInit};
 use chacha20poly1305::{ChaCha20Poly1305, Key, Nonce};
@@ -59,6 +59,8 @@ const OPS: &[&str] = &[
     "clear_history",
     "add_url",
     "add_nzb",
+    "set_job_priority",
+    "set_job_category",
     "get_vias",
 ];
 
@@ -721,6 +723,14 @@ async fn handle_op(e: &Arc<Engine>, dev_name: &str, op: &str, a: &Value) -> Resu
             e.move_job(arg_str(a, "id"), a["to"].as_u64().unwrap_or(0) as usize);
             Ok(Value::Null)
         }
+        "set_job_priority" => {
+            e.set_job_priority(arg_str(a, "id"), a["priority"].as_i64().unwrap_or(0) as i32);
+            Ok(Value::Null)
+        }
+        "set_job_category" => {
+            e.set_job_category(arg_str(a, "id"), arg_str(a, "category"));
+            Ok(Value::Null)
+        }
         "remove_job" => {
             e.remove_job(arg_str(a, "id"), a["deleteFiles"].as_bool().unwrap_or(false));
             Ok(Value::Null)
@@ -754,12 +764,12 @@ async fn handle_op(e: &Arc<Engine>, dev_name: &str, op: &str, a: &Value) -> Resu
                 "" => (f.filename.unwrap_or_default(), f.strong),
                 n => (n.to_string(), true),
             };
-            add_nzb(e, dev_name, data, name, strong, url, arg_via(a)).await
+            add_nzb(e, dev_name, data, name, strong, url, arg_add(a)).await
         }
         "add_nzb" => {
             let data = b64().decode(arg_str(a, "data")).map_err(|_| t!("remote.protocol"))?;
             let name = arg_str(a, "name").to_string();
-            add_nzb(e, dev_name, data, name.clone(), true, name, arg_via(a)).await
+            add_nzb(e, dev_name, data, name.clone(), true, name, arg_add(a)).await
         }
         "get_vias" => Ok(vias(e)),
         _ => Err(t!("remote.notAllowed")),
@@ -769,6 +779,24 @@ async fn handle_op(e: &Arc<Engine>, dev_name: &str, op: &str, a: &Value) -> Resu
 /// Método pedido por el móvil: "nntp", "nntp:<servidor>" o el id de un servicio debrid de este PC.
 fn arg_via(a: &Value) -> Option<String> {
     a["via"].as_str().map(str::trim).filter(|v| !v.is_empty() && v.len() <= 80).map(str::to_string)
+}
+
+/// Lo que el móvil puede elegir al añadir: método, categoría y categorías Newznab del resultado.
+struct AddArgs {
+    via: Option<String>,
+    category: Option<String>,
+    newznab: Vec<u32>,
+}
+
+fn arg_add(a: &Value) -> AddArgs {
+    AddArgs {
+        via: arg_via(a),
+        category: a["category"].as_str().map(str::trim).filter(|v| !v.is_empty() && v.len() <= 80).map(str::to_string),
+        newznab: a["newznab"]
+            .as_array()
+            .map(|l| l.iter().filter_map(Value::as_u64).take(20).map(|n| n as u32).collect())
+            .unwrap_or_default(),
+    }
 }
 
 /// Formas de descargar que tiene este PC (sin contraseñas ni API keys), para el menú del móvil.
@@ -786,7 +814,8 @@ fn vias(e: &Engine) -> Value {
         .filter(|d| d.usable())
         .map(|d| json!({ "id": d.id, "kind": d.kind, "name": d.name }))
         .collect();
-    json!({ "servers": servers, "debrid": debrid, "downloadVia": s.download_via })
+    let categories: Vec<&str> = s.categories.iter().map(|c| c.name.as_str()).collect();
+    json!({ "servers": servers, "debrid": debrid, "downloadVia": s.download_via, "categories": categories })
 }
 
 fn to_val<T: Serialize>(v: &T) -> Value {
@@ -806,28 +835,17 @@ async fn add_nzb(
     name: String,
     strong: bool,
     source: String,
-    via: Option<String>,
+    args: AddArgs,
 ) -> Result<Value, String> {
     let engine = e.clone();
     let preview = tokio::task::spawn_blocking(move || engine.register_pending(data, &name, strong, source))
         .await
         .map_err(|_| t!("err.internal"))??;
-    let s = e.settings.read().clone();
     let req = AddRequest {
-        token: preview.token.clone(),
-        name: preview.name.clone(),
-        dest_dir: s.download_dir.clone(),
-        password: preview.password.clone(),
-        paused: s.add_paused,
-        top: false,
-        options: JobOptions {
-            par2: s.par2_enabled,
-            extract: s.extract_enabled,
-            delete_archives: s.delete_archives,
-            delete_par2: s.delete_par2,
-            create_folder: s.create_job_folder,
-        },
-        via,
+        via: args.via,
+        category: args.category,
+        newznab: args.newznab,
+        ..AddRequest::with_defaults(&preview, e.settings.read().add_paused)
     };
     let id = e.add_job(req)?;
     crate::linfo!("{}", t!("log.remote.added", device = dev_name, name = preview.name));
@@ -1384,14 +1402,23 @@ async fn call_once(pc: &Pc, op: &str, args: Value) -> Result<Value, String> {
 }
 
 /// Manda un NZB (`kind` "file" con su ruta, o "url") al PC `id`.
-pub async fn send_nzb(id: &str, kind: &str, value: &str, via: Option<String>, name: Option<String>) -> Result<Value, String> {
+#[allow(clippy::too_many_arguments)]
+pub async fn send_nzb(
+    id: &str,
+    kind: &str,
+    value: &str,
+    via: Option<String>,
+    name: Option<String>,
+    category: Option<String>,
+    newznab: Vec<u32>,
+) -> Result<Value, String> {
     let pc = find_pc(id).ok_or_else(|| t!("remote.notPaired"))?;
     let (op, args) = if kind == "url" {
-        ("add_url", json!({ "url": value, "via": via, "name": name }))
+        ("add_url", json!({ "url": value, "via": via, "name": name, "category": category, "newznab": newznab }))
     } else {
         let data = tokio::fs::read(value).await.map_err(|err| t!("err.readFile", error = err))?;
         let name = std::path::Path::new(value).file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default();
-        ("add_nzb", json!({ "name": name, "data": b64().encode(data), "via": via }))
+        ("add_nzb", json!({ "name": name, "data": b64().encode(data), "via": via, "category": category }))
     };
     let active = SESSION.lock().as_ref().is_some_and(|s| s.pc_id == id && s.state.lock().status == "online");
     if active {

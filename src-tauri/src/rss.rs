@@ -11,7 +11,7 @@
 //!   se prueba la misma release en los demás.
 //! - Con la cola en pausa no se consulta nada.
 use crate::config::{IndexerConfig, RssFeed, RssRule, Settings};
-use crate::engine::{AddRequest, Engine, JobOptions};
+use crate::engine::{AddRequest, Engine};
 use crate::indexer::{self, SearchItem};
 use crate::stats::IndexerEvent;
 use crate::{lerror, linfo, lwarn, util};
@@ -564,20 +564,12 @@ async fn add(e: &Arc<Engine>, s: &Settings, rule: &RssRule, it: &SearchItem) -> 
         e.set_pending_indexer(&preview.token, id);
     }
     let req = AddRequest {
-        token: preview.token,
         name: it.title.clone(),
-        dest_dir: if rule.dest_dir.trim().is_empty() { s.download_dir.clone() } else { rule.dest_dir.trim().to_string() },
-        password: preview.password,
-        paused: s.add_paused,
-        top: false,
-        options: JobOptions {
-            par2: s.par2_enabled,
-            extract: s.extract_enabled,
-            delete_archives: s.delete_archives,
-            delete_par2: s.delete_par2,
-            create_folder: s.create_job_folder,
-        },
+        dest_dir: rule.dest_dir.trim().to_string(),
         via: (!rule.via.trim().is_empty()).then(|| rule.via.trim().to_string()),
+        category: (!rule.category.trim().is_empty()).then(|| rule.category.trim().to_string()),
+        newznab: it.category_ids.clone(),
+        ..AddRequest::with_defaults(&preview, s.add_paused)
     };
     e.add_job(req).map(|_| ())
 }

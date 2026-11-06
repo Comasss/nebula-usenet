@@ -107,6 +107,7 @@ pub fn export(s: &Settings) -> Result<String, String> {
     strip_list(&mut obj, "debrid", serde_json::to_value(crate::config::DebridConfig::default()).unwrap_or_default());
     strip_list(&mut obj, "rssFeeds", serde_json::to_value(crate::config::RssFeed::default()).unwrap_or_default());
     strip_list(&mut obj, "rssRules", serde_json::to_value(crate::config::RssRule::default()).unwrap_or_default());
+    strip_list(&mut obj, "categories", serde_json::to_value(crate::categories::Category::default()).unwrap_or_default());
     if let Some(Value::Array(rules)) = obj.get_mut("rssRules") {
         for r in rules {
             if let Value::Object(m) = r {
@@ -190,6 +191,15 @@ pub fn merge(current: &Settings, code: &str) -> Result<Settings, String> {
     // Las reglas RSS que ya existían aquí conservan su carpeta de destino.
     for r in &mut s.rss_rules {
         r.dest_dir = current.rss_rules.iter().find(|x| x.id == r.id).map(|x| x.dest_dir.clone()).unwrap_or_default();
+    }
+    // Las categorías que ya existían aquí conservan su carpeta; las nuevas solo traen una relativa
+    // (dentro de la carpeta de descargas de este dispositivo).
+    for c in &mut s.categories {
+        c.dir = match current.categories.iter().find(|x| x.name.eq_ignore_ascii_case(&c.name)) {
+            Some(x) => x.dir.clone(),
+            None if std::path::Path::new(&c.dir).is_absolute() || crate::categories::is_windows_absolute(&c.dir) => String::new(),
+            None => c.dir.clone(),
+        };
     }
     // Las notificaciones llegan del código; los scripts y la energía de este equipo se quedan.
     s.finish_actions.retain(|a| a.is_notification());
@@ -454,6 +464,8 @@ mod tests {
             created_at: 1_790_000_000,
             ..Default::default()
         });
+        s.categories.push(crate::categories::Category { name: "tv".into(), dir: "Series".into(), newznab: "5000-5999".into(), ..Default::default() });
+        s.categories.push(crate::categories::Category { name: "movies".into(), dir: "C:\\Pelis".into(), pp: 3, ..Default::default() });
         s.finish_actions.push(FinishAction { kind: "telegram".into(), token: "123:abc".into(), chat_id: "42".into(), ..Default::default() });
         s.finish_actions.push(FinishAction { kind: "script".into(), path: "C:\\scripts\\fin.bat".into(), ..Default::default() });
         s.finish_actions.push(FinishAction { kind: "power".into(), on_queue_empty: true, ..Default::default() });
@@ -509,6 +521,16 @@ mod tests {
         let out2 = merge(&dst2, &code).unwrap();
         assert_eq!(out2.rss_rules[0].dest_dir, "/storage/emulated/0/Series");
         assert_eq!(out2.rss_rules[0].name, "Mi serie");
+        // Las categorías viajan; las carpetas absolutas no, las relativas sí, y las que ya
+        // existían aquí conservan la suya.
+        let names: Vec<&str> = out.categories.iter().map(|c| c.name.as_str()).collect();
+        assert_eq!(names, ["tv", "movies"]);
+        assert_eq!(out.categories[0].dir, "Series");
+        assert_eq!(out.categories[0].newznab, "5000-5999");
+        assert_eq!(out.categories[1].dir, "");
+        let mut dst3 = Settings::default();
+        dst3.categories.push(crate::categories::Category { name: "Movies".into(), dir: "/mnt/pelis".into(), ..Default::default() });
+        assert_eq!(merge(&dst3, &code).unwrap().categories[1].dir, "/mnt/pelis");
         assert_eq!(out.finish_actions.len(), 1);
         assert_eq!(out.finish_actions[0].kind, "telegram");
         assert_eq!(out.finish_actions[0].token, "123:abc");

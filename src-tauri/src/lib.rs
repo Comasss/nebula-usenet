@@ -3,6 +3,7 @@ mod i18n;
 #[cfg(target_os = "android")]
 mod android;
 mod api;
+mod categories;
 mod commands;
 mod config;
 mod debrid;
@@ -309,6 +310,8 @@ pub fn run() {
             commands::resume_job,
             commands::remove_job,
             commands::move_job,
+            commands::set_job_priority,
+            commands::set_job_category,
             commands::set_paused,
             commands::set_speed_limit,
             commands::get_history,

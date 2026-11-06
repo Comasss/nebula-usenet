@@ -289,8 +289,10 @@ pub struct RssRule {
     pub categories: String,
     /// "" = método predeterminado, "nntp" o el id de un servicio debrid.
     pub via: String,
-    /// Carpeta de destino (vacía = la predeterminada). No viaja a otros dispositivos.
+    /// Carpeta de destino (vacía = la de la categoría). No viaja a otros dispositivos.
     pub dest_dir: String,
+    /// Categoría (vacía = según las categorías Newznab del elemento, o Default).
+    pub category: String,
     /// Fecha de creación (unix): por defecto solo se coge lo publicado después.
     pub created_at: u64,
     pub only_new: bool,
@@ -311,6 +313,7 @@ impl Default for RssRule {
             categories: String::new(),
             via: String::new(),
             dest_dir: String::new(),
+            category: String::new(),
             created_at: 0,
             only_new: true,
         }
@@ -409,6 +412,8 @@ pub struct Settings {
     pub rss_rules: Vec<RssRule>,
     /// Acciones al terminar una descarga, al fallar o al vaciarse la cola.
     pub finish_actions: Vec<FinishAction>,
+    /// Categorías propias (tv, movies…). La Default no está aquí: son los ajustes globales.
+    pub categories: Vec<crate::categories::Category>,
 }
 
 impl Default for Settings {
@@ -475,6 +480,7 @@ impl Default for Settings {
             rss_feeds: Vec::new(),
             rss_rules: Vec::new(),
             finish_actions: Vec::new(),
+            categories: Vec::new(),
         }
     }
 }
