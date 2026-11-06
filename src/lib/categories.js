@@ -2,7 +2,7 @@ import { t } from './i18n.svelte.js';
 import { defaultVia, usableDebrid } from './debrid.js';
 
 // Categorías (tv, movies…). La Default (`*`) es fija y equivale a los ajustes globales; no está en
-// settings.categories. La misma lógica vive en el motor (src-tauri/src/categories.rs).
+// settings.categories. La misma lógica vive en el motor (crates/nebula-core/src/categories.rs).
 
 export const DEFAULT_CAT = '*';
 

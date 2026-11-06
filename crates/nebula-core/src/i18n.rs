@@ -1,5 +1,5 @@
 //! Traducciones de los textos que genera el motor (errores, avisos, menú de la bandeja y
-//! notificaciones). Los textos están en `src-tauri/locales/<código>.json`; `es` es el original y
+//! notificaciones). Los textos están en `crates/nebula-core/locales/<código>.json`; `es` es el original y
 //! `en` el idioma de reserva cuando falta una cadena.
 
 use std::collections::HashMap;
@@ -202,18 +202,18 @@ mod tests {
     #[test]
     fn ui_locales_complete() {
         let ui: Vec<(&str, &str)> = vec![
-            ("es", include_str!("../../src/locales/es.json")),
-            ("en", include_str!("../../src/locales/en.json")),
-            ("zh", include_str!("../../src/locales/zh.json")),
-            ("hi", include_str!("../../src/locales/hi.json")),
-            ("pt", include_str!("../../src/locales/pt.json")),
-            ("fr", include_str!("../../src/locales/fr.json")),
-            ("de", include_str!("../../src/locales/de.json")),
-            ("ru", include_str!("../../src/locales/ru.json")),
-            ("ja", include_str!("../../src/locales/ja.json")),
-            ("ar", include_str!("../../src/locales/ar.json")),
-            ("it", include_str!("../../src/locales/it.json")),
-            ("ca", include_str!("../../src/locales/ca.json")),
+            ("es", include_str!("../../../src/locales/es.json")),
+            ("en", include_str!("../../../src/locales/en.json")),
+            ("zh", include_str!("../../../src/locales/zh.json")),
+            ("hi", include_str!("../../../src/locales/hi.json")),
+            ("pt", include_str!("../../../src/locales/pt.json")),
+            ("fr", include_str!("../../../src/locales/fr.json")),
+            ("de", include_str!("../../../src/locales/de.json")),
+            ("ru", include_str!("../../../src/locales/ru.json")),
+            ("ja", include_str!("../../../src/locales/ja.json")),
+            ("ar", include_str!("../../../src/locales/ar.json")),
+            ("it", include_str!("../../../src/locales/it.json")),
+            ("ca", include_str!("../../../src/locales/ca.json")),
         ];
         let parse = |code: &str, raw: &str| {
             let v: serde_json::Value = serde_json::from_str(raw).unwrap_or_else(|e| panic!("{}: {}", code, e));

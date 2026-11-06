@@ -1,92 +1,152 @@
-//! Lo que depende del sistema operativo, con una misma interfaz para el resto del motor:
-//! Windows (winint.rs), Android (android.rs) y, para compilar y probar, el resto de Unix.
+//! Lo que depende del sistema operativo en la app: Windows (winint.rs), Android (android.rs) y,
+//! para compilar y probar, el resto de Unix. El motor lo usa a través de `TauriPlatform`.
 use crate::engine::Engine;
-use std::path::Path;
+use nebula_core::Platform;
+use std::path::PathBuf;
 use std::sync::Arc;
+use tauri::{AppHandle, Manager};
 
 #[cfg(windows)]
-pub use crate::winint::{open_path, refresh_registrations, register_app_identity, reveal_path, set_association, set_autostart};
+pub use crate::winint::{open_path, refresh_registrations, register_app_identity, reveal_path};
 
-/// Notificación del sistema (fin de una descarga, enlace detectado…).
-pub fn notify(app: &tauri::AppHandle, tools_dir: &Path, title: &str, body: &str) {
-    #[cfg(windows)]
-    crate::winint::toast(app, tools_dir, title, body);
-    #[cfg(target_os = "android")]
-    {
-        let _ = (app, tools_dir);
+/// Lo que el motor le pide a la app: notificaciones, bandeja, ventanas y energía.
+pub struct TauriPlatform {
+    pub app: AppHandle,
+    /// Carpeta de herramientas (ahí está el icono de las notificaciones de Windows).
+    #[cfg_attr(not(windows), allow(dead_code))]
+    pub tools: PathBuf,
+}
+
+impl Platform for TauriPlatform {
+    fn notify(&self, title: &str, body: &str) {
+        #[cfg(windows)]
+        crate::winint::toast(&self.app, &self.tools, title, body);
+        #[cfg(target_os = "android")]
         crate::android::notify(title, body);
+        #[cfg(not(any(windows, target_os = "android")))]
+        let _ = (title, body);
     }
-    #[cfg(not(any(windows, target_os = "android")))]
-    let _ = (app, tools_dir, title, body);
-}
 
-/// Notificación de la cuenta atrás de apagado, con el botón Cancelar (solo Windows).
-pub fn notify_power(app: &tauri::AppHandle, title: &str, body: &str, cancel: &str) {
-    #[cfg(windows)]
-    if let Some(e) = tauri::Manager::try_state::<Arc<Engine>>(app) {
-        crate::winint::toast_power(app, &e.paths.tools, title, body, cancel);
+    fn notify_power(&self, title: &str, body: &str, cancel: &str) {
+        #[cfg(windows)]
+        crate::winint::toast_power(&self.app, &self.tools, title, body, cancel);
+        #[cfg(not(windows))]
+        let _ = (title, body, cancel);
     }
-    #[cfg(not(windows))]
-    let _ = (app, title, body, cancel);
-}
 
-/// Apagar, suspender o hibernar: solo en Windows.
-pub fn power_action(mode: &str) -> Result<(), String> {
-    #[cfg(windows)]
-    return crate::winint::power_action(mode);
-    #[cfg(not(windows))]
-    {
-        let _ = mode;
-        Err(t!("finish.windowsOnly"))
+    /// En Windows va al icono de la bandeja; en Android, a la notificación permanente que
+    /// mantiene viva la descarga con la pantalla apagada.
+    fn queue_status(&self, active: usize, text: String) {
+        #[cfg(all(desktop, windows))]
+        {
+            let _ = active;
+            if let Some(tray) = self.app.tray_by_id("main") {
+                let _ = tray.set_tooltip(Some(text));
+            }
+        }
+        #[cfg(target_os = "android")]
+        crate::android::keep_alive(active > 0, &text);
+        #[cfg(not(any(windows, target_os = "android")))]
+        let _ = (active, text);
     }
-}
 
-/// Estado de la cola: en Windows va al icono de la bandeja; en Android, a la notificación
-/// permanente que mantiene viva la descarga con la pantalla apagada.
-pub fn queue_status(app: &tauri::AppHandle, active: usize, text: String) {
-    #[cfg(all(desktop, windows))]
-    {
-        let _ = active;
-        if let Some(tray) = app.tray_by_id("main") {
-            let _ = tray.set_tooltip(Some(text));
+    fn tray_paused(&self, paused: bool) {
+        crate::update_tray_pause(&self.app, paused);
+    }
+
+    fn refresh_power(&self) {
+        crate::refresh_tray_power(&self.app);
+    }
+
+    fn show_main(&self) {
+        if let Some(w) = self.app.get_webview_window("main") {
+            let _ = w.show();
+            #[cfg(desktop)]
+            let _ = w.unminimize();
+            let _ = w.set_focus();
         }
     }
-    #[cfg(target_os = "android")]
-    {
-        let _ = app;
-        crate::android::keep_alive(active > 0, &text);
+
+    fn power_window(&self, open: bool) {
+        if open {
+            open_power_window(&self.app);
+        } else if let Some(w) = self.app.get_webview_window("power") {
+            let _ = w.destroy();
+        }
     }
-    #[cfg(not(any(windows, target_os = "android")))]
-    let _ = (app, active, text);
+
+    fn supports_power(&self) -> bool {
+        cfg!(windows)
+    }
+
+    fn power_action(&self, mode: &str) -> Result<(), String> {
+        #[cfg(windows)]
+        return crate::winint::power_action(mode);
+        #[cfg(not(windows))]
+        {
+            let _ = mode;
+            Err(t!("finish.windowsOnly"))
+        }
+    }
+
+    fn set_association(&self, enable: bool) -> Result<(), String> {
+        #[cfg(windows)]
+        return crate::winint::set_association(enable);
+        #[cfg(not(windows))]
+        {
+            // En Android el APK ya declara que abre archivos .nzb.
+            let _ = enable;
+            Ok(())
+        }
+    }
+
+    fn set_autostart(&self, enable: bool) -> Result<(), String> {
+        #[cfg(windows)]
+        return crate::winint::set_autostart(enable);
+        #[cfg(not(windows))]
+        {
+            // En Android no hay "iniciar con el sistema".
+            let _ = enable;
+            Ok(())
+        }
+    }
 }
 
-pub fn start_clipboard_monitor(engine: Arc<Engine>) {
+/// Ventana pequeña con la cuenta atrás de apagado.
+#[cfg(desktop)]
+fn open_power_window(app: &AppHandle) {
+    if let Some(w) = app.get_webview_window("power") {
+        let _ = w.show();
+        let _ = w.set_focus();
+        return;
+    }
+    let built = tauri::WebviewWindowBuilder::new(app, "power", tauri::WebviewUrl::App("index.html#power".into()))
+        .title("Nebula")
+        .inner_size(420.0, 250.0)
+        .resizable(false)
+        .maximizable(false)
+        .minimizable(false)
+        .decorations(false)
+        .always_on_top(true)
+        .center()
+        .focused(true)
+        .background_color(tauri::window::Color(10, 11, 16, 255))
+        .build();
+    if let Err(e) = built {
+        lerror!("{}", e);
+    }
+}
+
+#[cfg(mobile)]
+fn open_power_window(_app: &AppHandle) {}
+
+pub fn start_clipboard_monitor(app: AppHandle, engine: Arc<Engine>) {
     // En Android el portapapeles solo se puede leer con la app en primer plano: lo revisa la
-    // interfaz al volver a ella (comando `android_resume`).
+    // interfaz al volver a ella (comando `app_resumed`).
     #[cfg(windows)]
-    crate::winint::start_clipboard_monitor(engine);
+    crate::winint::start_clipboard_monitor(app, engine);
     #[cfg(not(windows))]
-    let _ = engine;
-}
-
-#[cfg(windows)]
-pub fn disk_free(path: &Path) -> Option<u64> {
-    crate::winint::disk_free(path)
-}
-
-#[cfg(unix)]
-pub fn disk_free(path: &Path) -> Option<u64> {
-    use std::os::unix::ffi::OsStrExt;
-    let mut p = path.to_path_buf();
-    while !p.exists() {
-        p = p.parent()?.to_path_buf();
-    }
-    let c = std::ffi::CString::new(p.as_os_str().as_bytes()).ok()?;
-    let mut st: libc::statvfs = unsafe { std::mem::zeroed() };
-    if unsafe { libc::statvfs(c.as_ptr(), &mut st) } != 0 {
-        return None;
-    }
-    Some(st.f_bavail as u64 * st.f_frsize as u64)
+    let _ = (app, engine);
 }
 
 #[cfg(not(windows))]
@@ -99,7 +159,7 @@ pub fn open_path(path: &str) -> Result<(), String> {
 
 #[cfg(not(windows))]
 pub fn reveal_path(path: &str) -> Result<(), String> {
-    let p = Path::new(path);
+    let p = std::path::Path::new(path);
     match p.parent() {
         Some(parent) if p.is_file() => open_path(&parent.to_string_lossy()),
         _ => open_path(path),
@@ -115,20 +175,8 @@ pub fn open_url(url: &str) -> Result<(), String> {
     std::process::Command::new("xdg-open").arg(url).spawn().map(|_| ()).map_err(|e| e.to_string())
 }
 
-// Asociación de .nzb e inicio con el sistema: solo existen en Windows. En Android el APK ya
-// declara que abre archivos .nzb y no hay "iniciar con el sistema".
-#[cfg(not(windows))]
-pub fn set_association(_enable: bool) -> Result<(), String> {
-    Ok(())
-}
-
-#[cfg(not(windows))]
-pub fn set_autostart(_enable: bool) -> Result<(), String> {
-    Ok(())
-}
-
 #[cfg(not(windows))]
 pub fn refresh_registrations(_associate: bool, _autostart: bool) {}
 
 #[cfg(not(windows))]
-pub fn register_app_identity(_tools_dir: &Path) {}
+pub fn register_app_identity(_tools_dir: &std::path::Path) {}

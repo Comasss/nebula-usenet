@@ -1,4 +1,3 @@
-use base64::Engine as _;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
@@ -21,14 +20,10 @@ impl AppPaths {
         Self::with(data, local.join("tools").join(env!("CARGO_PKG_VERSION")))
     }
 
-    /// En Android los datos van a la carpeta privada de la app y las herramientas (7-Zip, par2)
-    /// vienen dentro del APK como bibliotecas nativas, que es lo único que Android deja ejecutar.
-    #[cfg(target_os = "android")]
-    pub fn init(data: PathBuf) -> Self {
-        Self::with(data, crate::android::native_lib_dir())
-    }
-
-    fn with(data: PathBuf, tools: PathBuf) -> Self {
+    /// Con la carpeta de datos y la de herramientas dadas. En Android la de datos la da el
+    /// sistema y las herramientas (7-Zip, par2) vienen dentro del APK como bibliotecas nativas,
+    /// que es lo único que Android deja ejecutar.
+    pub fn with(data: PathBuf, tools: PathBuf) -> Self {
         let p = Self {
             nzb: data.join("nzb"),
             logs: data.join("logs"),
@@ -497,7 +492,7 @@ impl Settings {
             .unwrap_or_default();
         for srv in &mut s.servers {
             if !srv.password_enc.is_empty() {
-                if let Some(p) = unprotect(&srv.password_enc) {
+                if let Some(p) = crate::secrets::unprotect(&srv.password_enc) {
                     srv.password = p;
                 }
             }
@@ -505,7 +500,7 @@ impl Settings {
         }
         for ix in &mut s.indexers {
             if !ix.api_key_enc.is_empty() {
-                if let Some(k) = unprotect(&ix.api_key_enc) {
+                if let Some(k) = crate::secrets::unprotect(&ix.api_key_enc) {
                     ix.api_key = k;
                 }
             }
@@ -513,26 +508,26 @@ impl Settings {
         }
         for d in &mut s.debrid {
             if !d.api_key_enc.is_empty() {
-                if let Some(k) = unprotect(&d.api_key_enc) {
+                if let Some(k) = crate::secrets::unprotect(&d.api_key_enc) {
                     d.api_key = k;
                 }
             }
             d.api_key_enc.clear();
         }
         if !s.api_key_enc.is_empty() {
-            if let Some(k) = unprotect(&s.api_key_enc) {
+            if let Some(k) = crate::secrets::unprotect(&s.api_key_enc) {
                 s.api_key = k;
             }
         }
         s.api_key_enc.clear();
         for a in &mut s.finish_actions {
             if !a.url_enc.is_empty() {
-                if let Some(v) = unprotect(&a.url_enc) {
+                if let Some(v) = crate::secrets::unprotect(&a.url_enc) {
                     a.url = v;
                 }
             }
             if !a.token_enc.is_empty() {
-                if let Some(v) = unprotect(&a.token_enc) {
+                if let Some(v) = crate::secrets::unprotect(&a.token_enc) {
                     a.token = v;
                 }
             }
@@ -552,24 +547,24 @@ impl Settings {
             srv.password_enc = if srv.password.is_empty() {
                 String::new()
             } else {
-                protect(&srv.password).unwrap_or_default()
+                crate::secrets::protect(&srv.password).unwrap_or_default()
             };
             srv.password.clear();
         }
         for ix in &mut disk.indexers {
-            ix.api_key_enc = if ix.api_key.is_empty() { String::new() } else { protect(&ix.api_key).unwrap_or_default() };
+            ix.api_key_enc = if ix.api_key.is_empty() { String::new() } else { crate::secrets::protect(&ix.api_key).unwrap_or_default() };
             ix.api_key.clear();
         }
         for d in &mut disk.debrid {
-            d.api_key_enc = if d.api_key.is_empty() { String::new() } else { protect(&d.api_key).unwrap_or_default() };
+            d.api_key_enc = if d.api_key.is_empty() { String::new() } else { crate::secrets::protect(&d.api_key).unwrap_or_default() };
             d.api_key.clear();
         }
-        disk.api_key_enc = if disk.api_key.is_empty() { String::new() } else { protect(&disk.api_key).unwrap_or_default() };
+        disk.api_key_enc = if disk.api_key.is_empty() { String::new() } else { crate::secrets::protect(&disk.api_key).unwrap_or_default() };
         disk.api_key.clear();
         for a in &mut disk.finish_actions {
-            a.url_enc = if a.url.is_empty() { String::new() } else { protect(&a.url).unwrap_or_default() };
+            a.url_enc = if a.url.is_empty() { String::new() } else { crate::secrets::protect(&a.url).unwrap_or_default() };
             a.url.clear();
-            a.token_enc = if a.token.is_empty() { String::new() } else { protect(&a.token).unwrap_or_default() };
+            a.token_enc = if a.token.is_empty() { String::new() } else { crate::secrets::protect(&a.token).unwrap_or_default() };
             a.token.clear();
         }
         let json = serde_json::to_string_pretty(&disk).map_err(|e| e.to_string())?;
@@ -594,69 +589,3 @@ fn default_download_root() -> PathBuf {
     PathBuf::from("/storage/emulated/0/Download")
 }
 
-// ---- DPAPI: cifra la contraseña ligada al usuario de Windows ----
-
-#[cfg(windows)]
-pub(crate) fn protect(plain: &str) -> Option<String> {
-    use windows_sys::Win32::Foundation::LocalFree;
-    use windows_sys::Win32::Security::Cryptography::{CryptProtectData, CRYPT_INTEGER_BLOB};
-    let data = plain.as_bytes();
-    unsafe {
-        let input = CRYPT_INTEGER_BLOB { cbData: data.len() as u32, pbData: data.as_ptr() as *mut u8 };
-        let mut output = CRYPT_INTEGER_BLOB { cbData: 0, pbData: std::ptr::null_mut() };
-        let ok = CryptProtectData(
-            &input,
-            std::ptr::null(),
-            std::ptr::null(),
-            std::ptr::null(),
-            std::ptr::null(),
-            0,
-            &mut output,
-        );
-        if ok == 0 {
-            return None;
-        }
-        let v = std::slice::from_raw_parts(output.pbData, output.cbData as usize).to_vec();
-        LocalFree(output.pbData as _);
-        Some(base64::engine::general_purpose::STANDARD.encode(v))
-    }
-}
-
-#[cfg(windows)]
-pub(crate) fn unprotect(enc: &str) -> Option<String> {
-    use windows_sys::Win32::Foundation::LocalFree;
-    use windows_sys::Win32::Security::Cryptography::{CryptUnprotectData, CRYPT_INTEGER_BLOB};
-    let data = base64::engine::general_purpose::STANDARD.decode(enc).ok()?;
-    unsafe {
-        let input = CRYPT_INTEGER_BLOB { cbData: data.len() as u32, pbData: data.as_ptr() as *mut u8 };
-        let mut output = CRYPT_INTEGER_BLOB { cbData: 0, pbData: std::ptr::null_mut() };
-        let ok = CryptUnprotectData(
-            &input,
-            std::ptr::null_mut(),
-            std::ptr::null(),
-            std::ptr::null(),
-            std::ptr::null(),
-            0,
-            &mut output,
-        );
-        if ok == 0 {
-            return None;
-        }
-        let v = std::slice::from_raw_parts(output.pbData, output.cbData as usize).to_vec();
-        LocalFree(output.pbData as _);
-        String::from_utf8(v).ok()
-    }
-}
-
-// Fuera de Windows no hay DPAPI. En Android config.json vive en la carpeta privada de la app,
-// a la que no llegan otras apps, así que basta con no guardar las claves en texto plano.
-#[cfg(not(windows))]
-pub(crate) fn protect(plain: &str) -> Option<String> {
-    Some(base64::engine::general_purpose::STANDARD.encode(plain.as_bytes()))
-}
-
-#[cfg(not(windows))]
-pub(crate) fn unprotect(enc: &str) -> Option<String> {
-    let v = base64::engine::general_purpose::STANDARD.decode(enc).ok()?;
-    String::from_utf8(v).ok()
-}

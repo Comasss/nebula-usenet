@@ -663,7 +663,7 @@ impl SabBackend for std::sync::Arc<crate::engine::Engine> {
     fn fetch_nzb(&self, url: String) -> impl Future<Output = Result<(Vec<u8>, String), String>> + Send {
         let e = self.clone();
         async move {
-            let (data, f) = crate::commands::grab_nzb(&e, &url, None).await?;
+            let (data, f) = e.grab_nzb( &url, None).await?;
             Ok((data, f.filename.unwrap_or_default()))
         }
     }
@@ -690,17 +690,17 @@ impl SabBackend for std::sync::Arc<crate::engine::Engine> {
     }
     fn remove_history(&self, id: &str, delete_files: bool) {
         crate::engine::Engine::remove_history(self, id, delete_files);
-        let _ = tauri::Emitter::emit(&self.app, "history", ());
+        crate::bus::emit(crate::bus::Event::History);
         crate::remote::publish_history();
     }
     fn retry(&self, id: &str) -> Result<String, String> {
         let r = self.retry_history(id);
-        let _ = tauri::Emitter::emit(&self.app, "history", ());
+        crate::bus::emit(crate::bus::Event::History);
         crate::remote::publish_history();
         r
     }
     fn disk_free(&self, path: &str) -> Option<u64> {
-        crate::os::disk_free(std::path::Path::new(path))
+        crate::sys::disk_free(std::path::Path::new(path))
     }
 }
 
@@ -873,7 +873,7 @@ pub(crate) mod tests {
     fn run(b: &Fake, q: &str) -> Value {
         let p = params(q);
         let call = Call { params: &p, files: &[] };
-        tauri::async_runtime::block_on(handle(b, &call)).1
+        crate::rt::block_on(handle(b, &call)).1
     }
 
     #[test]

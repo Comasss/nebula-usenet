@@ -17,7 +17,6 @@ use std::fmt::Write as _;
 use std::net::IpAddr;
 use std::sync::{Arc, LazyLock};
 use std::time::{Duration, Instant};
-use tauri::Emitter;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream};
 
@@ -40,7 +39,7 @@ pub struct ApiStatus {
 
 struct Running {
     stop: tokio::sync::oneshot::Sender<()>,
-    task: tauri::async_runtime::JoinHandle<()>,
+    task: tokio::task::JoinHandle<()>,
 }
 
 static CTL: LazyLock<tokio::sync::Mutex<Option<Running>>> = LazyLock::new(|| tokio::sync::Mutex::new(None));
@@ -50,15 +49,15 @@ pub fn status() -> ApiStatus {
     STATUS.lock().clone()
 }
 
-fn set_status(e: &Engine, st: ApiStatus) {
+fn set_status(st: ApiStatus) {
     *STATUS.lock() = st.clone();
-    let _ = e.app.emit("api-status", st);
+    crate::bus::emit(crate::bus::Event::ApiStatus(st));
 }
 
 /// Arranca, para o reinicia el servidor según los ajustes (activada, puerto, red local).
 pub fn restart(e: &Arc<Engine>) {
     let e = e.clone();
-    tauri::async_runtime::spawn(async move {
+    crate::rt::spawn(async move {
         let mut ctl = CTL.lock().await;
         let was_running = ctl.is_some();
         if let Some(r) = ctl.take() {
@@ -73,14 +72,14 @@ pub fn restart(e: &Arc<Engine>) {
             if was_running {
                 crate::linfo!("{}", t!("log.api.stopped"));
             }
-            set_status(&e, ApiStatus { port, ..Default::default() });
+            set_status(ApiStatus { port, ..Default::default() });
             return;
         }
         let host = if lan { "0.0.0.0" } else { "127.0.0.1" };
         match TcpListener::bind((host, port)).await {
             Ok(listener) => {
                 let (tx, rx) = tokio::sync::oneshot::channel();
-                let task = tauri::async_runtime::spawn(serve(e.clone(), listener, rx, lan));
+                let task = crate::rt::spawn(serve(e.clone(), listener, rx, lan));
                 *ctl = Some(Running { stop: tx, task });
                 let mut urls = vec![format!("http://localhost:{}/api", port)];
                 if lan {
@@ -89,7 +88,7 @@ pub fn restart(e: &Arc<Engine>) {
                     }
                 }
                 crate::linfo!("{}", t!("log.api.started", url = urls.last().cloned().unwrap_or_default()));
-                set_status(&e, ApiStatus { running: true, error: None, port, urls });
+                set_status(ApiStatus { running: true, error: None, port, urls });
             }
             Err(err) => {
                 let msg = if err.kind() == std::io::ErrorKind::AddrInUse {
@@ -98,7 +97,7 @@ pub fn restart(e: &Arc<Engine>) {
                     t!("api.bindFailed", port = port, error = err)
                 };
                 crate::lerror!("{}", msg);
-                set_status(&e, ApiStatus { running: false, error: Some(msg), port, urls: Vec::new() });
+                set_status(ApiStatus { running: false, error: Some(msg), port, urls: Vec::new() });
             }
         }
     });
@@ -656,7 +655,7 @@ async fn get_nzb(e: &Arc<Engine>, id: &str) -> Response {
     let Some((url, title, indexer_id)) = found else {
         return error(300, "No such item (search again)");
     };
-    match crate::commands::grab_nzb(e, &url, Some(&indexer_id)).await {
+    match e.grab_nzb( &url, Some(&indexer_id)).await {
         Ok((data, f)) => {
             let mut name = f.filename.filter(|n| !n.trim().is_empty()).unwrap_or(title);
             if !name.to_ascii_lowercase().ends_with(".nzb") {
@@ -877,7 +876,7 @@ mod tests {
         assert!(path == "/api" || path == "/sabnzbd/api");
         assert!(req.param("mode").is_some());
         let call = crate::sab::Call { params: &req.query, files: &req.files };
-        tauri::async_runtime::block_on(crate::sab::handle(b, &call)).1
+        crate::rt::block_on(crate::sab::handle(b, &call)).1
     }
 
     fn get(b: &crate::sab::tests::Fake, q: &str) -> serde_json::Value {

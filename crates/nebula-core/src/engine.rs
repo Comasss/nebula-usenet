@@ -14,7 +14,8 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
-use tauri::{AppHandle, Emitter, Manager};
+use crate::bus::{self, Event};
+use crate::platform::Platform;
 use tokio::sync::{Notify, Semaphore};
 
 // ---------------------------------------------------------------------------
@@ -970,7 +971,10 @@ pub struct State {
 }
 
 pub struct Engine {
-    pub app: AppHandle,
+    /// Notificaciones, bandeja, ventanas… del programa que aloja el motor.
+    pub platform: Arc<dyn Platform>,
+    /// El propio motor, para las tareas que lanza desde métodos que solo tienen `&self`.
+    this: std::sync::Weak<Engine>,
     pub paths: AppPaths,
     pub settings: RwLock<Settings>,
     pub st: Mutex<State>,
@@ -1075,11 +1079,12 @@ pub(crate) fn queue_position(jobs: &[Job], priority: i32, top: bool) -> usize {
 }
 
 impl Engine {
-    pub fn new(app: AppHandle, paths: AppPaths, settings: Settings) -> Arc<Self> {
+    pub fn new(platform: Arc<dyn Platform>, paths: AppPaths, settings: Settings) -> Arc<Self> {
         let limiter = RateLimiter::new();
         limiter.set(settings.speed_limit_kbps * 1024);
-        Arc::new(Engine {
-            app,
+        Arc::new_cyclic(|this| Engine {
+            this: this.clone(),
+            platform,
             paths,
             settings: RwLock::new(settings),
             st: Mutex::new(State {
@@ -1120,18 +1125,23 @@ impl Engine {
             self.start_pp(id);
         }
         let e = self.clone();
-        tauri::async_runtime::spawn(async move { e.sampler().await });
+        crate::rt::spawn(async move { e.sampler().await });
         crate::api::restart(self);
         crate::remote::restart(self);
         linfo!("{}", t!("log.started", version = env!("CARGO_PKG_VERSION")));
     }
 
+    /// El motor como `Arc` (None solo mientras se destruye).
+    pub fn arc(&self) -> Option<Arc<Engine>> {
+        self.this.upgrade()
+    }
+
     pub fn toast(&self, kind: &'static str, message: impl Into<String>) {
-        let _ = self.app.emit("toast", Toast { kind, message: message.into() });
+        bus::emit(Event::Toast(Toast { kind, message: message.into() }));
     }
 
     pub fn notify_os(&self, title: &str, body: &str) {
-        crate::os::notify(&self.app, &self.paths.tools, title, body);
+        self.platform.notify(title, body);
     }
 
     fn timeout(&self) -> Duration {
@@ -1195,7 +1205,7 @@ impl Engine {
                 let e = self.clone();
                 let cfg = srv.clone();
                 let c = counters[idx].clone();
-                tauri::async_runtime::spawn(async move { worker(e, cfg, idx, gen, c).await });
+                crate::rt::spawn(async move { worker(e, cfg, idx, gen, c).await });
             }
         }
         self.work.notify_waiters();
@@ -1680,7 +1690,7 @@ impl Engine {
             self.work.notify_waiters();
         }
         linfo!("{}", if paused { t!("log.queuePaused") } else { t!("log.queueResumed") });
-        crate::update_tray_pause(&self.app, paused);
+        self.platform.tray_paused(paused);
         self.save_queue();
     }
 
@@ -1888,7 +1898,7 @@ impl Engine {
             }
         }
         let e = self.clone();
-        tauri::async_runtime::spawn(async move { crate::postproc::run(e, id).await });
+        crate::rt::spawn(async move { crate::postproc::run(e, id).await });
     }
 
     pub fn pp_context(&self, id: &str) -> Option<crate::postproc::PpCtx> {
@@ -1971,7 +1981,7 @@ impl Engine {
             let _ = std::fs::remove_file(&r.nzb_path);
         }
         self.save_history();
-        let _ = self.app.emit("history", ());
+        bus::emit(Event::History);
         crate::remote::publish_history();
     }
 
@@ -2298,7 +2308,7 @@ impl Engine {
                 }
             };
             if changed {
-                let _ = self.app.emit("queue", &snap);
+                bus::emit(Event::Queue(snap.clone()));
                 crate::remote::publish_queue(&snap);
             }
             self.debrid_schedule();
@@ -2311,7 +2321,7 @@ impl Engine {
                 } else {
                     format!("Nebula — {}", t!("tray.queued", n = active))
                 };
-                crate::os::queue_status(&self.app, if snap.paused { 0 } else { active }, tip);
+                self.platform.queue_status(if snap.paused { 0 } else { active }, tip);
                 self.sweep();
             }
             if tick % 20 == 0 && self.dirty.swap(false, Ordering::Relaxed) {
@@ -2513,7 +2523,7 @@ impl Engine {
         st.jobs = jobs;
         drop(st);
         if saved.paused {
-            crate::update_tray_pause(&self.app, true);
+            self.platform.tray_paused(true);
         }
         pp
     }
@@ -2559,7 +2569,7 @@ impl Engine {
             return;
         }
         if self.ui_ready.load(Ordering::SeqCst) {
-            let _ = self.app.emit("open-items", items);
+            bus::emit(Event::OpenItems(items));
         } else {
             self.pending_open.lock().extend(items);
         }
@@ -2575,13 +2585,13 @@ impl Engine {
         let old = self.settings.read().clone();
         new.save(&self.paths)?;
         if old.associate_nzb != new.associate_nzb {
-            if let Err(e) = crate::os::set_association(new.associate_nzb) {
+            if let Err(e) = self.platform.set_association(new.associate_nzb) {
                 lerror!("{}", t!("err.association", error = e));
                 self.toast("error", t!("err.association", error = e));
             }
         }
         if old.start_with_windows != new.start_with_windows {
-            if let Err(e) = crate::os::set_autostart(new.start_with_windows) {
+            if let Err(e) = self.platform.set_autostart(new.start_with_windows) {
                 lerror!("{}", t!("err.autostart", error = e));
             }
         }
@@ -2757,12 +2767,7 @@ pub async fn test_server(cfg: ServerConfig) -> TestResult {
 
 impl Engine {
     pub fn show_main(&self) {
-        if let Some(w) = self.app.get_webview_window("main") {
-            let _ = w.show();
-            #[cfg(desktop)]
-            let _ = w.unminimize();
-            let _ = w.set_focus();
-        }
+        self.platform.show_main();
     }
 }
 

@@ -1,34 +1,23 @@
+//! App de escritorio (Windows) y Android de Nebula: la interfaz Tauri sobre el motor
+//! `nebula-core`. Aquí solo va lo que necesita Tauri: ventanas, bandeja, comandos, eventos y la
+//! integración con cada sistema.
 #[macro_use]
-mod i18n;
+extern crate nebula_core;
+
 #[cfg(target_os = "android")]
 mod android;
-mod api;
-mod categories;
 mod commands;
-mod config;
-mod debrid;
-mod debrid_job;
-mod engine;
-mod fetch;
-mod finish;
-mod indexer;
-mod logger;
-mod nntp;
-mod nzb;
 mod os;
-mod postproc;
-mod remote;
-mod rss;
-mod sab;
-mod stats;
 #[cfg(windows)]
 mod tools;
-mod transfer;
 mod updater;
-mod util;
 #[cfg(windows)]
 mod winint;
-mod yenc;
+
+// Los módulos del motor, con las mismas rutas que cuando vivían en este crate.
+pub(crate) use nebula_core::{config, engine, finish, i18n, logger, remote, rss, transfer, util};
+#[allow(unused_imports)]
+pub(crate) use nebula_core::{lerror, linfo, lwarn};
 
 use engine::{Engine, OpenItem};
 use std::sync::Arc;
@@ -172,7 +161,7 @@ fn build_tray(app: &tauri::App) -> tauri::Result<()> {
             }
             "power" => {
                 if let Some(e) = app.try_state::<Arc<Engine>>() {
-                    if !finish::cancel_power(app, &e.finish) {
+                    if !finish::cancel_power(&e) {
                         let mode = {
                             let s = e.settings.read();
                             match finish::armed(&s) {
@@ -200,6 +189,24 @@ fn build_tray(app: &tauri::App) -> tauri::Result<()> {
     }
     builder.build(app)?;
     Ok(())
+}
+
+/// Reenvía los eventos del motor a la interfaz con el mismo nombre y los mismos datos.
+fn forward_events(app: AppHandle) {
+    use tauri::Emitter;
+    use tokio::sync::broadcast::error::RecvError;
+    let mut rx = nebula_core::bus::subscribe();
+    tauri::async_runtime::spawn(async move {
+        loop {
+            match rx.recv().await {
+                Ok(ev) => {
+                    let _ = app.emit(ev.name(), ev.payload());
+                }
+                Err(RecvError::Lagged(_)) => continue,
+                Err(RecvError::Closed) => break,
+            }
+        }
+    });
 }
 
 /// Carpetas, registro, ajustes, idioma y herramientas: lo que hay que preparar antes del motor.
@@ -255,21 +262,25 @@ pub fn run() {
             if early.is_none() {
                 let data = app.path().app_data_dir()?;
                 android::prepare(&data);
-                early = Some(boot(config::AppPaths::init(data)));
+                early = Some(boot(config::AppPaths::with(data, android::native_lib_dir())));
             }
             let (paths, settings) = early.take().expect("arranque");
+            // El motor lanza sus tareas en el runtime de Tauri y avisa por su bus, que se
+            // reenvía tal cual como eventos de Tauri.
+            nebula_core::rt::set_handle(tauri::async_runtime::handle().inner().clone());
+            forward_events(app.handle().clone());
             updater::cleanup(&paths.data);
             remote::init(&paths.data);
-            logger::set_app(app.handle().clone());
             #[cfg(desktop)]
             build_tray(app)?;
             os::refresh_registrations(settings.associate_nzb, settings.start_with_windows);
-            let engine = Engine::new(app.handle().clone(), paths.clone(), settings.clone());
+            let platform = os::TauriPlatform { app: app.handle().clone(), tools: paths.tools.clone() };
+            let engine = Engine::new(Arc::new(platform), paths.clone(), settings.clone());
             app.manage(engine.clone());
             refresh_tray_power(app.handle());
             engine.start();
             rss::start(engine.clone());
-            os::start_clipboard_monitor(engine.clone());
+            os::start_clipboard_monitor(app.handle().clone(), engine.clone());
             let args: Vec<String> = std::env::args().skip(1).collect();
             engine.open_items(parse_args(&args, None));
             // Si la interfaz no llega a avisar de que está lista, se muestra la ventana igualmente.

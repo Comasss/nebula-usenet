@@ -22,7 +22,6 @@ use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, LazyLock};
 use std::time::Duration;
-use tauri::Emitter;
 
 pub const DEFAULT_INTERVAL: u32 = 15;
 pub const MIN_INTERVAL: u32 = 5;
@@ -344,7 +343,7 @@ pub fn start(e: Arc<Engine>) {
         st.seen = st.saved.seen.iter().cloned().collect();
         st.path = Some(path);
     }
-    tauri::async_runtime::spawn(async move {
+    crate::rt::spawn(async move {
         // Se deja arrancar la app antes de la primera consulta.
         tokio::time::sleep(Duration::from_secs(8)).await;
         loop {
@@ -374,7 +373,7 @@ pub async fn run(e: &Arc<Engine>, force: bool) -> Result<CheckSummary, String> {
     }
     let res = run_inner(e, force).await;
     BUSY.store(false, Ordering::SeqCst);
-    let _ = e.app.emit("rss", ());
+    crate::bus::emit(crate::bus::Event::Rss);
     Ok(res)
 }
 
@@ -553,7 +552,7 @@ async fn grab(e: &Arc<Engine>, s: &Settings, rule: &RssRule, it: &SearchItem, fe
 /// Flujo normal de descarga: NZB → vista previa → cola, con las opciones de la regla.
 async fn add(e: &Arc<Engine>, s: &Settings, rule: &RssRule, it: &SearchItem) -> Result<(), String> {
     let ix = (!it.indexer_id.is_empty()).then(|| it.indexer_id.clone());
-    let (data, f) = crate::commands::grab_nzb(e, &it.link, ix.as_deref()).await?;
+    let (data, f) = e.grab_nzb( &it.link, ix.as_deref()).await?;
     let engine = e.clone();
     let name = f.filename.unwrap_or_default();
     let link = it.link.clone();
@@ -630,12 +629,12 @@ pub fn status(e: &Engine) -> Status {
     Status { feeds, log, busy: BUSY.load(Ordering::SeqCst), paused: e.st.lock().paused }
 }
 
-pub fn clear_log(e: &Engine) {
+pub fn clear_log() {
     let mut st = STATE.lock();
     st.saved.log.clear();
     st.save();
     drop(st);
-    let _ = e.app.emit("rss", ());
+    crate::bus::emit(crate::bus::Event::Rss);
 }
 
 #[derive(Serialize)]

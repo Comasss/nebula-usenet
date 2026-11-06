@@ -5,7 +5,6 @@
 //! Las rutas de las carpetas y las opciones propias de cada sistema no viajan (tampoco la
 //! carpeta de destino de las reglas RSS, aunque sí los feeds y las reglas).
 use crate::config::Settings;
-use crate::engine::Engine;
 use base64::Engine as _;
 use chacha20poly1305::aead::{Aead, KeyInit};
 use chacha20poly1305::{ChaCha20Poly1305, Key, Nonce};
@@ -15,9 +14,8 @@ use serde_json::{Map, Value};
 use sha2::{Digest, Sha256};
 use std::io::{Read, Write};
 use std::net::SocketAddr;
-use std::sync::{Arc, LazyLock};
+use std::sync::LazyLock;
 use std::time::Duration;
-use tauri::Emitter;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream};
 
@@ -279,7 +277,7 @@ pub fn stop_receive() {
 }
 
 /// Abre un puerto en la red local para recibir los ajustes de otro dispositivo y devuelve su QR.
-pub async fn start_receive(e: Arc<Engine>) -> Result<QrCode, String> {
+pub async fn start_receive() -> Result<QrCode, String> {
     stop_receive();
     let ip = crate::api::lan_ip().ok_or_else(|| t!("transfer.noLan"))?;
     let listener = TcpListener::bind(("0.0.0.0", 0)).await.map_err(|err| t!("transfer.bindFailed", error = err))?;
@@ -289,18 +287,18 @@ pub async fn start_receive(e: Arc<Engine>) -> Result<QrCode, String> {
     let svg = qr_svg(&code)?;
     let (tx, rx) = tokio::sync::oneshot::channel();
     *RX.lock() = Some(Receiving { stop: tx });
-    tauri::async_runtime::spawn(serve(e, listener, key, rx));
+    crate::rt::spawn(serve(listener, key, rx));
     Ok(QrCode { code, svg })
 }
 
 #[derive(Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
-struct Received {
+pub struct Received {
     code: String,
     preview: Preview,
 }
 
-async fn serve(e: Arc<Engine>, listener: TcpListener, key: [u8; 32], mut stop: tokio::sync::oneshot::Receiver<()>) {
+async fn serve(listener: TcpListener, key: [u8; 32], mut stop: tokio::sync::oneshot::Receiver<()>) {
     let deadline = tokio::time::sleep(RX_TIMEOUT);
     tokio::pin!(deadline);
     let mut failures = 0;
@@ -313,7 +311,7 @@ async fn serve(e: Arc<Engine>, listener: TcpListener, key: [u8; 32], mut stop: t
                 match tokio::time::timeout(Duration::from_secs(20), handle(sock, &key)).await {
                     Ok(Some(code)) => {
                         if let Ok(preview) = preview(&code) {
-                            let _ = e.app.emit("transfer-received", Received { code, preview });
+                            crate::bus::emit(crate::bus::Event::TransferReceived(Received { code, preview }));
                             break;
                         }
                     }
@@ -329,7 +327,7 @@ async fn serve(e: Arc<Engine>, listener: TcpListener, key: [u8; 32], mut stop: t
         }
     }
     RX.lock().take();
-    let _ = e.app.emit("transfer-closed", ());
+    crate::bus::emit(crate::bus::Event::TransferClosed);
 }
 
 /// Lee una petición POST con el cuerpo cifrado; devuelve el código de ajustes si la clave es la buena.

@@ -15,17 +15,6 @@ const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 #[cfg(windows)]
 const BELOW_NORMAL_PRIORITY_CLASS: u32 = 0x0000_4000;
 
-// Nombres de las herramientas dentro de la carpeta `tools`. En Android van en el APK como
-// bibliotecas nativas (lib*.so), porque Android solo deja ejecutar archivos de esa carpeta.
-#[cfg(not(target_os = "android"))]
-const PAR2_EXE: &str = "par2.exe";
-#[cfg(not(target_os = "android"))]
-const SEVENZIP_EXE: &str = "7z.exe";
-#[cfg(target_os = "android")]
-const PAR2_EXE: &str = "libpar2.so";
-#[cfg(target_os = "android")]
-const SEVENZIP_EXE: &str = "lib7zz.so";
-
 pub struct PpCtx {
     pub id: String,
     pub name: String,
@@ -408,7 +397,7 @@ fn cleanup_par2_backups(dir: &Path, before: &HashSet<PathBuf>) {
 }
 
 async fn run_par2(engine: &Arc<Engine>, c: &PpCtx, mode: &str, par2: &Path) -> Result<Par2Result, PpError> {
-    let exe = c.tools.join(PAR2_EXE);
+    let exe = crate::tools::path(&c.tools, crate::tools::Tool::Par2);
     let mut cmd = command(&exe);
     cmd.current_dir(&c.work_dir).arg(mode).arg(util::file_name(par2));
     // Archivos extra para detectar archivos con nombre cambiado (ofuscados).
@@ -594,7 +583,7 @@ static RE_PCT: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^(\d{1,3})%").unw
 async fn extract_set(engine: &Arc<Engine>, c: &PpCtx, set: &ArchiveSet, before: u64, total: u64, detail: &str) -> Result<(), PpError> {
     std::fs::create_dir_all(&c.final_dir)
         .map_err(|e| PpError::new("extract", t!("pp.createDest", error = e)))?;
-    let exe = c.tools.join(SEVENZIP_EXE);
+    let exe = crate::tools::path(&c.tools, crate::tools::Tool::SevenZip);
     let pw = c.password.clone().filter(|p| !p.is_empty()).unwrap_or_else(|| "nebula-no-password".into());
     let mut cmd = command(&exe);
     cmd.current_dir(&c.work_dir)

@@ -14,9 +14,9 @@ use parking_lot::Mutex;
 use serde::Serialize;
 use serde_json::json;
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::{Arc, LazyLock};
+use std::sync::LazyLock;
 use std::time::Duration;
-use tauri::{AppHandle, Emitter, Manager};
+use crate::bus;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Trigger {
@@ -163,7 +163,7 @@ pub fn on_job(e: &Engine, job: &Job, entry: &HistoryEntry, ok: bool) {
 /// Se añadió algo a la cola: si había una cuenta atrás de apagado, se cancela.
 pub fn on_job_added(e: &Engine) {
     if e.finish.power.lock().is_some() {
-        cancel_power(&e.app, &e.finish);
+        cancel_power(e);
     }
 }
 
@@ -171,16 +171,16 @@ fn dispatch(e: &Engine, ev: Event, trigger: Trigger) {
     let actions: Vec<FinishAction> = e.settings.read().finish_actions.iter().filter(|a| matches(a, trigger)).cloned().collect();
     for a in actions {
         if a.kind == "power" {
-            if trigger == Trigger::QueueEmpty && cfg!(windows) {
+            if trigger == Trigger::QueueEmpty && e.platform.supports_power() {
                 if a.once {
                     disarm_once(e, &a.id);
                 }
-                start_power(&e.app, &e.finish, &a.power, false);
+                start_power(e, &a.power, false);
             }
             continue;
         }
         let ev = ev.clone();
-        tauri::async_runtime::spawn(async move {
+        crate::rt::spawn(async move {
             if let Err(err) = run(&a, &ev).await {
                 lerror!("{}", t!("finish.error", action = label(&a), error = err));
             }
@@ -201,8 +201,8 @@ fn save(e: &Engine, s: Settings) {
         lerror!("{}", err);
     }
     *e.settings.write() = s.clone();
-    let _ = e.app.emit("settings", s);
-    crate::refresh_tray_power(&e.app);
+    bus::emit(bus::Event::Settings(Box::new(s)));
+    e.platform.refresh_power();
 }
 
 /// Nombre de la acción para el Log y la interfaz.
@@ -538,7 +538,8 @@ pub fn power_status(rt: &Runtime) -> Option<Countdown> {
 }
 
 /// Empieza la cuenta atrás (sustituye a la que hubiera). Muestra la ventana y la notificación.
-pub fn start_power(app: &AppHandle, rt: &Runtime, mode: &str, test: bool) {
+pub fn start_power(e: &Engine, mode: &str, test: bool) {
+    let rt = &e.finish;
     let mode = match mode {
         "sleep" | "hibernate" => mode.to_string(),
         _ => "shutdown".to_string(),
@@ -548,20 +549,19 @@ pub fn start_power(app: &AppHandle, rt: &Runtime, mode: &str, test: bool) {
     let cd = Countdown { gen, mode: mode.clone(), remaining: secs, test };
     *rt.power.lock() = Some(cd.clone());
     linfo!("{}", t!("finish.powerStarted", action = power_name(&mode), secs = secs));
-    let _ = app.emit("power-countdown", &cd);
-    crate::refresh_tray_power(app);
-    open_power_window(app);
-    crate::os::notify_power(app, &power_name(&mode), &t!("finish.powerBody", secs = secs), &t!("finish.cancel"));
-    let app = app.clone();
-    tauri::async_runtime::spawn(async move {
+    bus::emit(bus::Event::PowerCountdown(cd));
+    e.platform.refresh_power();
+    e.platform.power_window(true);
+    e.platform.notify_power(&power_name(&mode), &t!("finish.powerBody", secs = secs), &t!("finish.cancel"));
+    let Some(e) = e.arc() else { return };
+    crate::rt::spawn(async move {
         for left in (0..secs).rev() {
             tokio::time::sleep(Duration::from_secs(1)).await;
-            let Some(e) = app.try_state::<Arc<Engine>>() else { return };
             let mut cur = e.finish.power.lock();
             match cur.as_mut() {
                 Some(c) if c.gen == gen => {
                     c.remaining = left;
-                    let _ = app.emit("power-countdown", &*c);
+                    bus::emit(bus::Event::PowerCountdown(c.clone()));
                 }
                 _ => return,
             }
@@ -569,64 +569,29 @@ pub fn start_power(app: &AppHandle, rt: &Runtime, mode: &str, test: bool) {
                 *cur = None;
             }
         }
-        close_power_window(&app);
-        crate::refresh_tray_power(&app);
+        e.platform.power_window(false);
+        e.platform.refresh_power();
         if test {
             linfo!("{}", t!("finish.powerTestDone", action = power_name(&mode)));
             return;
         }
         linfo!("{}", t!("finish.powerNow", action = power_name(&mode)));
-        if let Some(e) = app.try_state::<Arc<Engine>>() {
-            e.save_queue();
-            e.save_history();
-        }
-        if let Err(err) = crate::os::power_action(&mode) {
+        e.save_queue();
+        e.save_history();
+        if let Err(err) = e.platform.power_action(&mode) {
             lerror!("{}", t!("finish.error", action = power_name(&mode), error = err));
         }
     });
 }
 
 /// Cancela la cuenta atrás. Devuelve si había una.
-pub fn cancel_power(app: &AppHandle, rt: &Runtime) -> bool {
-    let Some(cd) = rt.power.lock().take() else { return false };
+pub fn cancel_power(e: &Engine) -> bool {
+    let Some(cd) = e.finish.power.lock().take() else { return false };
     lwarn!("{}", t!("finish.powerCancelled", action = power_name(&cd.mode)));
-    let _ = app.emit("power-cancelled", ());
-    close_power_window(app);
-    crate::refresh_tray_power(app);
+    bus::emit(bus::Event::PowerCancelled);
+    e.platform.power_window(false);
+    e.platform.refresh_power();
     true
-}
-
-#[cfg(desktop)]
-fn open_power_window(app: &AppHandle) {
-    if let Some(w) = app.get_webview_window("power") {
-        let _ = w.show();
-        let _ = w.set_focus();
-        return;
-    }
-    let built = tauri::WebviewWindowBuilder::new(app, "power", tauri::WebviewUrl::App("index.html#power".into()))
-        .title("Nebula")
-        .inner_size(420.0, 250.0)
-        .resizable(false)
-        .maximizable(false)
-        .minimizable(false)
-        .decorations(false)
-        .always_on_top(true)
-        .center()
-        .focused(true)
-        .background_color(tauri::window::Color(10, 11, 16, 255))
-        .build();
-    if let Err(e) = built {
-        lerror!("{}", e);
-    }
-}
-
-#[cfg(mobile)]
-fn open_power_window(_app: &AppHandle) {}
-
-fn close_power_window(app: &AppHandle) {
-    if let Some(w) = app.get_webview_window("power") {
-        let _ = w.destroy();
-    }
 }
 
 /// Acción de energía que se dispara con la cola vacía, si hay una activa.

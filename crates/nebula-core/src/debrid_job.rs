@@ -906,7 +906,7 @@ impl Engine {
         };
         for id in ids {
             let e = self.clone();
-            tauri::async_runtime::spawn(async move { drive(e, id).await });
+            crate::rt::spawn(async move { drive(e, id).await });
         }
     }
 
@@ -1116,7 +1116,7 @@ impl Engine {
         if delete && !rid.is_empty() {
             let cfg = cfg.clone();
             let name = s.name.clone();
-            tauri::async_runtime::spawn(async move {
+            crate::rt::spawn(async move {
                 if let Err(err) = debrid::remove(&cfg, &rid, &folder).await {
                     lwarn!("{}", t!("log.dj.removeFailed", name = name, provider = cfg.label(), error = err));
                 }
@@ -1155,7 +1155,7 @@ impl Engine {
         }
         let Some(cfg) = self.settings.read().debrid.iter().find(|c| c.id == d.provider).cloned() else { return };
         let (rid, folder) = (d.remote_id.clone(), d.remote_folder.clone());
-        tauri::async_runtime::spawn(async move {
+        crate::rt::spawn(async move {
             if let Err(err) = debrid::remove(&cfg, &rid, &folder).await {
                 lwarn!("{}", t!("log.dj.removeRemoteFailed", provider = cfg.label(), error = err));
             }
@@ -1205,7 +1205,7 @@ impl Engine {
         // Lo que quede en el servicio ya no sirve.
         if !remote_id.is_empty() && settings.debrid_delete_after {
             if let Some(cfg) = settings.debrid.iter().find(|c| c.id == provider).cloned() {
-                tauri::async_runtime::spawn(async move {
+                crate::rt::spawn(async move {
                     let _ = debrid::remove(&cfg, &remote_id, &folder).await;
                 });
             }

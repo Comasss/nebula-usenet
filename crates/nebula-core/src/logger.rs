@@ -5,7 +5,6 @@ use std::fs::{File, OpenOptions};
 use std::io::Write;
 use std::path::Path;
 use std::sync::OnceLock;
-use tauri::{AppHandle, Emitter};
 
 #[derive(Clone, Serialize)]
 pub struct LogEntry {
@@ -17,7 +16,6 @@ pub struct LogEntry {
 struct Logger {
     buf: Mutex<VecDeque<LogEntry>>,
     file: Mutex<Option<File>>,
-    app: OnceLock<AppHandle>,
 }
 
 static LOGGER: OnceLock<Logger> = OnceLock::new();
@@ -34,14 +32,7 @@ pub fn init(dir: &Path) {
     let _ = LOGGER.set(Logger {
         buf: Mutex::new(VecDeque::with_capacity(MAX_ENTRIES)),
         file: Mutex::new(file),
-        app: OnceLock::new(),
     });
-}
-
-pub fn set_app(app: AppHandle) {
-    if let Some(l) = LOGGER.get() {
-        let _ = l.app.set(app);
-    }
 }
 
 pub fn log(level: &'static str, msg: String) {
@@ -59,9 +50,7 @@ pub fn log(level: &'static str, msg: String) {
         }
         b.push_back(entry.clone());
     }
-    if let Some(app) = l.app.get() {
-        let _ = app.emit("log", entry);
-    }
+    crate::bus::emit(crate::bus::Event::Log(entry));
 }
 
 pub fn entries() -> Vec<LogEntry> {

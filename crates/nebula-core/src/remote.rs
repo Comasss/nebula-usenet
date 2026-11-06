@@ -23,7 +23,6 @@ use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::path::PathBuf;
 use std::sync::{Arc, LazyLock};
 use std::time::{Duration, Instant};
-use tauri::{AppHandle, Emitter};
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 use tokio::net::tcp::{OwnedReadHalf, OwnedWriteHalf};
 use tokio::net::{TcpListener, TcpStream, UdpSocket};
@@ -149,10 +148,10 @@ pub fn init(data: &std::path::Path) {
     let path = data.join("remote.json");
     let mut s: Store = std::fs::read_to_string(&path).ok().and_then(|t| serde_json::from_str(&t).ok()).unwrap_or_default();
     for d in &mut s.devices {
-        d.token = crate::config::unprotect(&d.token).unwrap_or_default();
+        d.token = crate::secrets::unprotect(&d.token).unwrap_or_default();
     }
     for p in &mut s.pcs {
-        p.token = crate::config::unprotect(&p.token).unwrap_or_default();
+        p.token = crate::secrets::unprotect(&p.token).unwrap_or_default();
     }
     s.devices.retain(|d| !d.token.is_empty());
     s.pcs.retain(|p| !p.token.is_empty());
@@ -173,10 +172,10 @@ fn save() {
     };
     let Some(path) = path else { return };
     for d in &mut disk.devices {
-        d.token = crate::config::protect(&d.token).unwrap_or_default();
+        d.token = crate::secrets::protect(&d.token).unwrap_or_default();
     }
     for p in &mut disk.pcs {
-        p.token = crate::config::protect(&p.token).unwrap_or_default();
+        p.token = crate::secrets::protect(&p.token).unwrap_or_default();
     }
     if let Ok(json) = serde_json::to_string_pretty(&disk) {
         if let Err(e) = crate::config::write_atomic(&path, json.as_bytes()) {
@@ -331,9 +330,9 @@ pub fn status() -> RemoteStatus {
     STATUS.lock().clone()
 }
 
-fn set_status(e: &Engine, st: RemoteStatus) {
+fn set_status(st: RemoteStatus) {
     *STATUS.lock() = st.clone();
-    let _ = e.app.emit("remote-status", st);
+    crate::bus::emit(crate::bus::Event::RemoteStatus(st));
 }
 
 pub fn devices() -> Vec<DeviceView> {
@@ -355,12 +354,12 @@ pub fn devices() -> Vec<DeviceView> {
     out
 }
 
-fn emit_devices(app: &AppHandle) {
-    let _ = app.emit("remote-devices", devices());
+fn emit_devices() {
+    crate::bus::emit(crate::bus::Event::RemoteDevices(devices()));
 }
 
 /// Quita un móvil emparejado y corta su conexión si está conectado.
-pub fn revoke(app: &AppHandle, id: &str) {
+pub fn revoke(id: &str) {
     let name = {
         let mut g = STORE.lock();
         let name = g.1.devices.iter().find(|d| d.id == id).map(|d| d.name.clone());
@@ -372,7 +371,7 @@ pub fn revoke(app: &AppHandle, id: &str) {
     if let Some(n) = name {
         crate::linfo!("{}", t!("log.remote.revoked", name = n));
     }
-    emit_devices(app);
+    emit_devices();
 }
 
 /// Respuesta del usuario del PC a una petición de emparejamiento.
@@ -385,7 +384,7 @@ pub fn answer_pairing(req: &str, ok: bool) {
 /// Arranca, para o reinicia el control remoto según los ajustes.
 pub fn restart(e: &Arc<Engine>) {
     let e = e.clone();
-    tauri::async_runtime::spawn(async move {
+    crate::rt::spawn(async move {
         let mut ctl = SERVER.lock().await;
         let was_running = ctl.is_some();
         if let Some(stop) = ctl.take() {
@@ -402,7 +401,7 @@ pub fn restart(e: &Arc<Engine>) {
             if was_running {
                 crate::linfo!("{}", t!("log.remote.stopped"));
             }
-            set_status(&e, RemoteStatus { port, name, ..Default::default() });
+            set_status(RemoteStatus { port, name, ..Default::default() });
             return;
         }
         let listener = match TcpListener::bind(("0.0.0.0", port)).await {
@@ -414,7 +413,7 @@ pub fn restart(e: &Arc<Engine>) {
                     t!("remote.bindFailed", port = port, error = err)
                 };
                 crate::lerror!("{}", msg);
-                set_status(&e, RemoteStatus { error: Some(msg), port, name, ..Default::default() });
+                set_status(RemoteStatus { error: Some(msg), port, name, ..Default::default() });
                 return;
             }
         };
@@ -422,7 +421,7 @@ pub fn restart(e: &Arc<Engine>) {
         let mut warning = None;
         match bind_udp(DISCOVERY_PORT).await {
             Ok(sock) => {
-                tauri::async_runtime::spawn(answer_probes(sock, port, stop_rx.clone()));
+                crate::rt::spawn(answer_probes(sock, port, stop_rx.clone()));
             }
             Err(err) => {
                 let msg = t!("log.remote.noDiscovery", port = DISCOVERY_PORT, error = err);
@@ -430,11 +429,11 @@ pub fn restart(e: &Arc<Engine>) {
                 warning = Some(msg);
             }
         }
-        tauri::async_runtime::spawn(accept_loop(e.clone(), listener, stop_rx));
+        crate::rt::spawn(accept_loop(e.clone(), listener, stop_rx));
         *ctl = Some(stop_tx);
         let addresses = crate::api::lan_ip().map(|ip| vec![SocketAddr::new(ip, port).to_string()]).unwrap_or_default();
         crate::linfo!("{}", t!("log.remote.started", port = port));
-        set_status(&e, RemoteStatus { running: true, error: None, warning, port, name, addresses });
+        set_status(RemoteStatus { running: true, error: None, warning, port, name, addresses });
     });
 }
 
@@ -534,7 +533,7 @@ async fn serve_pair(e: &Arc<Engine>, mut sock: TcpStream, hello: &Value, peer: S
     let req = crate::util::new_id();
     let (tx, rx) = oneshot::channel();
     PAIRING.lock().insert(req.clone(), tx);
-    let _ = e.app.emit("remote-pair-request", json!({ "req": req, "name": name, "code": code, "from": peer.ip().to_string() }));
+    crate::bus::emit(crate::bus::Event::RemotePairRequest(json!({ "req": req, "name": name, "code": code, "from": peer.ip().to_string() })));
     e.show_main();
     e.notify_os(&t!("remote.pairNotifyTitle"), &t!("remote.pairNotifyBody", name = name, code = code));
     // Se espera la respuesta en el PC; si el móvil se va antes, se cancela.
@@ -544,7 +543,7 @@ async fn serve_pair(e: &Arc<Engine>, mut sock: TcpStream, hello: &Value, peer: S
         _ = read_frame(&mut sock, MAX_HELLO) => false,
     };
     PAIRING.lock().remove(&req);
-    let _ = e.app.emit("remote-pair-closed", json!({ "req": req }));
+    crate::bus::emit(crate::bus::Event::RemotePairClosed(json!({ "req": req })));
     if !ok {
         let _ = write_json(&mut sock, &json!({ "t": "error", "code": "rejected" })).await;
         return;
@@ -566,10 +565,10 @@ async fn serve_pair(e: &Arc<Engine>, mut sock: TcpStream, hello: &Value, peer: S
     let sealed = c.seal(&token);
     let _ = write_json(&mut sock, &json!({ "t": "paired", "box": b64().encode(sealed) })).await;
     crate::linfo!("{}", t!("log.remote.paired", name = name));
-    emit_devices(&e.app);
+    emit_devices();
 }
 
-struct OnlineGuard(String, AppHandle);
+struct OnlineGuard(String);
 impl Drop for OnlineGuard {
     fn drop(&mut self) {
         {
@@ -581,7 +580,7 @@ impl Drop for OnlineGuard {
                 }
             }
         }
-        emit_devices(&self.1);
+        emit_devices();
     }
 }
 
@@ -629,8 +628,8 @@ async fn serve_session(e: Arc<Engine>, mut sock: TcpStream, hello: &Value, mut s
     }
     save();
     *ONLINE.lock().entry(device.clone()).or_default() += 1;
-    let _guard = OnlineGuard(device.clone(), e.app.clone());
-    emit_devices(&e.app);
+    let _guard = OnlineGuard(device.clone());
+    emit_devices();
 
     let (out_tx, mut out_rx) = mpsc::channel::<String>(64);
     let writer = tokio::spawn(async move {
@@ -745,12 +744,12 @@ async fn handle_op(e: &Arc<Engine>, dev_name: &str, op: &str, a: &Value) -> Resu
         }
         "remove_history" => {
             e.remove_history(arg_str(a, "id"), a["deleteFiles"].as_bool().unwrap_or(false));
-            history_changed(e);
+            history_changed();
             Ok(Value::Null)
         }
         "clear_history" => {
             e.clear_history(a["onlyCompleted"].as_bool().unwrap_or(true));
-            history_changed(e);
+            history_changed();
             Ok(Value::Null)
         }
         "add_url" => {
@@ -758,7 +757,7 @@ async fn handle_op(e: &Arc<Engine>, dev_name: &str, op: &str, a: &Value) -> Resu
             if !(url.starts_with("http://") || url.starts_with("https://")) {
                 return Err(t!("err.invalidLink"));
             }
-            let (data, f) = crate::commands::grab_nzb(e, &url, None).await?;
+            let (data, f) = e.grab_nzb( &url, None).await?;
             // Desde la búsqueda del móvil llega el título del resultado: manda sobre el del archivo.
             let (name, strong) = match arg_str(a, "name").trim() {
                 "" => (f.filename.unwrap_or_default(), f.strong),
@@ -822,8 +821,8 @@ fn to_val<T: Serialize>(v: &T) -> Value {
     serde_json::to_value(v).unwrap_or_default()
 }
 
-fn history_changed(e: &Engine) {
-    let _ = e.app.emit("history", ());
+fn history_changed() {
+    crate::bus::emit(crate::bus::Event::History);
     publish_history();
 }
 
@@ -996,7 +995,7 @@ pub fn cancel_pairing() {
 
 /// Empareja este móvil con el PC de `addr`. Mientras se espera la aprobación, emite
 /// `remote-pair-code` con el código que debe salir también en el PC.
-pub async fn pair(app: &AppHandle, addr: &str, name: &str) -> Result<PcView, String> {
+pub async fn pair(addr: &str, name: &str) -> Result<PcView, String> {
     let addr = normalize_addr(addr)?;
     let mut sock = dial(&addr).await?;
     let secret = StaticSecret::from(random32());
@@ -1024,7 +1023,7 @@ pub async fn pair(app: &AppHandle, addr: &str, name: &str) -> Result<PcView, Str
     }
     let shared = *secret.diffie_hellman(&PublicKey::from(server_pub)).as_bytes();
     let code = pair_code(&shared, client_pub.as_bytes(), &server_pub);
-    let _ = app.emit("remote-pair-code", json!({ "code": code, "name": pc_name }));
+    crate::bus::emit(crate::bus::Event::RemotePairCode(json!({ "code": code, "name": pc_name })));
     let done = tokio::select! {
         r = tokio::time::timeout(PAIR_WAIT + Duration::from_secs(10), read_json(&mut sock)) => r,
         _ = PAIR_CANCEL.notified() => return Err(t!("remote.cancelled")),
@@ -1128,14 +1127,14 @@ pub fn session_state() -> Option<SessionState> {
     SESSION.lock().as_ref().map(|s| s.state.lock().clone())
 }
 
-fn set_state(app: &AppHandle, s: &Session, status: &str, error: Option<String>) {
+fn set_state(s: &Session, status: &str, error: Option<String>) {
     let st = {
         let mut st = s.state.lock();
         st.status = status.into();
         st.error = error;
         st.clone()
     };
-    let _ = app.emit("remote-state", st);
+    crate::bus::emit(crate::bus::Event::RemoteState(st));
 }
 
 fn find_pc(id: &str) -> Option<Pc> {
@@ -1143,7 +1142,7 @@ fn find_pc(id: &str) -> Option<Pc> {
 }
 
 /// Empieza a controlar el PC `id` (o sigue si ya se estaba controlando).
-pub fn connect(app: &AppHandle, id: &str) -> Result<SessionState, String> {
+pub fn connect(id: &str) -> Result<SessionState, String> {
     let pc = find_pc(id).ok_or_else(|| t!("remote.notPaired"))?;
     if let Some(s) = SESSION.lock().as_ref() {
         if s.pc_id == id && !*s.stop.borrow() {
@@ -1163,7 +1162,7 @@ pub fn connect(app: &AppHandle, id: &str) -> Result<SessionState, String> {
     });
     *SESSION.lock() = Some(s.clone());
     let st = s.state.lock().clone();
-    tauri::async_runtime::spawn(run_session(app.clone(), s, calls_rx, stop_rx));
+    crate::rt::spawn(run_session(s, calls_rx, stop_rx));
     Ok(st)
 }
 
@@ -1186,7 +1185,7 @@ enum Ended {
     Revoked,
 }
 
-async fn run_session(app: AppHandle, s: Arc<Session>, mut calls: mpsc::Receiver<(String, Value, Reply)>, mut stop: watch::Receiver<bool>) {
+async fn run_session(s: Arc<Session>, mut calls: mpsc::Receiver<(String, Value, Reply)>, mut stop: watch::Receiver<bool>) {
     let mut fails: u32 = 0;
     loop {
         if *stop.borrow() {
@@ -1194,7 +1193,7 @@ async fn run_session(app: AppHandle, s: Arc<Session>, mut calls: mpsc::Receiver<
         }
         let Some(pc) = find_pc(&s.pc_id) else { break };
         if fails == 0 {
-            set_state(&app, &s, "connecting", None);
+            set_state(&s, "connecting", None);
         }
         match connect_auth(&pc).await {
             Ok(conn) => {
@@ -1203,25 +1202,25 @@ async fn run_session(app: AppHandle, s: Arc<Session>, mut calls: mpsc::Receiver<
                     let mut st = s.state.lock();
                     st.name = pc.name.clone();
                 }
-                set_state(&app, &s, "online", None);
-                match run_conn(&app, &s, conn, &mut calls, &mut stop).await {
+                set_state(&s, "online", None);
+                match run_conn(&s, conn, &mut calls, &mut stop).await {
                     Ended::Stopped => break,
                     Ended::Revoked => {
                         forget_quietly(&s.pc_id);
-                        set_state(&app, &s, "unauthorized", Some(t!("remote.unauthorized", name = pc.name)));
+                        set_state(&s, "unauthorized", Some(t!("remote.unauthorized", name = pc.name)));
                         break;
                     }
-                    Ended::Lost => set_state(&app, &s, "offline", Some(t!("remote.offline", name = pc.name))),
+                    Ended::Lost => set_state(&s, "offline", Some(t!("remote.offline", name = pc.name))),
                 }
             }
             Err(DialError::Unauthorized(msg)) => {
                 forget_quietly(&s.pc_id);
-                set_state(&app, &s, "unauthorized", Some(msg));
+                set_state(&s, "unauthorized", Some(msg));
                 break;
             }
             Err(DialError::Other(_)) => {
                 fails += 1;
-                set_state(&app, &s, "offline", Some(t!("remote.offline", name = pc.name)));
+                set_state(&s, "offline", Some(t!("remote.offline", name = pc.name)));
                 // La IP del PC puede haber cambiado: se busca otra vez en la red por su id.
                 if fails % 2 == 0 {
                     if let Some(f) = discover(Duration::from_millis(1500)).await.into_iter().find(|f| f.id == pc.id) {
@@ -1257,7 +1256,7 @@ async fn run_session(app: AppHandle, s: Arc<Session>, mut calls: mpsc::Receiver<
         }
     }
     if *stop.borrow() {
-        let _ = app.emit("remote-state", SessionState { id: s.pc_id.clone(), status: "stopped".into(), ..Default::default() });
+        crate::bus::emit(crate::bus::Event::RemoteState(SessionState { id: s.pc_id.clone(), status: "stopped".into(), ..Default::default() }));
     }
 }
 
@@ -1267,7 +1266,6 @@ fn forget_quietly(id: &str) {
 }
 
 async fn run_conn(
-    app: &AppHandle,
     s: &Session,
     conn: Conn,
     calls: &mut mpsc::Receiver<(String, Value, Reply)>,
@@ -1320,8 +1318,8 @@ async fn run_conn(
                 let Ok(v) = serde_json::from_slice::<Value>(&plain) else { continue };
                 if let Some(ev) = v["ev"].as_str() {
                     match ev {
-                        "queue" => { let _ = app.emit("remote-queue", &v["data"]); }
-                        "history" => { let _ = app.emit("remote-history", &v["data"]); }
+                        "queue" => crate::bus::emit(crate::bus::Event::RemoteQueue(v["data"].clone())),
+                        "history" => crate::bus::emit(crate::bus::Event::RemoteHistory(v["data"].clone())),
                         "revoked" => break Ended::Revoked,
                         _ => {}
                     }

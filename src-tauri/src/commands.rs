@@ -1,12 +1,15 @@
-use crate::config::{DebridConfig, IndexerConfig, ServerConfig, Settings};
-use crate::engine::{AddRequest, Engine, FileView, HistoryEntry, NzbPreview, Snapshot, TestResult};
-use crate::logger::LogEntry;
-use crate::stats::{IndexerEvent, StatRecord};
-use crate::{debrid, fetch, indexer, logger, nzb, os};
+//! Comandos de la interfaz: envoltorios finos sobre el motor (`nebula_core`). La lógica está en
+//! el motor (sobre todo en `facade.rs`) para que la usen igual el servidor y la línea de comandos.
+use crate::os;
+use nebula_core::config::{DebridConfig, IndexerConfig, ServerConfig, Settings};
+use nebula_core::engine::{AddRequest, Engine, FileView, HistoryEntry, NzbPreview, Snapshot, TestResult};
+use nebula_core::facade::{AppInfo, DirList};
+use nebula_core::logger::{self, LogEntry};
+use nebula_core::stats::{IndexerEvent, StatRecord};
+use nebula_core::{debrid, indexer};
 use serde::Serialize;
-use std::sync::atomic::Ordering;
 use std::sync::Arc;
-use tauri::{AppHandle, Emitter, Manager, State, WebviewWindow};
+use tauri::{AppHandle, Manager, State, WebviewWindow};
 
 type Eng<'a> = State<'a, Arc<Engine>>;
 
@@ -19,17 +22,15 @@ pub fn get_settings(e: Eng) -> Settings {
 /// las notificaciones y los mensajes del motor.
 #[tauri::command]
 pub fn set_language(app: AppHandle, e: Eng, lang: String) {
-    if crate::i18n::set(&lang) {
+    if e.set_language(&lang) {
         let paused = e.st.lock().paused;
         crate::refresh_tray_texts(&app, paused);
     }
 }
 
 #[tauri::command]
-pub fn save_settings(app: AppHandle, e: Eng, settings: Settings) -> Result<(), String> {
-    e.inner().apply_settings(settings)?;
-    crate::refresh_tray_power(&app);
-    Ok(())
+pub fn save_settings(e: Eng, settings: Settings) -> Result<(), String> {
+    e.save_settings(settings)
 }
 
 #[tauri::command]
@@ -39,60 +40,12 @@ pub async fn test_server(server: ServerConfig) -> TestResult {
 
 #[tauri::command]
 pub async fn inspect_nzb_file(e: Eng<'_>, path: String) -> Result<NzbPreview, String> {
-    let data = tokio::fs::read(&path).await.map_err(|err| t!("err.readFile", error = err))?;
-    let name = std::path::Path::new(&path)
-        .file_name()
-        .map(|n| n.to_string_lossy().to_string())
-        .unwrap_or_default();
-    let engine = e.inner().clone();
-    tokio::task::spawn_blocking(move || engine.register_pending(data, &name, true, path))
-        .await
-        .map_err(|_| t!("err.internal"))?
-}
-
-/// Descarga un NZB de un enlace y devuelve sus datos y nombre. Si viene de un indexador,
-/// anota en las estadísticas si se pudo obtener y cuánto tardó.
-pub(crate) async fn grab_nzb(e: &Engine, url: &str, indexer_id: Option<&str>) -> Result<(Vec<u8>, fetch::Fetched), String> {
-    let start = std::time::Instant::now();
-    let res = async {
-        let f = fetch::fetch(url).await?;
-        let data = nzb::maybe_gunzip(&f.data)?;
-        if !nzb::looks_like_nzb(&data) {
-            return Err(fetch::explain_not_nzb(&data));
-        }
-        Ok((data, f))
-    }
-    .await;
-    if let Some(id) = indexer_id {
-        e.record_indexer(IndexerEvent {
-            at: crate::util::now_secs(),
-            id: id.to_string(),
-            name: indexer_label(e, id),
-            kind: "grab".into(),
-            ms: start.elapsed().as_millis() as u64,
-            ok: res.is_ok(),
-            ..Default::default()
-        });
-    }
-    res
-}
-
-fn indexer_label(e: &Engine, id: &str) -> String {
-    e.settings.read().indexers.iter().find(|i| i.id == id).map(|i| i.label()).unwrap_or_default()
+    e.inspect_nzb_file(path).await
 }
 
 #[tauri::command]
 pub async fn inspect_nzb_url(e: Eng<'_>, url: String, indexer_id: Option<String>) -> Result<NzbPreview, String> {
-    let (data, f) = grab_nzb(e.inner(), &url, indexer_id.as_deref()).await?;
-    let engine = e.inner().clone();
-    let name = f.filename.unwrap_or_default();
-    let preview = tokio::task::spawn_blocking(move || engine.register_pending(data, &name, f.strong, url))
-        .await
-        .map_err(|_| t!("err.internal"))??;
-    if let Some(id) = indexer_id {
-        e.set_pending_indexer(&preview.token, id);
-    }
-    Ok(preview)
+    e.inspect_nzb_url(url, indexer_id).await
 }
 
 #[tauri::command]
@@ -207,47 +160,28 @@ pub fn clear_logs() {
 
 #[tauri::command]
 pub fn disk_free(path: String) -> Option<u64> {
-    os::disk_free(std::path::Path::new(&path))
+    nebula_core::sys::disk_free(std::path::Path::new(&path))
 }
 
 #[tauri::command]
 pub fn default_patterns() -> Vec<String> {
-    crate::config::default_patterns()
+    nebula_core::config::default_patterns()
 }
 
 #[tauri::command]
 pub fn detect_nzb_urls(e: Eng, text: String) -> Vec<String> {
-    let patterns = e.settings.read().clipboard_patterns.clone();
-    crate::util::detect_nzb_urls(&text, &patterns)
-}
-
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct AppInfo {
-    version: String,
-    data_dir: String,
-    tools_dir: String,
-    log_dir: String,
-    /// "windows", "android"…
-    platform: String,
+    e.detect_nzb_urls(&text)
 }
 
 #[tauri::command]
 pub fn app_info(e: Eng) -> AppInfo {
-    AppInfo {
-        version: env!("CARGO_PKG_VERSION").into(),
-        data_dir: e.paths.data.to_string_lossy().to_string(),
-        tools_dir: e.paths.tools.to_string_lossy().to_string(),
-        log_dir: e.paths.logs.to_string_lossy().to_string(),
-        platform: std::env::consts::OS.into(),
-    }
+    e.app_info()
 }
 
 /// La interfaz ya está lista: se muestra la ventana y se entregan los archivos pendientes.
 #[tauri::command]
 pub fn app_ready(app: AppHandle, e: Eng) {
-    let first = !e.ui_ready.swap(true, Ordering::SeqCst);
-    if first {
+    if e.ui_ready() {
         let minimized = std::env::args().any(|a| a == "--minimized") || e.settings.read().start_minimized;
         if let Some(w) = app.get_webview_window("main") {
             if !minimized {
@@ -255,10 +189,6 @@ pub fn app_ready(app: AppHandle, e: Eng) {
                 let _ = w.set_focus();
             }
         }
-    }
-    let pending: Vec<_> = e.pending_open.lock().drain(..).collect();
-    if !pending.is_empty() {
-        let _ = app.emit("open-items", pending);
     }
 }
 
@@ -297,34 +227,13 @@ pub async fn search_indexer(
     offset: u32,
     search_id: Option<String>,
 ) -> Result<indexer::SearchResult, String> {
-    let (ix, limit) = {
-        let s = e.settings.read();
-        let ix = s.indexers.iter().find(|i| i.id == id).cloned().ok_or_else(|| t!("err.indexerNotFound"))?;
-        (ix, s.search_limit)
-    };
-    let start = std::time::Instant::now();
-    let res = indexer::search(&ix, &query, category.as_deref(), offset, limit).await;
-    e.record_indexer(IndexerEvent {
-        at: crate::util::now_secs(),
-        id: ix.id.clone(),
-        name: ix.label(),
-        kind: "search".into(),
-        ms: res.as_ref().map(|r| r.ms).unwrap_or_else(|_| start.elapsed().as_millis() as u64),
-        ok: res.is_ok(),
-        results: res.as_ref().map(|r| r.items.len() as u64).unwrap_or(0),
-        offset,
-        search: search_id,
-    });
-    res.map_err(|err| {
-        crate::lwarn!("{}: {}", ix.label(), err);
-        err
-    })
+    e.search_indexer(&id, &query, category.as_deref(), offset, search_id).await
 }
 
 /// Estado de la API Newznab (si está escuchando, en qué direcciones o por qué no arrancó).
 #[tauri::command]
-pub fn api_status() -> crate::api::ApiStatus {
-    crate::api::status()
+pub fn api_status() -> nebula_core::api::ApiStatus {
+    nebula_core::api::status()
 }
 
 #[tauri::command]
@@ -340,19 +249,13 @@ pub async fn test_indexer(indexer: IndexerConfig) -> indexer::IndexerTest {
 /// Descarga un NZB desde un enlace y lo guarda en una carpeta del PC.
 #[tauri::command]
 pub async fn save_nzb_url(e: Eng<'_>, url: String, dir: String, name: String, indexer_id: Option<String>) -> Result<String, String> {
-    let (data, f) = grab_nzb(e.inner(), &url, indexer_id.as_deref()).await?;
-    let name = if name.trim().is_empty() { f.filename.unwrap_or_default() } else { name };
-    fetch::save_nzb_file(&data, &dir, &name)
+    e.save_nzb_url(&url, &dir, &name, indexer_id.as_deref()).await
 }
 
 /// Guarda el NZB de una vista previa ya analizada (sin volver a pedirlo al indexador).
 #[tauri::command]
 pub fn save_pending_nzb(e: Eng, token: String, dir: String, name: String) -> Result<String, String> {
-    let (raw, pending_name) = e.pending_nzb(&token).ok_or_else(|| t!("err.previewExpiredRetry"))?;
-    let data = nzb::maybe_gunzip(&raw)?;
-    let path = fetch::save_nzb_file(&data, &dir, if name.trim().is_empty() { &pending_name } else { &name })?;
-    e.discard_pending(&token);
-    Ok(path)
+    e.save_pending_nzb(&token, &dir, &name)
 }
 
 #[tauri::command]
@@ -373,19 +276,7 @@ pub async fn test_debrid(provider: DebridConfig) -> debrid::DebridTest {
 /// Servicios debrid que ya tienen en caché el NZB de una vista previa (descarga instantánea).
 #[tauri::command]
 pub async fn debrid_cached(e: Eng<'_>, token: String) -> Result<Vec<String>, String> {
-    let providers: Vec<DebridConfig> = e.settings.read().debrid.iter().filter(|d| d.usable()).cloned().collect();
-    if !providers.iter().any(|p| p.kind == "torbox") {
-        return Ok(Vec::new());
-    }
-    let (raw, _) = e.pending_nzb(&token).ok_or_else(|| t!("err.previewExpired"))?;
-    let hash = debrid::nzb_hash(&nzb::maybe_gunzip(&raw)?);
-    let mut out = Vec::new();
-    for p in providers {
-        if let Ok(true) = debrid::cached(&p, &hash).await {
-            out.push(p.id);
-        }
-    }
-    Ok(out)
+    e.debrid_cached(&token).await
 }
 
 // ---- Móvil ----
@@ -413,7 +304,7 @@ pub async fn app_resumed(e: Eng<'_>) -> Result<Resumed, String> {
             (s.clipboard_monitor, s.clipboard_patterns.clone())
         };
         let r = crate::android::resume(enabled).await;
-        let clipboard = if enabled { crate::util::detect_nzb_urls(&r.clipboard, &patterns) } else { Vec::new() };
+        let clipboard = if enabled { nebula_core::util::detect_nzb_urls(&r.clipboard, &patterns) } else { Vec::new() };
         Ok(Resumed { files: r.files, urls: r.urls, clipboard, storage: r.storage })
     }
     #[cfg(not(target_os = "android"))]
@@ -444,48 +335,21 @@ pub fn import_nzb(e: Eng, request: tauri::ipc::Request<'_>) -> Result<String, St
         .headers()
         .get("x-name")
         .and_then(|v| v.to_str().ok())
-        .map(crate::util::percent_decode)
+        .map(nebula_core::util::percent_decode)
         .unwrap_or_default();
-    let name = crate::util::sanitize_filename(&name);
-    let name = if name.trim().is_empty() { "nebula.nzb".to_string() } else { name };
-    let dir = e.paths.data.join("incoming");
-    std::fs::create_dir_all(&dir).map_err(|err| t!("err.writeFile", path = dir.display(), error = err))?;
-    let path = dir.join(&name);
-    std::fs::write(&path, data).map_err(|err| t!("err.writeFile", path = path.display(), error = err))?;
-    Ok(path.to_string_lossy().to_string())
-}
-
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct DirList {
-    path: String,
-    parent: Option<String>,
-    dirs: Vec<String>,
+    e.import_nzb(&name, data)
 }
 
 /// Subcarpetas de una carpeta, para el selector de carpetas propio de la versión móvil.
 #[tauri::command]
 pub fn list_dirs(path: String) -> Result<DirList, String> {
-    let p = std::path::PathBuf::from(&path);
-    let rd = std::fs::read_dir(&p).map_err(|err| err.to_string())?;
-    let mut dirs: Vec<String> = rd
-        .flatten()
-        .filter(|e| e.file_type().map(|t| t.is_dir()).unwrap_or(false))
-        .map(|e| e.file_name().to_string_lossy().to_string())
-        .filter(|n| !n.starts_with('.'))
-        .collect();
-    dirs.sort_by_key(|n| n.to_lowercase());
-    Ok(DirList {
-        path: p.to_string_lossy().to_string(),
-        parent: p.parent().map(|x| x.to_string_lossy().to_string()),
-        dirs,
-    })
+    nebula_core::facade::list_dirs(&path)
 }
 
 /// Crea una carpeta (botón "Nueva carpeta" del selector de carpetas).
 #[tauri::command]
 pub fn make_dir(path: String) -> Result<(), String> {
-    std::fs::create_dir_all(&path).map_err(|err| err.to_string())
+    nebula_core::facade::make_dir(&path)
 }
 
 /// Android: vibración breve al tocar ("tap", "tick", "long", "success" o "error").
@@ -531,8 +395,8 @@ pub async fn update_install(app: AppHandle) -> Result<crate::updater::InstallRes
 // ---- Pasar los ajustes a otro dispositivo ----
 
 #[tauri::command]
-pub fn transfer_export(e: Eng) -> Result<crate::transfer::QrCode, String> {
-    crate::transfer::export_qr(&e.settings.read())
+pub fn transfer_export(e: Eng) -> Result<nebula_core::transfer::QrCode, String> {
+    nebula_core::transfer::export_qr(&e.settings.read())
 }
 
 #[tauri::command]
@@ -543,15 +407,12 @@ pub fn transfer_preview(code: String) -> Result<crate::transfer::Preview, String
 /// Importa un código de ajustes y devuelve los ajustes resultantes.
 #[tauri::command]
 pub fn transfer_import(e: Eng, code: String) -> Result<Settings, String> {
-    let next = crate::transfer::merge(&e.settings.read(), &code)?;
-    e.inner().apply_settings(next.clone())?;
-    crate::linfo!("{}", t!("log.transferImported"));
-    Ok(next)
+    e.transfer_import(&code)
 }
 
 #[tauri::command]
-pub async fn transfer_receive_start(e: Eng<'_>) -> Result<crate::transfer::QrCode, String> {
-    crate::transfer::start_receive(e.inner().clone()).await
+pub async fn transfer_receive_start() -> Result<nebula_core::transfer::QrCode, String> {
+    nebula_core::transfer::start_receive().await
 }
 
 #[tauri::command]
@@ -580,8 +441,8 @@ pub fn remote_devices() -> Vec<crate::remote::DeviceView> {
 }
 
 #[tauri::command]
-pub fn remote_revoke(app: AppHandle, id: String) {
-    crate::remote::revoke(&app, &id);
+pub fn remote_revoke(id: String) {
+    crate::remote::revoke(&id);
 }
 
 /// PC: el usuario acepta o rechaza el emparejamiento de un móvil.
@@ -603,8 +464,8 @@ pub fn remote_pcs() -> Vec<crate::remote::PcView> {
 }
 
 #[tauri::command]
-pub async fn remote_pair(app: AppHandle, addr: String, name: String) -> Result<crate::remote::PcView, String> {
-    crate::remote::pair(&app, &addr, &name).await
+pub async fn remote_pair(addr: String, name: String) -> Result<crate::remote::PcView, String> {
+    crate::remote::pair(&addr, &name).await
 }
 
 #[tauri::command]
@@ -618,8 +479,8 @@ pub fn remote_forget(id: String) {
 }
 
 #[tauri::command]
-pub fn remote_connect(app: AppHandle, id: String) -> Result<crate::remote::SessionState, String> {
-    crate::remote::connect(&app, &id)
+pub fn remote_connect(id: String) -> Result<crate::remote::SessionState, String> {
+    crate::remote::connect(&id)
 }
 
 #[tauri::command]
@@ -677,8 +538,8 @@ pub async fn rss_preview(e: Eng<'_>, rule: crate::config::RssRule) -> Result<cra
 }
 
 #[tauri::command]
-pub fn rss_clear_log(e: Eng) {
-    crate::rss::clear_log(e.inner());
+pub fn rss_clear_log() {
+    crate::rss::clear_log();
 }
 
 // ---- Acciones al terminar ----
@@ -686,20 +547,8 @@ pub fn rss_clear_log(e: Eng) {
 /// Botón "Probar" de una acción: la ejecuta con una descarga de ejemplo. La de energía solo hace
 /// una cuenta atrás corta, sin apagar nada.
 #[tauri::command]
-pub async fn finish_test(app: AppHandle, e: Eng<'_>, action: crate::config::FinishAction) -> Result<(), String> {
-    if action.kind == "power" {
-        if !cfg!(windows) {
-            return Err(t!("finish.windowsOnly"));
-        }
-        crate::finish::start_power(&app, &e.finish, &action.power, true);
-        return Ok(());
-    }
-    let res = crate::finish::run(&action, &crate::finish::sample_event()).await;
-    match &res {
-        Ok(()) => crate::linfo!("{}", t!("finish.testOk", action = crate::finish::label(&action))),
-        Err(err) => crate::lerror!("{}", t!("finish.error", action = crate::finish::label(&action), error = err)),
-    }
-    res
+pub async fn finish_test(e: Eng<'_>, action: crate::config::FinishAction) -> Result<(), String> {
+    e.finish_test(action).await
 }
 
 #[tauri::command]
@@ -708,13 +557,12 @@ pub fn power_status(e: Eng) -> Option<crate::finish::Countdown> {
 }
 
 #[tauri::command]
-pub fn power_cancel(app: AppHandle, e: Eng) -> bool {
-    crate::finish::cancel_power(&app, &e.finish)
+pub fn power_cancel(e: Eng) -> bool {
+    e.power_cancel()
 }
 
 /// Apagado rápido desde el panel de velocidad: `mode` = "shutdown" / "sleep" / "hibernate", o nada para desactivarlo.
 #[tauri::command]
 pub fn power_quick(e: Eng, mode: Option<String>) -> Settings {
-    crate::finish::quick_power(&e, mode.as_deref());
-    e.settings.read().clone()
+    e.power_quick(mode.as_deref())
 }
