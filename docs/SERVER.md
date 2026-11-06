@@ -1,5 +1,7 @@
 # nebula-server (Linux, NAS, headless)
 
+> For Docker, Unraid and Synology, see [DOCKER.md](DOCKER.md).
+
 `nebula-server` is Nebula without a window: the same engine as the desktop and Android apps, with the interface in the browser and the Newznab and SABnzbd APIs on the same port. It's meant for a server, a NAS or a container, next to Sonarr and Radarr.
 
 ```
@@ -17,9 +19,9 @@ Every option can also be given as an environment variable, which is handier in D
 | `--data-dir` | `NEBULA_DATA_DIR` | `/config` in Docker, `~/.config/nebula` elsewhere (`%APPDATA%\Nebula Server` on Windows) | Settings, queue, history, logs, `auth.json` and `secret.key`. |
 | `--port` | `NEBULA_PORT` | `5080` | Port for the interface and the APIs. |
 | `--bind` | `NEBULA_BIND` | `0.0.0.0` | Address to listen on. `127.0.0.1` keeps it to this machine (behind a reverse proxy, for example). |
-| `--download-dir` | `NEBULA_DOWNLOAD_DIR` | `~/Downloads/Nebula` | Download folder for a new installation. Ignored once `config.json` exists; change it later in **Settings → Folders**. |
+| `--download-dir` | `NEBULA_DOWNLOAD_DIR` | `~/Downloads/Nebula` (`/downloads` in Docker) | Default download folder, used until you choose another one in **Settings → Folders**. |
 
-`nebula-server --help` lists them, and `--version` prints the version.
+`nebula-server --help` lists them, and `--version` prints the version. `nebula-server healthcheck` exits with 0 if the server on that port answers `/health` (Docker uses it).
 
 ## What's different from the app
 
@@ -38,7 +40,7 @@ The interface is the same, minus what only makes sense with a window on your own
 
 Forgot the password? Stop Nebula, delete `auth.json` and start it again: it asks you to create the user again. Nothing else is lost.
 
-Scripts and the future CLI can call the interface's commands without a cookie by sending Nebula's API key (from **Settings → API**) in an `X-Api-Key` header.
+Scripts and the future CLI can call the interface's commands without a cookie by sending Nebula's API key (from **Settings → API**) in an `X-Api-Key` header. That works even before the web user exists.
 
 ## Sonarr, Radarr and Prowlarr
 
@@ -81,6 +83,10 @@ What the browser uses, also useful for scripts:
 | `/api`, `/sabnzbd/api`, `/newznab/api` | The Newznab and SABnzbd APIs. |
 
 Everything under `/api/v1/` except `/health` and `/api/v1/auth*` needs the session cookie or `X-Api-Key`. Request bodies are limited to 100 MB.
+
+## Installing as a service (systemd)
+
+The [Release](../../../releases) has `nebula-server_<version>_linux_x64` and `_linux_arm64`: one static binary that runs on any Linux distribution. [`deploy/nebula-server.service`](../deploy/nebula-server.service) runs it as its own `nebula` user with its data in `/var/lib/nebula`; the steps to install it are at the top of the file.
 
 ## Building
 

@@ -13,7 +13,7 @@ Search all your indexers, download over NNTP or debrid, repair and extract autom
 ![Platforms](https://img.shields.io/badge/platforms-Windows%20%7C%20Android%20%7C%20Linux%20server-555)
 [![License: PolyForm Noncommercial](https://img.shields.io/badge/license-PolyForm%20Noncommercial-orange)](LICENSE.md)
 
-[**Download**](https://github.com/Comasss/nebula-usenet/releases/latest) · [Features](#features) · [Screenshots](#screenshots) · [Categories](docs/CATEGORIES.md) · [Newznab API](docs/API.md) · [SABnzbd API](docs/SABNZBD.md) · [Server](docs/SERVER.md) · [Building](#building)
+[**Download**](https://github.com/Comasss/nebula-usenet/releases/latest) · [Features](#features) · [Screenshots](#screenshots) · [Categories](docs/CATEGORIES.md) · [Newznab API](docs/API.md) · [SABnzbd API](docs/SABNZBD.md) · [Server](docs/SERVER.md) · [Docker](docs/DOCKER.md) · [Building](#building)
 
 <img src="https://github.com/Comasss/nebula-usenet/raw/screenshots/downloads.png" alt="Nebula Usenet: Downloads view with live speed graph, queue and post-processing" width="900">
 
@@ -58,6 +58,8 @@ Search all your indexers, download over NNTP or debrid, repair and extract autom
 - `Nebula_<version>_x64_portable.exe`: a single executable, no installation.
 
 Both need WebView2, which comes with Windows 11 (the installer downloads it if missing).
+
+For Linux servers and NAS there are `nebula-server_<version>_linux_x64` and `nebula-server_<version>_linux_arm64` (a single static binary, see [docs/SERVER.md](docs/SERVER.md)) and the Docker image `ghcr.io/comasss/nebula` for amd64 and arm64 (see [docs/DOCKER.md](docs/DOCKER.md)).
 
 For Android 7+ on 64-bit ARM phones (practically all of them) there is `Nebula_<version>_android_arm64.apk`. Download it on the phone, allow installing from that source and open it.
 
@@ -108,15 +110,22 @@ Use [Tailscale](https://tailscale.com), a free private network between your own 
 
 From then on the phone reaches the PC wherever you are, as long as Tailscale is on both. If it doesn't connect, check that Windows Firewall allows Nebula on the network type of the Tailscale adapter too.
 
-## Server (Linux, NAS)
+## Server (Linux, NAS, Docker)
 
 `nebula-server` runs Nebula on a machine without a screen: start it, open `http://<server>:5080` in a browser, create your user and set it up as in the app.
+
+```bash
+docker run -d --name nebula -p 5080:5080 -e PUID=1000 -e PGID=1000 -e TZ=Europe/Madrid \
+  -v /path/to/nebula:/config -v /path/to/downloads:/downloads ghcr.io/comasss/nebula:latest
+```
+
+The image (amd64 and arm64) includes par2cmdline-turbo and 7-Zip. [docs/DOCKER.md](docs/DOCKER.md) covers Compose with Sonarr and Radarr ([`deploy/docker-compose.yml`](deploy/docker-compose.yml)), Unraid and Synology. Without Docker, download the binary from the Release and run it, or install it as a systemd service with [`deploy/nebula-server.service`](deploy/nebula-server.service):
 
 ```bash
 nebula-server --data-dir ~/.config/nebula --port 5080
 ```
 
-It uses the system's `par2` and `7z` (`sudo apt install par2 7zip`; par2cmdline-turbo is faster), stores passwords encrypted with a key in the data folder and stops cleanly on `Ctrl+C` or SIGTERM, saving the queue. Options, the HTTP routes and how to connect Sonarr and Radarr are in [docs/SERVER.md](docs/SERVER.md).
+Outside Docker it uses the system's `par2` and `7z` (`sudo apt install par2 7zip`; par2cmdline-turbo is faster), stores passwords encrypted with a key in the data folder and stops cleanly on `Ctrl+C` or SIGTERM, saving the queue. Options, the HTTP routes and how to connect Sonarr and Radarr are in [docs/SERVER.md](docs/SERVER.md).
 
 ## Usage
 
@@ -144,11 +153,11 @@ Nebula checks the latest [Release](../../releases) on GitHub when it opens and e
 
 ## Automatic builds (GitHub Actions)
 
-`.github/workflows/build.yml` builds Nebula on `windows-latest` (and the Android APK on `ubuntu-latest`) on every push and pull request:
+`.github/workflows/build.yml` builds Nebula on `windows-latest` (the Android APK on `ubuntu-latest`, and nebula-server with its Docker image on an amd64 and an arm64 Linux runner) on every push and pull request:
 
 - Runs the tests of the whole workspace (`cargo test --workspace`), checks that `nebula-core` builds without Tauri and builds the interface.
 - Produces the installer and the portable exe and uploads them as a run artifact (**Actions** tab → the run → **Artifacts**).
-- On every push to `main` it publishes the **Release** `vX.Y.Z` for the version in `src-tauri/tauri.conf.json` with `Nebula_<version>_x64-setup.exe`, `Nebula_<version>_x64_portable.exe`, `Nebula_<version>_android_arm64.apk` and `SHA256SUMS.txt`:
+- On every push to `main` it publishes the **Release** `vX.Y.Z` for the version in `src-tauri/tauri.conf.json` with `Nebula_<version>_x64-setup.exe`, `Nebula_<version>_x64_portable.exe`, `Nebula_<version>_android_arm64.apk`, `nebula-server_<version>_linux_x64`, `nebula-server_<version>_linux_arm64` and `SHA256SUMS.txt`, and pushes the image `ghcr.io/<owner>/nebula` with the tags `latest` and `vX.Y.Z`:
   - If that version has no Release yet, it creates it.
   - If this same workflow created it, it updates it with the new build (and moves the tag to the latest commit).
   - If you published it by hand, it leaves it alone.
