@@ -178,7 +178,8 @@
     "speedLimit": "速度限制",
     "urlPlaceholder": "在此粘贴 .nzb 的直链，我会询问保存位置…",
     "viewHistory": "查看历史",
-    "viewServers": "查看服务器"
+    "viewServers": "查看服务器",
+    "emptyTextWeb": "把 <strong>.nzb</strong> 文件拖到此页面,点 <strong>+</strong> 上传,或在上方粘贴链接。"
   },
   "drop": {
     "subtitle": "将加入下载队列",
@@ -779,7 +780,8 @@
       "remote": "查看和管理电脑上的下载",
       "rss": "按规则自动下载",
       "finish": "通知、脚本和关机",
-      "categories": "tv、movies…及其文件夹和选项"
+      "categories": "tv、movies…及其文件夹和选项",
+      "server": "用户名、密码和会话"
     }
   },
   "update": {
@@ -1159,5 +1161,31 @@
     "chooseTitle": "放入哪个分类？",
     "byNewznab": "按其 Newznab 分类",
     "ruleHelp": "决定此规则抓取内容的文件夹、优先级和后处理（如果规则自己设置了文件夹和方式，则以规则为准）。"
+  },
+  "web": {
+    "unreachable": "无法连接到 Nebula 服务器。",
+    "mismatch": "两次输入的密码不一致。",
+    "setupTitle": "创建你的账户",
+    "loginTitle": "登录",
+    "setupDesc": "这是你第一次打开这个 Nebula。用户名和密码用于保护网页界面;密码至少需要 {n} 个字符。",
+    "username": "用户名",
+    "password": "密码",
+    "repeat": "再次输入密码",
+    "create": "创建并登录",
+    "signIn": "登录",
+    "section": "网页账户",
+    "account": "已登录为 {user}",
+    "accountDesc": "此浏览器中的会话有效期为 30 天。修改密码会退出所有会话。",
+    "signOut": "退出",
+    "changePassword": "修改密码",
+    "currentPassword": "当前密码",
+    "newPassword": "新密码",
+    "passwordChanged": "密码已修改。",
+    "apiNote": "Sonarr、Radarr 和 Prowlarr 可以使用同一个端口:{url}(或 /sabnzbd/api),并填写下方的密钥。",
+    "par2Path": "par2 程序",
+    "sevenZipPath": "7-Zip 程序",
+    "toolFound": "正在使用 {path}。留空则自动查找。",
+    "toolMissing": "未找到({path})。请安装或指定位置:缺少它将无法修复或解压下载。",
+    "notFound": "未找到"
   }
 }

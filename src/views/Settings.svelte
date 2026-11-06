@@ -1,7 +1,7 @@
 <script>
   import { t, th, LANGUAGES, setLanguage, systemLanguage, locale } from '../lib/i18n.svelte.js';
   import { invoke, listen } from '../lib/transport.js';
-    import { pickFolder, isAndroid } from '../lib/platform.js';
+  import { pickFolder, openUrl, isAndroid, isServer, isWindows, isDesktopApp } from '../lib/platform.js';
   import { fly, scale } from 'svelte/transition';
   import Icon from '../components/Icon.svelte';
   import SettingRow from '../components/SettingRow.svelte';
@@ -20,7 +20,10 @@
   // `only`: muestra solo esa sección (el móvil abre cada sección como una página).
   // `query`: búsqueda que llega de fuera (la portada de Ajustes del móvil); sin ella se usa el buscador propio.
   let { only = null, query = null } = $props();
-  const show = (id) => !only || only === id;
+  // Secciones que no existen aquí: en el navegador (nebula-server) no hay portapapeles que vigilar,
+  // ventana, bandeja ni actualizador; la cuenta del servidor solo existe allí.
+  const NOT_HERE = isServer ? ['links', 'windows', 'updates'] : ['server'];
+  const show = (id) => !NOT_HERE.includes(id) && (!only || only === id);
 
   // ---- Buscador ----
   let localQuery = $state('');
@@ -35,6 +38,7 @@
     if (id === 'windows') return isAndroid ? t('mobile.appTitle') : t('settings.windowsTitle');
     if (id === 'api') return t('api.title');
     if (id === 'remote') return isAndroid ? t('remote.mobileTitle') : t('settings.section.remote');
+    if (id === 'server') return t('web.section');
     return t(`settings.section.${id}`);
   }
   // Si coincide el título de la sección, se muestra entera.
@@ -69,6 +73,7 @@
     { id: 'post', icon: 'package' },
     { id: 'links', icon: 'clipboard' },
     { id: 'windows', icon: isAndroid ? 'smartphone' : 'monitor' },
+    { id: 'server', icon: 'server' },
     { id: 'finish', icon: 'bell' },
     { id: 'network', icon: 'wifi' },
     { id: 'look', icon: 'palette' },
@@ -77,7 +82,7 @@
     { id: 'transfer', icon: 'qr' },
     { id: 'updates', icon: 'refresh' },
     { id: 'about', icon: 'info' },
-  ];
+  ].filter((sec) => !NOT_HERE.includes(sec.id));
   let section = $state('features');
 
   function setFeature(key, v) {
@@ -136,8 +141,12 @@
   // ---- API Newznab ----
   const DOCS_URL = 'https://github.com/Comasss/nebula-usenet/blob/main/docs/API.md';
   const SAB_DOCS_URL = 'https://github.com/Comasss/nebula-usenet/blob/main/docs/SABNZBD.md';
-  // Host y puerto para Sonarr/Radarr: la IP de la red local si está permitida, si no localhost.
+  // Host y puerto para Sonarr/Radarr. En nebula-server, los de esta misma página (las APIs
+  // responden en el mismo puerto); en la app, la IP de la red local si está permitida o localhost.
+  const webPort = location.port || (location.protocol === 'https:' ? '443' : '80');
+  const sabPort = $derived(isServer ? webPort : s?.apiPort);
   const sabHost = $derived.by(() => {
+    if (isServer) return location.hostname;
     const url = apiStatus?.urls?.[apiStatus.urls.length - 1] ?? `http://localhost:${s?.apiPort ?? 5077}/api`;
     try {
       return new URL(url).hostname;
@@ -162,6 +171,36 @@
     return Array.from(b, (x) => x.toString(16).padStart(2, '0')).join('');
   }
 
+  // ---- nebula-server: herramientas y cuenta ----
+  let tools = $state([]);
+  async function loadTools() {
+    if (isWindows || isAndroid) return;
+    tools = await invoke('tools_status').catch(() => []);
+  }
+  loadTools();
+
+  let account = $state({ user: '', current: '', next: '' });
+  if (isServer) {
+    fetch('api/v1/auth', { credentials: 'same-origin' })
+      .then((r) => r.json())
+      .then((v) => (account.user = v.user ?? ''))
+      .catch(() => {});
+  }
+  async function logout() {
+    await fetch('api/v1/auth/logout', { method: 'POST', credentials: 'same-origin' }).catch(() => {});
+    location.reload();
+  }
+  async function changePassword(e) {
+    e.preventDefault();
+    try {
+      await invoke('auth_change', { current: account.current, password: account.next });
+      account.current = account.next = '';
+      toast('success', t('web.passwordChanged'));
+    } catch (err) {
+      toast('error', String(err));
+    }
+  }
+
   function setApi(v) {
     saveSettings(v && !s.apiKey ? { apiEnabled: true, apiKey: newKey() } : { apiEnabled: v });
   }
@@ -172,7 +211,16 @@
 
   async function copy(text) {
     try {
-      await navigator.clipboard.writeText(text);
+      if (navigator.clipboard && window.isSecureContext) await navigator.clipboard.writeText(text);
+      else {
+        // Por http en la red local el navegador no da acceso al portapapeles: se copia a la antigua.
+        const ta = Object.assign(document.createElement('textarea'), { value: text });
+        document.body.append(ta);
+        ta.select();
+        const ok = document.execCommand('copy');
+        ta.remove();
+        if (!ok) throw new Error('copy');
+      }
       toast('success', t('api.copied'), 2500);
     } catch (e) {
       toast('error', String(e));
@@ -218,7 +266,7 @@
       <nav>
         {#each SECTIONS as sec}
           <button class:sel={section === sec.id} onclick={() => scrollTo(sec.id)}>
-            <Icon name={sec.icon} size={16} /> {sec.id === 'windows' && isAndroid ? t('mobile.appTitle') : sec.id === 'remote' ? titleOf('remote') : t(`settings.section.${sec.id}`)}
+            <Icon name={sec.icon} size={16} /> {sec.id === 'windows' && isAndroid ? t('mobile.appTitle') : sec.id === 'remote' || sec.id === 'server' ? titleOf(sec.id) : t(`settings.section.${sec.id}`)}
           </button>
         {/each}
       </nav>
@@ -337,6 +385,15 @@
           <SettingRow label={t('settings.deleteArchives')} description={t('settings.deleteArchivesDesc')} checked={s.deleteArchives} onchange={set('deleteArchives')} disabled={!s.extractEnabled} />
           <SettingRow label={t('settings.deletePar2')} checked={s.deletePar2} onchange={set('deletePar2')} />
           <SettingRow icon="zap" label={t('settings.abortHopeless')} description={t('settings.abortHopelessDesc')} checked={s.abortHopeless} onchange={set('abortHopeless')} />
+          {#if !isWindows && !isAndroid}
+            {#each tools as tl (tl.tool)}
+              <SettingRow label={tl.tool === 'par2' ? t('web.par2Path') : t('web.sevenZipPath')} description={tl.found ? t('web.toolFound', { path: tl.path }) : t('web.toolMissing', { path: tl.path })}>
+                {#if !tl.found}<span class="chip warn"><Icon name="alert-triangle" size={11} /> {t('web.notFound')}</span>{/if}
+                <input class="input path" value={tl.tool === 'par2' ? s.par2Path : s.sevenZipPath} placeholder={t('settings.automatic')} spellcheck="false"
+                  onchange={async (e) => { await saveSettings({ [tl.tool === 'par2' ? 'par2Path' : 'sevenZipPath']: e.target.value.trim() }); loadTools(); }} />
+              </SettingRow>
+            {/each}
+          {/if}
         </div>
       </section>
       {/if}
@@ -404,6 +461,24 @@
       </section>
       {/if}
 
+      {#if show('server')}
+      <section id="sec-server" class:hit={secHit('server')}>
+        <h2><Icon name="server" size={18} /> {t('web.section')}</h2>
+        <div class="card group">
+          <SettingRow icon="user" label={t('web.account', { user: account.user })} description={t('web.accountDesc')}>
+            <button class="btn sm" onclick={logout}><Icon name="log-out" size={14} /> {t('web.signOut')}</button>
+          </SettingRow>
+          <form class="pw" onsubmit={changePassword}>
+            <div class="pw-title">{t('web.changePassword')}</div>
+            <input class="input" type="password" placeholder={t('web.currentPassword')} bind:value={account.current} autocomplete="current-password" />
+            <input class="input" type="password" placeholder={t('web.newPassword')} bind:value={account.next} autocomplete="new-password" />
+            <button class="btn sm" type="submit" disabled={!account.current || !account.next}>{t('common.save')}</button>
+          </form>
+          <SettingRow label={t('settings.confirmDelete')} checked={s.confirmDelete} onchange={set('confirmDelete')} />
+        </div>
+      </section>
+      {/if}
+
       {#if show('finish')}
       <section id="sec-finish" class:hit={secHit('finish')}>
         <h2><Icon name="bell" size={18} /> {t('settings.section.finish')}</h2>
@@ -465,6 +540,9 @@
       <section id="sec-api" class:hit={secHit('api')}>
         <h2><Icon name="plug" size={18} /> {t('api.title')}</h2>
         <div class="card group">
+          {#if isServer}
+            <div class="note"><Icon name="info" size={14} /> <span>{t('web.apiNote', { url: `${location.origin}/api` })}</span></div>
+          {/if}
           <SettingRow icon="plug" label={t('api.enable')} description={t('api.enableDesc')} keywords={`API ${t('api.key')} ${t('api.port')} ${t('api.lan')} Newznab NZBHydra`} checked={!!s.apiEnabled} onchange={setApi} />
           {#if s.apiEnabled}
             {#if apiStatus?.error}
@@ -502,7 +580,7 @@
                   {t('api.sab.step2')}
                   <div class="sab-grid">
                     <span>Host</span><code>{sabHost}</code>
-                    <span>Port</span><code>{s.apiPort}</code>
+                    <span>Port</span><code>{sabPort}</code>
                     <span>URL Base</span><code class="muted">{t('api.sab.empty')}</code>
                     <span>API Key</span><span class="url"><code>{showKey ? s.apiKey : '•'.repeat(12)}</code><button class="btn ghost sm icon" onclick={() => copy(s.apiKey)} aria-label={t('api.copy')} title={t('api.copy')}><Icon name="copy" size={13} /></button></span>
                     <span>Category</span><code>{(s.categories ?? []).map((c) => c.name).join(' / ') || 'tv / movies'}</code>
@@ -516,14 +594,14 @@
               {#if !s.apiLan}
                 <div class="sab-hint"><Icon name="info" size={13} /> {t('api.sab.lanHint')}</div>
               {/if}
-              <button class="btn sm" onclick={() => invoke('open_url', { url: SAB_DOCS_URL })}><Icon name="external" size={13} /> {t('api.sab.docs')}</button>
+              <button class="btn sm" onclick={() => openUrl(SAB_DOCS_URL)}><Icon name="external" size={13} /> {t('api.sab.docs')}</button>
             </div>
             {#if isAndroid}
               <div class="note"><Icon name="smartphone" size={14} /> {t('api.androidNote')}</div>
             {/if}
           {/if}
           <SettingRow icon="external" label={t('api.docs')} description={t('api.docsDesc')}>
-            <button class="btn sm" onclick={() => invoke('open_url', { url: DOCS_URL })}>{t('common.open')} <Icon name="chevron-right" size={14} /></button>
+            <button class="btn sm" onclick={() => openUrl(DOCS_URL)}>{t('common.open')} <Icon name="chevron-right" size={14} /></button>
           </SettingRow>
         </div>
       </section>
@@ -608,7 +686,10 @@
               <div class="muted">{t('settings.version', { version: ui.info?.version })}</div>
             </div>
           </div>
-          {#if !isAndroid}
+          {#if isServer}
+            <p class="muted data-path"><Icon name="folder" size={13} /> <code class="selectable">{ui.info?.dataDir}</code></p>
+          {/if}
+          {#if isDesktopApp}
             <div class="links">
               <button class="btn sm" onclick={() => invoke('open_path', { path: ui.info.dataDir })}><Icon name="folder" size={14} /> {t('settings.dataDir')}</button>
               <button class="btn sm" onclick={() => invoke('open_path', { path: ui.info.logDir })}><Icon name="logs" size={14} /> {t('settings.logsDir')}</button>
@@ -701,6 +782,10 @@
   .logo-big { width: 56px; height: 56px; border-radius: 16px; display: grid; place-items: center; background: var(--grad-diag); color: #fff; box-shadow: 0 10px 30px -10px rgba(var(--accent-rgb), 0.9); }
   .app-name { font-family: var(--font-display); font-size: 22px; font-weight: 750; }
   .links { display: flex; gap: 8px; margin-top: 16px; }
+  .data-path { display: flex; align-items: center; gap: 6px; margin: 12px 0 0; font-size: 12.5px; overflow-wrap: anywhere; }
+  .pw { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px 18px; border-top: 1px solid var(--border); }
+  .pw-title { width: 100%; font-size: 13.5px; font-weight: 600; }
+  .pw .input { flex: 1 1 180px; min-width: 0; }
   .upd-progress { display: flex; align-items: center; gap: 12px; padding: 0 18px 14px 64px; margin-top: -4px; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
   .upd-progress span { flex-shrink: 0; }
   .spin-wrap { display: inline-flex; }

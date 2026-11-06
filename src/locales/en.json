@@ -183,7 +183,8 @@
     "speedLimit": "Speed limit",
     "urlPlaceholder": "Paste a direct link to a .nzb here and I'll ask where to save it…",
     "viewHistory": "View history",
-    "viewServers": "View servers"
+    "viewServers": "View servers",
+    "emptyTextWeb": "Drag an <strong>.nzb</strong> file onto this page, press <strong>+</strong> to upload it or paste a link above."
   },
   "drop": {
     "subtitle": "They'll be added to the download queue",
@@ -800,7 +801,8 @@
       "remote": "See and manage a PC's downloads",
       "rss": "Automatic downloads with rules",
       "finish": "Alerts, scripts and shutdown",
-      "categories": "tv, movies… with their folder and options"
+      "categories": "tv, movies… with their folder and options",
+      "server": "Username, password and session"
     }
   },
   "update": {
@@ -1180,5 +1182,31 @@
     "chooseTitle": "Which category?",
     "byNewznab": "By its Newznab category",
     "ruleHelp": "Sets the folder, priority and post-processing of what this rule grabs (the rule's own folder and method win if you set them)."
+  },
+  "web": {
+    "unreachable": "Can't reach the Nebula server.",
+    "mismatch": "The passwords don't match.",
+    "setupTitle": "Create your account",
+    "loginTitle": "Sign in",
+    "setupDesc": "This is the first time you open this Nebula. The username and password protect the web interface; the password must have at least {n} characters.",
+    "username": "Username",
+    "password": "Password",
+    "repeat": "Repeat the password",
+    "create": "Create and sign in",
+    "signIn": "Sign in",
+    "section": "Web account",
+    "account": "Signed in as {user}",
+    "accountDesc": "The session lasts 30 days in this browser. Changing the password signs out every session.",
+    "signOut": "Sign out",
+    "changePassword": "Change the password",
+    "currentPassword": "Current password",
+    "newPassword": "New password",
+    "passwordChanged": "Password changed.",
+    "apiNote": "Sonarr, Radarr and Prowlarr can use this same port: {url} (or /sabnzbd/api) with the key below.",
+    "par2Path": "par2 program",
+    "sevenZipPath": "7-Zip program",
+    "toolFound": "Using {path}. Leave it empty to find it automatically.",
+    "toolMissing": "Not found ({path}). Install it or say where it is: without it downloads aren't repaired or extracted.",
+    "notFound": "Not found"
   }
 }

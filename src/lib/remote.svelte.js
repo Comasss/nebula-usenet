@@ -8,7 +8,7 @@ import { ui, ask, closeDialog, toast, queueAdd } from './state.svelte.js';
 import { actionSheet, haptic } from './feedback.js';
 import { viaOptions } from './debrid.js';
 
-const isAndroid = /android/i.test(navigator.userAgent);
+import { isAndroid } from './platform.js';
 
 /** Lo que se puede pedir al PC (el resto de acciones de esas pantallas se ocultan). */
 const OPS = new Set([

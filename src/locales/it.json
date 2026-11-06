@@ -183,7 +183,8 @@
     "speedLimit": "Limite di velocità",
     "urlPlaceholder": "Incolla qui il link diretto a un .nzb e ti chiederò dove salvarlo…",
     "viewHistory": "Vedi cronologia",
-    "viewServers": "Vedi server"
+    "viewServers": "Vedi server",
+    "emptyTextWeb": "Trascina un file <strong>.nzb</strong> su questa pagina, premi <strong>+</strong> per caricarlo o incolla un link qui sopra."
   },
   "drop": {
     "subtitle": "Verranno aggiunti alla coda di download",
@@ -800,7 +801,8 @@
       "remote": "Vedi e gestisci i download di un PC",
       "rss": "Download automatico con regole",
       "finish": "Avvisi, script e spegnimento",
-      "categories": "tv, movies… con la loro cartella e opzioni"
+      "categories": "tv, movies… con la loro cartella e opzioni",
+      "server": "Nome utente, password e sessione"
     }
   },
   "update": {
@@ -1180,5 +1182,31 @@
     "chooseTitle": "In quale categoria?",
     "byNewznab": "In base alla sua categoria Newznab",
     "ruleHelp": "Imposta cartella, priorità e post-elaborazione di ciò che questa regola prende (cartella e metodo della regola prevalgono se li indichi)."
+  },
+  "web": {
+    "unreachable": "Impossibile raggiungere il server di Nebula.",
+    "mismatch": "Le password non coincidono.",
+    "setupTitle": "Crea il tuo account",
+    "loginTitle": "Accedi",
+    "setupDesc": "È la prima volta che apri questo Nebula. Nome utente e password proteggono l'interfaccia web; la password deve avere almeno {n} caratteri.",
+    "username": "Nome utente",
+    "password": "Password",
+    "repeat": "Ripeti la password",
+    "create": "Crea e accedi",
+    "signIn": "Accedi",
+    "section": "Account web",
+    "account": "Accesso effettuato come {user}",
+    "accountDesc": "La sessione dura 30 giorni in questo browser. Cambiare la password chiude tutte le sessioni.",
+    "signOut": "Esci",
+    "changePassword": "Cambia la password",
+    "currentPassword": "Password attuale",
+    "newPassword": "Nuova password",
+    "passwordChanged": "Password cambiata.",
+    "apiNote": "Sonarr, Radarr e Prowlarr possono usare questa stessa porta: {url} (o /sabnzbd/api) con la chiave qui sotto.",
+    "par2Path": "Programma par2",
+    "sevenZipPath": "Programma 7-Zip",
+    "toolFound": "In uso {path}. Lascia vuoto per cercarlo automaticamente.",
+    "toolMissing": "Non trovato ({path}). Installalo o indica dove si trova: senza, i download non vengono riparati né estratti.",
+    "notFound": "Non trovato"
   }
 }

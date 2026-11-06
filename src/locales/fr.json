@@ -183,7 +183,8 @@
     "speedLimit": "Limite de vitesse",
     "urlPlaceholder": "Collez ici le lien direct vers un .nzb, je vous demanderai où l'enregistrer…",
     "viewHistory": "Voir l'historique",
-    "viewServers": "Voir les serveurs"
+    "viewServers": "Voir les serveurs",
+    "emptyTextWeb": "Glissez un fichier <strong>.nzb</strong> sur cette page, appuyez sur <strong>+</strong> pour l'envoyer ou collez un lien ci-dessus."
   },
   "drop": {
     "subtitle": "Ils seront ajoutés à la file de téléchargement",
@@ -800,7 +801,8 @@
       "remote": "Voir et gérer les téléchargements d'un PC",
       "rss": "Téléchargement automatique par règles",
       "finish": "Alertes, scripts et extinction",
-      "categories": "tv, movies… avec leur dossier et leurs options"
+      "categories": "tv, movies… avec leur dossier et leurs options",
+      "server": "Identifiant, mot de passe et session"
     }
   },
   "update": {
@@ -1180,5 +1182,31 @@
     "chooseTitle": "Dans quelle catégorie ?",
     "byNewznab": "Selon sa catégorie Newznab",
     "ruleHelp": "Fixe le dossier, la priorité et le post-traitement de ce que cette règle récupère (le dossier et la méthode de la règle priment si vous les indiquez)."
+  },
+  "web": {
+    "unreachable": "Impossible de joindre le serveur Nebula.",
+    "mismatch": "Les mots de passe ne correspondent pas.",
+    "setupTitle": "Créez votre compte",
+    "loginTitle": "Connexion",
+    "setupDesc": "C'est la première fois que vous ouvrez ce Nebula. L'identifiant et le mot de passe protègent l'interface web ; le mot de passe doit comporter au moins {n} caractères.",
+    "username": "Identifiant",
+    "password": "Mot de passe",
+    "repeat": "Répétez le mot de passe",
+    "create": "Créer et se connecter",
+    "signIn": "Se connecter",
+    "section": "Compte web",
+    "account": "Connecté en tant que {user}",
+    "accountDesc": "La session dure 30 jours dans ce navigateur. Changer le mot de passe ferme toutes les sessions.",
+    "signOut": "Déconnexion",
+    "changePassword": "Changer le mot de passe",
+    "currentPassword": "Mot de passe actuel",
+    "newPassword": "Nouveau mot de passe",
+    "passwordChanged": "Mot de passe modifié.",
+    "apiNote": "Sonarr, Radarr et Prowlarr peuvent utiliser ce même port : {url} (ou /sabnzbd/api) avec la clé ci-dessous.",
+    "par2Path": "Programme par2",
+    "sevenZipPath": "Programme 7-Zip",
+    "toolFound": "Utilise {path}. Laissez vide pour le trouver automatiquement.",
+    "toolMissing": "Introuvable ({path}). Installez-le ou indiquez son emplacement : sans lui, les téléchargements ne sont ni réparés ni extraits.",
+    "notFound": "Introuvable"
   }
 }

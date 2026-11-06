@@ -183,7 +183,8 @@
     "speedLimit": "Limite de velocidade",
     "urlPlaceholder": "Cole aqui o link direto para um .nzb e vou perguntar onde salvá-lo…",
     "viewHistory": "Ver histórico",
-    "viewServers": "Ver servidores"
+    "viewServers": "Ver servidores",
+    "emptyTextWeb": "Arrasta um ficheiro <strong>.nzb</strong> para esta página, carrega em <strong>+</strong> para o enviar ou cola uma ligação acima."
   },
   "drop": {
     "subtitle": "Eles serão adicionados à fila de downloads",
@@ -800,7 +801,8 @@
       "remote": "Ver e gerenciar os downloads de um PC",
       "rss": "Transferência automática com regras",
       "finish": "Alertas, scripts e desligar",
-      "categories": "tv, movies… com sua pasta e opções"
+      "categories": "tv, movies… com sua pasta e opções",
+      "server": "Utilizador, palavra-passe e sessão"
     }
   },
   "update": {
@@ -1180,5 +1182,31 @@
     "chooseTitle": "Em qual categoria?",
     "byNewznab": "Pela sua categoria Newznab",
     "ruleHelp": "Define a pasta, a prioridade e o pós-processamento do que esta regra pega (a pasta e o método da regra prevalecem se você os indicar)."
+  },
+  "web": {
+    "unreachable": "Não foi possível ligar ao servidor do Nebula.",
+    "mismatch": "As palavras-passe não coincidem.",
+    "setupTitle": "Cria o teu utilizador",
+    "loginTitle": "Entrar",
+    "setupDesc": "É a primeira vez que abres este Nebula. O utilizador e a palavra-passe protegem a interface web; a palavra-passe deve ter pelo menos {n} caracteres.",
+    "username": "Utilizador",
+    "password": "Palavra-passe",
+    "repeat": "Repete a palavra-passe",
+    "create": "Criar e entrar",
+    "signIn": "Entrar",
+    "section": "Conta web",
+    "account": "Entraste como {user}",
+    "accountDesc": "A sessão dura 30 dias neste navegador. Mudar a palavra-passe termina todas as sessões.",
+    "signOut": "Sair",
+    "changePassword": "Mudar a palavra-passe",
+    "currentPassword": "Palavra-passe atual",
+    "newPassword": "Nova palavra-passe",
+    "passwordChanged": "Palavra-passe alterada.",
+    "apiNote": "O Sonarr, o Radarr e o Prowlarr podem usar esta mesma porta: {url} (ou /sabnzbd/api) com a chave abaixo.",
+    "par2Path": "Programa par2",
+    "sevenZipPath": "Programa 7-Zip",
+    "toolFound": "A usar {path}. Deixa vazio para o procurar automaticamente.",
+    "toolMissing": "Não encontrado ({path}). Instala-o ou indica onde está: sem ele as transferências não são reparadas nem extraídas.",
+    "notFound": "Não encontrado"
   }
 }

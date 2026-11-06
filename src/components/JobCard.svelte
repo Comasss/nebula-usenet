@@ -7,7 +7,7 @@
   import ProgressBar from './ProgressBar.svelte';
   import { ui, ask, toast, d } from '../lib/state.svelte.js';
   import * as f from '../lib/format.js';
-  import { isAndroid } from '../lib/platform.js';
+  import { isMobile, isServer } from '../lib/platform.js';
   import { haptic, longpress, actionSheet } from '../lib/feedback.js';
   import Select from './Select.svelte';
   import { catLabel, isDefault, categoryOptions, priorityOptions, priorityLabel, PRIORITIES } from '../lib/categories.js';
@@ -82,7 +82,7 @@
           ]
         : []),
       { id: 'details', label: expanded ? t('job.hideDetails') : t('common.details'), icon: 'info' },
-      ...(!rc.active ? [{ id: 'open', label: t('job.openDest'), icon: 'folder' }] : []),
+      ...(!rc.active && !isServer ? [{ id: 'open', label: t('job.openDest'), icon: 'folder' }] : []),
       { id: 'remove', label: t('common.remove'), icon: 'trash', danger: true },
     ];
     const a = await actionSheet({ title: job.name, subtitle: `${f.bytes(job.total)} · ${st.label}`, actions });
@@ -152,7 +152,7 @@
   }
 </script>
 
-<article class="job card {job.status}" class:expanded use:longpress={{ enabled: isAndroid, onlong: openMenu, ms: 520 }}>
+<article class="job card {job.status}" class:expanded use:longpress={{ enabled: isMobile, onlong: openMenu, ms: 520 }}>
   <div class="top">
     <div class="s-icon {st.kind}" class:spinning={pp && !waiting}>
       {#if pp && !waiting}
@@ -205,7 +205,7 @@
       {/if}
     </div>
 
-    {#if isAndroid}
+    {#if isMobile}
       <div class="m-actions">
         {#if !pp}
           <button class="m-btn" class:resume={job.status === 'paused'} onclick={togglePause}>
@@ -226,7 +226,7 @@
           <Icon name={job.status === 'paused' ? 'play' : 'pause'} size={16} />
         </button>
       {/if}
-      {#if !rc.active}<button class="icon-btn" onclick={() => invoke('open_path', { path: job.dest })} title={t('job.openDest')}><Icon name="folder" size={16} /></button>{/if}
+      {#if !rc.active && !isServer}<button class="icon-btn" onclick={() => invoke('open_path', { path: job.dest })} title={t('job.openDest')}><Icon name="folder" size={16} /></button>{/if}
       <button class="icon-btn danger" onclick={remove} title={t('common.remove')}><Icon name="trash" size={16} /></button>
       <button class="icon-btn chevron" class:open={expanded} onclick={() => (expanded = !expanded)} title={t('common.details')}><Icon name="chevron-down" size={17} /></button>
     </div>

@@ -6,11 +6,14 @@
   import logo from '../assets/logo.svg';
   import { ui } from '../lib/state.svelte.js';
   import { speed } from '../lib/format.js';
+  import { isDesktopApp } from '../lib/platform.js';
 
-  const win = getCurrentWindow();
+  // En el navegador (nebula-server) no hay ventana propia: sin botones de ventana.
+  const win = isDesktopApp ? getCurrentWindow() : null;
   let maximized = $state(false);
 
   $effect(() => {
+    if (!win) return;
     let unlisten;
     win.isMaximized().then((v) => (maximized = v));
     win
@@ -36,6 +39,7 @@
       <span class="status live"><Icon name="arrow-down" size={11} stroke={2.8} /> {speed(ui.queue.speed)}</span>
     {/if}
   </div>
+  {#if win}
   <div class="controls">
     <button class="tb" onclick={() => invoke('window_minimize')} title={t('window.minimize')} aria-label={t('window.minimize')}>
       <Icon name="minus" size={16} stroke={1.6} />
@@ -47,6 +51,9 @@
       <Icon name="x" size={16} stroke={1.6} />
     </button>
   </div>
+  {:else}
+  <div></div>
+  {/if}
 </header>
 
 <style>

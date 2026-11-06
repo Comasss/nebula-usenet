@@ -6,7 +6,7 @@
   import Icon from './Icon.svelte';
   import { ui, dismissToast, d } from '../lib/state.svelte.js';
 
-  import { isAndroid } from '../lib/platform.js';
+  import { isMobile } from '../lib/platform.js';
 
   const ICON = { success: 'check-circle', error: 'x-circle', warn: 'alert-triangle', info: 'info' };
 
@@ -31,16 +31,16 @@
 
 <svelte:window onpointermove={move} onpointerup={up} onpointercancel={up} />
 
-<div class="toasts" class:top={isAndroid}>
+<div class="toasts" class:top={isMobile}>
   {#each ui.toasts as t (t.id)}
     <div
       class="toast {t.kind}"
-      class:glass={isAndroid}
+      class:glass={isMobile}
       class:dragging={swipe.id === t.id}
       style={swipe.id === t.id ? `transform: translateX(${swipe.dx}px); opacity: ${1 - Math.min(0.8, Math.abs(swipe.dx) / 220)}` : ''}
       onpointerdown={(e) => down(e, t.id)}
       animate:flip={{ duration: d(300) }}
-      in:fly={isAndroid ? { y: -36, duration: d(380), easing: cubicOut } : { x: 40, duration: d(320), easing: cubicOut }}
+      in:fly={isMobile ? { y: -36, duration: d(380), easing: cubicOut } : { x: 40, duration: d(320), easing: cubicOut }}
       out:fade={{ duration: d(180) }}>
       <Icon name={ICON[t.kind] ?? 'info'} size={18} />
       <div class="msg selectable">{t.message}</div>

@@ -1,7 +1,7 @@
 // Respuesta a lo que hace el usuario: vibración breve (Android), ondas al tocar, pulsación larga
 // y la animación de "enviado a Descargas".
 import { invoke } from './transport.js';
-import { isAndroid } from './platform.js';
+import { isAndroid, isMobile } from './platform.js';
 import { ui } from './state.svelte.js';
 
 const animOn = () => ui.settings?.animations !== false;
@@ -83,7 +83,7 @@ export function longpress(node, opts) {
     // a veces antes de que salte el temporizador: el menú contextual que llega después es la
     // pulsación larga. En escritorio es el clic derecho.
     if (!fired) {
-      fired = isAndroid; // tras la pulsación larga no debe colarse el clic
+      fired = isMobile; // tras la pulsación larga no debe colarse el clic
       if (isAndroid) haptic('long');
       o?.onlong?.(node);
     }

@@ -183,7 +183,8 @@
     "speedLimit": "Geschwindigkeitslimit",
     "urlPlaceholder": "Füge hier den direkten Link zu einer .nzb ein – ich frage dich dann, wo sie gespeichert werden soll …",
     "viewHistory": "Verlauf anzeigen",
-    "viewServers": "Server anzeigen"
+    "viewServers": "Server anzeigen",
+    "emptyTextWeb": "Ziehe eine <strong>.nzb</strong>-Datei auf diese Seite, tippe auf <strong>+</strong> zum Hochladen oder füge oben einen Link ein."
   },
   "drop": {
     "subtitle": "Sie werden zur Download-Warteschlange hinzugefügt",
@@ -800,7 +801,8 @@
       "remote": "Downloads eines PCs ansehen und steuern",
       "rss": "Automatische Downloads mit Regeln",
       "finish": "Benachrichtigungen, Skripte, Herunterfahren",
-      "categories": "tv, movies… mit Ordner und Optionen"
+      "categories": "tv, movies… mit Ordner und Optionen",
+      "server": "Benutzername, Passwort und Sitzung"
     }
   },
   "update": {
@@ -1180,5 +1182,31 @@
     "chooseTitle": "In welche Kategorie?",
     "byNewznab": "Nach ihrer Newznab-Kategorie",
     "ruleHelp": "Legt Ordner, Priorität und Nachbearbeitung für das fest, was diese Regel holt (Ordner und Methode der Regel haben Vorrang, wenn du sie angibst)."
+  },
+  "web": {
+    "unreachable": "Der Nebula-Server ist nicht erreichbar.",
+    "mismatch": "Die Passwörter stimmen nicht überein.",
+    "setupTitle": "Konto anlegen",
+    "loginTitle": "Anmelden",
+    "setupDesc": "Du öffnest dieses Nebula zum ersten Mal. Benutzername und Passwort schützen die Weboberfläche; das Passwort braucht mindestens {n} Zeichen.",
+    "username": "Benutzername",
+    "password": "Passwort",
+    "repeat": "Passwort wiederholen",
+    "create": "Anlegen und anmelden",
+    "signIn": "Anmelden",
+    "section": "Webkonto",
+    "account": "Angemeldet als {user}",
+    "accountDesc": "Die Sitzung gilt 30 Tage in diesem Browser. Ein neues Passwort beendet alle Sitzungen.",
+    "signOut": "Abmelden",
+    "changePassword": "Passwort ändern",
+    "currentPassword": "Aktuelles Passwort",
+    "newPassword": "Neues Passwort",
+    "passwordChanged": "Passwort geändert.",
+    "apiNote": "Sonarr, Radarr und Prowlarr können denselben Port nutzen: {url} (oder /sabnzbd/api) mit dem Schlüssel unten.",
+    "par2Path": "par2-Programm",
+    "sevenZipPath": "7-Zip-Programm",
+    "toolFound": "Verwendet {path}. Leer lassen, um es automatisch zu suchen.",
+    "toolMissing": "Nicht gefunden ({path}). Installiere es oder gib den Pfad an: ohne es werden Downloads weder repariert noch entpackt.",
+    "notFound": "Nicht gefunden"
   }
 }

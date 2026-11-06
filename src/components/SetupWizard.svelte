@@ -1,6 +1,6 @@
 <script>
   import { t, th } from '../lib/i18n.svelte.js';
-  import { pickFolder, isAndroid } from '../lib/platform.js';
+  import { pickFolder, isAndroid, isDesktopApp, isServer } from '../lib/platform.js';
   import { fly, fade, scale } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
   import Icon from './Icon.svelte';
@@ -234,12 +234,14 @@
                 <SettingRow label={t('wizard.askDestination')} checked={prefs.askDestination} onchange={(v) => (prefs.askDestination = v)} />
                 <SettingRow label={t('settings.par2')} checked={prefs.par2Enabled} onchange={(v) => (prefs.par2Enabled = v)} />
                 <SettingRow label={t('settings.extract')} checked={prefs.extractEnabled} onchange={(v) => (prefs.extractEnabled = v)} />
-                {#if !isAndroid}
+                {#if isDesktopApp}
                   <SettingRow label={t('settings.associate')} checked={prefs.associateNzb} onchange={(v) => (prefs.associateNzb = v)} />
                 {/if}
               {/if}
-              <SettingRow label={t('wizard.clipboard')} checked={prefs.clipboardMonitor} onchange={(v) => (prefs.clipboardMonitor = v)} />
-              {#if !isAndroid}
+              {#if !isServer}
+                <SettingRow label={t('wizard.clipboard')} checked={prefs.clipboardMonitor} onchange={(v) => (prefs.clipboardMonitor = v)} />
+              {/if}
+              {#if isDesktopApp}
                 <SettingRow label={t('wizard.closeToTray')} checked={prefs.closeToTray} onchange={(v) => (prefs.closeToTray = v)} />
               {/if}
             </div>
@@ -300,8 +302,8 @@
   .line { flex: 1; min-width: 12px; height: 2px; border-radius: 2px; background: var(--panel-3); position: relative; overflow: hidden; }
   .line::after { content: ''; position: absolute; inset: 0; background: var(--grad); transform: scaleX(0); transform-origin: left; transition: transform 0.5s var(--ease); }
   .line.done::after { transform: scaleX(1); }
-  .stage { position: relative; display: grid; overflow-y: auto; overflow-x: hidden; min-height: 420px; }
-  .page { grid-area: 1 / 1; padding: 26px 28px 20px; }
+  .stage { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); overflow-y: auto; overflow-x: hidden; min-height: 420px; }
+  .page { grid-area: 1 / 1; min-width: 0; padding: 26px 28px 20px; }
   .welcome { text-align: center; padding: 16px 20px 0; }
   .hero { width: 110px; height: 110px; animation: float 4s ease-in-out infinite; filter: drop-shadow(0 18px 40px rgba(var(--accent-rgb), 0.5)); }
   @keyframes float { 50% { transform: translateY(-8px) rotate(-3deg); } }
@@ -344,6 +346,7 @@
   :global(html.mobile) .stage { min-height: 0; flex: 1; }
   :global(html.mobile) .page { padding: 22px 18px 18px; }
   :global(html.mobile) .welcome { padding: 8px 4px 0; }
+  :global(html.mobile) .from-device { white-space: normal; height: auto; min-height: 42px; padding: 8px 12px; text-align: left; }
   :global(html.mobile) .welcome h1 { font-size: 24px; }
   :global(html.mobile) .features-list, :global(html.mobile) .fcards { grid-template-columns: 1fr; }
   :global(html.mobile) .dirrow { flex-direction: column; }

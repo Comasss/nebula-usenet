@@ -183,7 +183,8 @@
     "speedLimit": "Límit de velocitat",
     "urlPlaceholder": "Enganxa aquí l'enllaç directe a un .nzb i et preguntaré on desar-lo…",
     "viewHistory": "Mostra l'historial",
-    "viewServers": "Mostra els servidors"
+    "viewServers": "Mostra els servidors",
+    "emptyTextWeb": "Arrossega un fitxer <strong>.nzb</strong> a aquesta pàgina, prem <strong>+</strong> per pujar-lo o enganxa un enllaç a dalt."
   },
   "drop": {
     "subtitle": "S'afegiran a la cua de baixades",
@@ -800,7 +801,8 @@
       "remote": "Veure i gestionar les baixades d'un PC",
       "rss": "Baixada automàtica amb regles",
       "finish": "Avisos, scripts i apagada",
-      "categories": "tv, movies… amb la seva carpeta i opcions"
+      "categories": "tv, movies… amb la seva carpeta i opcions",
+      "server": "Usuari, contrasenya i sessió"
     }
   },
   "update": {
@@ -1180,5 +1182,31 @@
     "chooseTitle": "A quina categoria?",
     "byNewznab": "Segons la seva categoria Newznab",
     "ruleHelp": "Posa la carpeta, la prioritat i el postprocessament del que agafa aquesta regla (la carpeta i el mètode de la regla manen si els indiques)."
+  },
+  "web": {
+    "unreachable": "No es pot connectar amb el servidor de Nebula.",
+    "mismatch": "Les contrasenyes no coincideixen.",
+    "setupTitle": "Crea el teu usuari",
+    "loginTitle": "Entra",
+    "setupDesc": "És la primera vegada que obres aquest Nebula. L'usuari i la contrasenya protegeixen la interfície web; la contrasenya ha de tenir almenys {n} caràcters.",
+    "username": "Usuari",
+    "password": "Contrasenya",
+    "repeat": "Repeteix la contrasenya",
+    "create": "Crea i entra",
+    "signIn": "Entra",
+    "section": "Compte web",
+    "account": "Has entrat com a {user}",
+    "accountDesc": "La sessió dura 30 dies en aquest navegador. Canviar la contrasenya tanca totes les sessions.",
+    "signOut": "Surt",
+    "changePassword": "Canvia la contrasenya",
+    "currentPassword": "Contrasenya actual",
+    "newPassword": "Contrasenya nova",
+    "passwordChanged": "Contrasenya canviada.",
+    "apiNote": "Sonarr, Radarr i Prowlarr poden fer servir aquest mateix port: {url} (o /sabnzbd/api) amb la clau de sota.",
+    "par2Path": "Programa par2",
+    "sevenZipPath": "Programa 7-Zip",
+    "toolFound": "Es fa servir {path}. Deixa-ho buit per buscar-lo sol.",
+    "toolMissing": "No es troba ({path}). Instal·la'l o indica on és: sense ell les baixades no es reparen ni es descomprimeixen.",
+    "notFound": "No trobat"
   }
 }

@@ -12,6 +12,7 @@
   import { upd } from '../lib/updater.svelte.js';
   import Settings from './Settings.svelte';
   import { fold } from '../lib/format.js';
+  import { isServer } from '../lib/platform.js';
   import Indexers from './Indexers.svelte';
   import Servers from './Servers.svelte';
   import Debrid from './Debrid.svelte';
@@ -46,6 +47,7 @@
     { id: 'post', icon: 'package', hue: 20 },
     { id: 'links', icon: 'clipboard', hue: 330 },
     { id: 'windows', icon: 'smartphone', hue: 200 },
+    { id: 'server', icon: 'user', hue: 200 },
     { id: 'finish', icon: 'bell', hue: 10 },
     { id: 'network', icon: 'wifi', hue: 140 },
     { id: 'look', icon: 'palette', hue: 300 },
@@ -53,14 +55,17 @@
     { id: 'api', icon: 'plug', hue: 100 },
     { id: 'transfer', icon: 'qr', hue: 50 },
   ];
-  const prefs = $derived(SECTION_ROWS.filter((r) => (!r.nntp || s?.featureNntp !== false) && (!r.indexers || s?.featureIndexers)));
+  // En el navegador (nebula-server) no hay portapapeles, ventana ni actualizador; sí la cuenta.
+  const NOT_HERE = isServer ? ['links', 'windows', 'updates'] : ['server'];
+  const prefs = $derived(SECTION_ROWS.filter((r) => !NOT_HERE.includes(r.id) && (!r.nntp || s?.featureNntp !== false) && (!r.indexers || s?.featureIndexers)));
 
   function sectionTitle(id) {
     if (id === 'debrid') return t('settings.downloadMethod');
     if (id === 'search') return t('settings.searchTitle');
     if (id === 'windows') return t('mobile.appTitle');
     if (id === 'api') return t('api.title');
-    if (id === 'remote') return t('remote.mobileTitle');
+    if (id === 'remote') return isServer ? t('settings.section.remote') : t('remote.mobileTitle');
+    if (id === 'server') return t('web.section');
     return t(`settings.section.${id}`);
   }
 
@@ -156,7 +161,7 @@
         <h3>{t('msettings.system')}</h3>
         <div class="card group">
           {@render row({ id: 'logs', icon: 'logs', hue: 0, label: t('nav.logs'), sub: t('msettings.desc.logs') }, () => open('logs'), errorLogs)}
-          {@render row({ id: 'updates', icon: 'refresh', hue: 170, label: t('settings.section.updates'), sub: upd.info?.available ? t('update.availableLabel', { version: upd.info.version }) : t('msettings.desc.updates') }, () => open('sec:updates'), upd.info?.available ? 1 : 0)}
+          {#if !isServer}{@render row({ id: 'updates', icon: 'refresh', hue: 170, label: t('settings.section.updates'), sub: upd.info?.available ? t('update.availableLabel', { version: upd.info.version }) : t('msettings.desc.updates') }, () => open('sec:updates'), upd.info?.available ? 1 : 0)}{/if}
           {@render row({ id: 'about', icon: 'info', hue: 250, label: t('settings.section.about'), sub: t('msettings.desc.about') }, () => open('sec:about'))}
         </div>
         {/if}

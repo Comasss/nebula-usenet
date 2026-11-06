@@ -178,7 +178,8 @@
     "speedLimit": "速度制限",
     "urlPlaceholder": ".nzb の直接リンクをここに貼り付けると、保存先を確認します…",
     "viewHistory": "履歴を表示",
-    "viewServers": "サーバーを表示"
+    "viewServers": "サーバーを表示",
+    "emptyTextWeb": "<strong>.nzb</strong> ファイルをこのページにドラッグするか、<strong>+</strong> でアップロード、または上にリンクを貼り付けます。"
   },
   "drop": {
     "subtitle": "ダウンロードキューに追加されます",
@@ -779,7 +780,8 @@
       "remote": "PC のダウンロードを確認・操作",
       "rss": "ルールで自動ダウンロード",
       "finish": "通知、スクリプト、シャットダウン",
-      "categories": "tv、movies…とそのフォルダーとオプション"
+      "categories": "tv、movies…とそのフォルダーとオプション",
+      "server": "ユーザー名、パスワード、セッション"
     }
   },
   "update": {
@@ -1159,5 +1161,31 @@
     "chooseTitle": "どのカテゴリに入れますか？",
     "byNewznab": "Newznab カテゴリに従う",
     "ruleHelp": "このルールで取得したものの保存先、優先度、後処理を決めます（ルールにフォルダーや方法を指定した場合はそちらが優先）。"
+  },
+  "web": {
+    "unreachable": "Nebula サーバーに接続できません。",
+    "mismatch": "パスワードが一致しません。",
+    "setupTitle": "アカウントを作成",
+    "loginTitle": "サインイン",
+    "setupDesc": "この Nebula を開くのは初めてです。ユーザー名とパスワードで Web 画面を保護します。パスワードは {n} 文字以上にしてください。",
+    "username": "ユーザー名",
+    "password": "パスワード",
+    "repeat": "パスワード(確認)",
+    "create": "作成してサインイン",
+    "signIn": "サインイン",
+    "section": "Web アカウント",
+    "account": "{user} としてサインイン中",
+    "accountDesc": "このブラウザーのセッションは 30 日間有効です。パスワードを変更するとすべてのセッションが終了します。",
+    "signOut": "サインアウト",
+    "changePassword": "パスワードを変更",
+    "currentPassword": "現在のパスワード",
+    "newPassword": "新しいパスワード",
+    "passwordChanged": "パスワードを変更しました。",
+    "apiNote": "Sonarr、Radarr、Prowlarr はこの同じポートを使えます: {url}(または /sabnzbd/api)と下のキー。",
+    "par2Path": "par2 プログラム",
+    "sevenZipPath": "7-Zip プログラム",
+    "toolFound": "{path} を使用中。空欄にすると自動で探します。",
+    "toolMissing": "見つかりません({path})。インストールするか場所を指定してください。ないとダウンロードの修復や展開ができません。",
+    "notFound": "見つかりません"
   }
 }

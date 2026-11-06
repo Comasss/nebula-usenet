@@ -8,7 +8,7 @@
   import Icon from '../components/Icon.svelte';
   import { ui, ask, toast, refreshHistory, d } from '../lib/state.svelte.js';
   import * as f from '../lib/format.js';
-  import { isAndroid } from '../lib/platform.js';
+  import { isMobile, isServer } from '../lib/platform.js';
   import { longpress, actionSheet } from '../lib/feedback.js';
   import Select from '../components/Select.svelte';
   import { catLabel, isDefault, DEFAULT_CAT } from '../lib/categories.js';
@@ -19,7 +19,7 @@
     // En un PC controlado desde el móvil no se abren carpetas ni se reintenta (solo ver y borrar).
     const local = !remote.active;
     const actions = [
-      ...(ok && local ? [{ id: 'open', label: t('common.open'), icon: 'folder' }] : []),
+      ...(ok && local && !isServer ? [{ id: 'open', label: t('common.open'), icon: 'folder' }] : []),
       ...(!ok && local && h.canRetryExtract ? [{ id: 'extract', label: t('history.retryExtract'), icon: 'key' }] : []),
       ...(!ok && local ? [{ id: 'retry', label: t('common.retry'), icon: 'refresh' }] : []),
       { id: 'details', label: t('common.details'), icon: 'info' },
@@ -159,7 +159,7 @@
   <div class="list">
     {#each items as h (h.id)}
       {@const ok = h.status === 'completed'}
-      <article class="hist card" class:failed={!ok} use:longpress={{ enabled: isAndroid, onlong: () => menu(h), ms: 520 }} animate:flip={{ duration: d(320), easing: cubicOut }} in:fly={{ y: 12, duration: d(280) }} out:fade={{ duration: d(160) }}>
+      <article class="hist card" class:failed={!ok} use:longpress={{ enabled: isMobile, onlong: () => menu(h), ms: 520 }} animate:flip={{ duration: d(320), easing: cubicOut }} in:fly={{ y: 12, duration: d(280) }} out:fade={{ duration: d(160) }}>
         <div class="h-top" onclick={() => (open = open === h.id ? null : h.id)} role="presentation">
           <div class="h-icon {ok ? 'ok' : 'err'}"><Icon name={ok ? 'check' : 'x'} size={17} stroke={2.6} /></div>
           <div class="h-main">
@@ -179,7 +179,7 @@
             {#if remote.active}
               <!-- PC controlado: solo borrar. -->
             {:else if ok}
-              <button class="btn sm" onclick={() => invoke('open_path', { path: h.dest })}><Icon name="folder" size={14} /> {t('common.open')}</button>
+              {#if !isServer}<button class="btn sm" onclick={() => invoke('open_path', { path: h.dest })}><Icon name="folder" size={14} /> {t('common.open')}</button>{/if}
             {:else}
               {#if h.canRetryExtract}
                 <button class="btn sm" onclick={() => retryExtract(h)}><Icon name="key" size={14} /> {t('history.retryExtract')}</button>
