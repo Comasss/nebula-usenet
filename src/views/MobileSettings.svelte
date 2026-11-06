@@ -50,6 +50,7 @@
     { id: 'server', icon: 'user', hue: 200 },
     { id: 'finish', icon: 'bell', hue: 10 },
     { id: 'network', icon: 'wifi', hue: 140 },
+    { id: 'schedule', icon: 'clock', hue: 180, nntp: true },
     { id: 'look', icon: 'palette', hue: 300 },
     { id: 'remote', icon: 'monitor', hue: 250 },
     { id: 'api', icon: 'plug', hue: 100 },

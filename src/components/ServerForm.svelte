@@ -1,6 +1,6 @@
 <script>
   import Select from './Select.svelte';
-  import { t } from '../lib/i18n.svelte.js';
+  import { t, locale } from '../lib/i18n.svelte.js';
   import { invoke } from '../lib/transport.js';
   import { fly } from 'svelte/transition';
   import Icon from './Icon.svelte';
@@ -76,6 +76,34 @@
         <label for="sf-ret">{t('server.retention')}</label>
         <input id="sf-ret" class="input" type="number" min="0" bind:value={server.retentionDays} placeholder={t('server.retentionPlaceholder')} />
       </div>
+      <div class="field">
+        <label for="sf-quota">{t('server.quota')}</label>
+        <div class="with-unit">
+          <input id="sf-quota" class="input" type="number" min="0" step="any" value={server.quotaGb || ''} placeholder={t('server.quotaPlaceholder')}
+            onchange={(e) => (server.quotaGb = Math.max(0, parseFloat(String(e.target.value).replace(',', '.')) || 0))} />
+          <span class="unit">GB</span>
+        </div>
+      </div>
+      {#if server.quotaGb > 0}
+        <div class="field">
+          <label for="sf-qper">{t('server.quotaPeriod')}</label>
+          <Select id="sf-qper" label={t('server.quotaPeriod')} value={server.quotaPeriod ?? 'month'} onchange={(v) => { server.quotaPeriod = v; server.quotaResetDay = 1; }}
+            options={['day', 'week', 'month', 'never'].map((p) => ({ value: p, label: t(`server.quotaPeriods.${p}`) }))} />
+        </div>
+        {#if (server.quotaPeriod ?? 'month') === 'month'}
+          <div class="field">
+            <label for="sf-qday">{t('server.quotaResetDay')}</label>
+            <input id="sf-qday" class="input" type="number" min="1" max="28" value={server.quotaResetDay || 1}
+              onchange={(e) => (server.quotaResetDay = Math.min(28, Math.max(1, Math.round(+e.target.value) || 1)))} />
+          </div>
+        {:else if server.quotaPeriod === 'week'}
+          <div class="field">
+            <label for="sf-qwd">{t('server.quotaResetWeekday')}</label>
+            <Select id="sf-qwd" label={t('server.quotaResetWeekday')} value={server.quotaResetDay || 1} onchange={(v) => (server.quotaResetDay = v)}
+              options={[1, 2, 3, 4, 5, 6, 7].map((n) => ({ value: n, label: new Intl.DateTimeFormat(locale(), { weekday: 'long' }).format(new Date(2024, 0, n)) }))} />
+          </div>
+        {/if}
+      {/if}
     {/if}
   </div>
 
@@ -109,6 +137,9 @@
   .pw { position: relative; }
   .pw .input { padding-right: 40px; }
   .eye { position: absolute; right: 3px; top: 3px; }
+  .with-unit { display: flex; align-items: center; gap: 8px; }
+  .with-unit .input { flex: 1; min-width: 0; }
+  .unit { font-size: 12px; color: var(--muted); }
   .val { float: right; color: var(--text); font-variant-numeric: tabular-nums; }
   .range {
     -webkit-appearance: none; appearance: none;

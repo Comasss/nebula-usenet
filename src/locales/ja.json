@@ -283,7 +283,9 @@
     "serverTitle": "このサーバーからのみダウンロード",
     "stepUpload": "送信",
     "stepRemote": "{provider} 上",
-    "stepFetch": "ダウンロード"
+    "stepFetch": "ダウンロード",
+    "checking": "確認中",
+    "checkingDetail": "記事の有無を確認中 · {pct}%"
   },
   "logs": {
     "all": "すべて",
@@ -378,7 +380,18 @@
     "ssl": "暗号化接続（SSL/TLS）",
     "test": "接続をテスト",
     "username": "ユーザー名",
-    "verifyCert": "証明書を検証"
+    "verifyCert": "証明書を検証",
+    "quota": "ダウンロード上限",
+    "quotaPlaceholder": "上限なし",
+    "quotaPeriod": "リセット",
+    "quotaPeriods": {
+      "day": "毎日",
+      "week": "毎週",
+      "month": "毎月",
+      "never": "しない"
+    },
+    "quotaResetDay": "日付",
+    "quotaResetWeekday": "曜日"
   },
   "servers": {
     "add": "サーバーを追加",
@@ -412,12 +425,16 @@
       "down": "接続なし",
       "idle": "接続済み",
       "ready": "準備完了",
-      "warn": "エラーあり"
+      "warn": "エラーあり",
+      "quota": "上限到達"
     },
     "subtitle": "Usenet プロバイダーの一覧です。バックアップサーバーは、プライマリにアーティクルがない場合にのみ使用されます。",
     "testing": "接続をテストしています…",
     "tip": "同じ優先度のサーバーは処理を分担します。プライマリにアーティクルがない場合は、バックアップサーバーを順に検索します。",
-    "updated": "サーバーを更新しました"
+    "updated": "サーバーを更新しました",
+    "quotaSub": "上限 {size}（{period}）",
+    "quotaUsed": "上限: {used} / {total}",
+    "quotaReset": "リセット"
   },
   "settings": {
     "abortHopeless": "完了不可能なダウンロードを中止",
@@ -527,7 +544,8 @@
       "transfer": "別のデバイスへ移行",
       "remote": "リモート操作",
       "finish": "完了時",
-      "categories": "カテゴリ"
+      "categories": "カテゴリ",
+      "schedule": "スケジューラ"
     },
     "speedLimitDesc": "MB/s 単位。0 = 制限なし。",
     "startMinimized": "トレイに最小化した状態で起動",
@@ -543,7 +561,35 @@
     "haptics": "タップ時に振動",
     "hapticsDesc": "タップや長押しを短い振動で知らせます。",
     "searchPlaceholder": "設定を検索…",
-    "noResults": "「{q}」に一致する設定はありません"
+    "noResults": "「{q}」に一致する設定はありません",
+    "deobfuscate": "難読化された名前を復元",
+    "deobfuscateDesc": "PAR2 から本来の名前を復元し、メインファイルの名前がまだランダムならダウンロード名を付けます。",
+    "directUnpack": "ダウンロード中に展開",
+    "directUnpackDesc": "各アーカイブは完成し次第、残りを待たずに展開します。複数アーカイブのパックは早く終わりますが、ダウンロード中のディスクと CPU の負荷が増えます。",
+    "passwords": "予備のパスワード",
+    "passwordsDesc": "アーカイブが保護されていてダウンロードのパスワードで開けない場合、これらを順に試します。",
+    "addPassword": "パスワードを追加…",
+    "unwanted": "不要なファイル",
+    "unwantedDesc": "ダウンロードに実行ファイルやリストのファイルが含まれる場合（NZB 内または展開後）の動作。",
+    "unwantedAction": {
+      "off": "何もしない",
+      "warn": "警告する",
+      "skip": "破棄する",
+      "fail": "ダウンロードを拒否"
+    },
+    "unwantedList": "不要な拡張子",
+    "unwantedListDesc": "ドットなし: exe、scr、lnk…",
+    "addExtension": "拡張子を追加…",
+    "precheck": "ダウンロード前に確認",
+    "precheckDesc": "何もダウンロードする前に各記事をサーバーに問い合わせ（STAT）、PAR2 で修復できる以上に欠けていれば中止します。開始に少し時間がかかりますが、完了できないダウンロードでデータを無駄にしません。",
+    "duplicates": "重複したダウンロード",
+    "duplicatesDesc": "すでにキューにあるか、ダウンロード済みの場合（同じ名前または同じ NZB）。",
+    "duplicateAction": {
+      "off": "そのまま追加",
+      "warn": "追加して警告",
+      "pause": "一時停止で追加",
+      "skip": "追加しない"
+    }
   },
   "sidebar": {
     "activeConns": {
@@ -781,7 +827,8 @@
       "rss": "ルールで自動ダウンロード",
       "finish": "通知、スクリプト、シャットダウン",
       "categories": "tv、movies…とそのフォルダーとオプション",
-      "server": "ユーザー名、パスワード、セッション"
+      "server": "ユーザー名、パスワード、セッション",
+      "schedule": "時間帯ごとの一時停止と速度"
     }
   },
   "update": {
@@ -1187,5 +1234,17 @@
     "toolFound": "{path} を使用中。空欄にすると自動で探します。",
     "toolMissing": "見つかりません({path})。インストールするか場所を指定してください。ないとダウンロードの修復や展開ができません。",
     "notFound": "見つかりません"
+  },
+  "sched": {
+    "pause": "キューを一時停止",
+    "resume": "キューを再開",
+    "speed": "速度制限",
+    "enabled": "有効",
+    "time": "時刻",
+    "days": "曜日",
+    "action": "動作",
+    "empty": "タスクはありません。例: 平日 8:00 に一時停止し、18:00 に再開。",
+    "add": "タスクを追加",
+    "hint": "Nebula を実行している機器の現地時刻。曜日を選ばなければ毎日。"
   }
 }

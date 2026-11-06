@@ -95,7 +95,11 @@
     }
   }
 
-  const STATE_CLS = { active: 'active', idle: 'idle', ready: 'ok', warn: 'warn', down: 'err', auth: 'err' };
+  const STATE_CLS = { active: 'active', idle: 'idle', ready: 'ok', warn: 'warn', down: 'err', auth: 'err', quota: 'warn' };
+  const quotaLabel = (s) => t('servers.quotaSub', { size: `${s.quotaGb} GB`, period: t(`server.quotaPeriods.${s.quotaPeriod ?? 'month'}`) });
+  async function resetQuota(s) {
+    await invoke('reset_quota', { id: s.id }).catch((e) => toast('error', String(e)));
+  }
   function serverState(state) {
     const k = STATE_CLS[state] ? state : 'ready';
     return { cls: STATE_CLS[k], text: t(`servers.state.${k}`) };
@@ -127,7 +131,7 @@
               </span>
               {#if s.ssl}<span class="chip ok"><Icon name="lock" size={10} stroke={2.6} /> SSL</span>{/if}
             </div>
-            <div class="srv-sub">{s.host}:{s.port} · {s.username || t('servers.noUser')} · {tn('servers.connections', s.connections)}{#if s.retentionDays}{' · '}{tn('servers.retentionDays', s.retentionDays)}{/if}</div>
+            <div class="srv-sub">{s.host}:{s.port} · {s.username || t('servers.noUser')} · {tn('servers.connections', s.connections)}{#if s.retentionDays}{' · '}{tn('servers.retentionDays', s.retentionDays)}{/if}{#if s.quotaGb > 0}{' · '}{quotaLabel(s)}{/if}</div>
           </div>
           <div class="srv-actions">
             <button class="icon-btn" title={t('common.priorityUp')} onclick={() => shift(s, -1)} disabled={s.priority === 0}><Icon name="chevron-up" size={17} /></button>
@@ -145,6 +149,12 @@
             <div class="st"><Icon name="download" size={13} /> {t('servers.sessionBytes', { size: f.bytes(rt.bytes) })}</div>
             <div class="st"><Icon name="check" size={13} /> {tn('servers.articles', rt.articlesOk)}</div>
             {#if rt.articlesMissing}<div class="st warn"><Icon name="alert-triangle" size={13} /> {tn('servers.missing', rt.articlesMissing)}</div>{/if}
+            {#if rt.quota > 0}
+              <div class="st" class:warn={rt.quotaUsed >= rt.quota}>
+                <Icon name="gauge" size={13} /> {t('servers.quotaUsed', { used: f.bytes(rt.quotaUsed), total: f.bytes(rt.quota) })}
+                {#if rt.quotaUsed > 0}<button class="link" onclick={() => resetQuota(s)}>{t('servers.quotaReset')}</button>{/if}
+              </div>
+            {/if}
           {/if}
         </div>
         {#if rt?.lastError && s.enabled}
@@ -203,6 +213,7 @@
   .srv-actions :global(.switch) { margin-left: 8px; }
   .srv-stats { display: flex; flex-wrap: wrap; gap: 8px 20px; padding-top: 12px; border-top: 1px solid var(--border); }
   .st { display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--text-2); }
+  .st .link { border: none; background: none; padding: 0; color: var(--accent-2, var(--accent)); font-size: 12px; cursor: pointer; text-decoration: underline; }
   .st.warn { color: #fcd34d; }
   .empty { padding: 48px 20px; text-align: center; color: var(--text-2); display: flex; flex-direction: column; align-items: center; gap: 8px; }
   .empty h3 { margin: 8px 0 0; color: var(--text); font-family: var(--font-display); }

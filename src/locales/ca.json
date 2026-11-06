@@ -291,7 +291,9 @@
     "serverTitle": "Es baixa només amb aquest servidor",
     "stepUpload": "Enviament",
     "stepRemote": "A {provider}",
-    "stepFetch": "Baixada"
+    "stepFetch": "Baixada",
+    "checking": "Comprovant",
+    "checkingDetail": "Comprovant que els articles existeixen · {pct} %"
   },
   "logs": {
     "all": "Tot",
@@ -392,7 +394,18 @@
     "ssl": "Connexió xifrada (SSL/TLS)",
     "test": "Prova la connexió",
     "username": "Usuari",
-    "verifyCert": "Verifica el certificat"
+    "verifyCert": "Verifica el certificat",
+    "quota": "Quota de baixada",
+    "quotaPlaceholder": "Sense quota",
+    "quotaPeriod": "Es reinicia",
+    "quotaPeriods": {
+      "day": "cada dia",
+      "week": "cada setmana",
+      "month": "cada mes",
+      "never": "mai"
+    },
+    "quotaResetDay": "Dia del mes",
+    "quotaResetWeekday": "Dia de la setmana"
   },
   "servers": {
     "add": "Afegeix un servidor",
@@ -430,12 +443,16 @@
       "down": "Sense connexió",
       "idle": "Connectat",
       "ready": "A punt",
-      "warn": "Amb errors"
+      "warn": "Amb errors",
+      "quota": "Quota esgotada"
     },
     "subtitle": "Els teus proveïdors Usenet. Els de reserva només s'utilitzen quan al principal li falta un article.",
     "testing": "S'està provant la connexió…",
     "tip": "Els servidors amb la mateixa prioritat es reparteixen la feina. Si un article no és al principal, es cerca als de reserva per ordre.",
-    "updated": "S'ha actualitzat el servidor"
+    "updated": "S'ha actualitzat el servidor",
+    "quotaSub": "quota {size} {period}",
+    "quotaUsed": "Quota: {used} de {total}",
+    "quotaReset": "Posar a zero"
   },
   "settings": {
     "abortHopeless": "Cancel·la les baixades impossibles",
@@ -545,7 +562,8 @@
       "transfer": "Passar a un altre dispositiu",
       "remote": "Control remot",
       "finish": "En acabar",
-      "categories": "Categories"
+      "categories": "Categories",
+      "schedule": "Programador"
     },
     "speedLimitDesc": "En MB/s. 0 = sense límit.",
     "startMinimized": "Inicia minimitzat a la safata",
@@ -561,7 +579,35 @@
     "haptics": "Vibració en tocar",
     "hapticsDesc": "Una vibració breu confirma el que toques i el que mantens premut.",
     "searchPlaceholder": "Cerca a la configuració…",
-    "noResults": "Cap opció coincideix amb «{q}»"
+    "noResults": "Cap opció coincideix amb «{q}»",
+    "deobfuscate": "Desofuscar noms",
+    "deobfuscateDesc": "Recupera els noms reals amb el PAR2 i, si el fitxer principal encara té un nom aleatori, li posa el de la baixada.",
+    "directUnpack": "Extreure durant la baixada",
+    "directUnpackDesc": "Cada fitxer comprimit s'extreu tan bon punt és complet, sense esperar la resta. Els paquets de diversos fitxers acaben abans, però fa servir més disc i CPU mentre baixa.",
+    "passwords": "Contrasenyes de reserva",
+    "passwordsDesc": "Si un fitxer està protegit i la contrasenya de la baixada no l'obre, es proven aquestes per ordre.",
+    "addPassword": "Afegeix contrasenya…",
+    "unwanted": "Fitxers no desitjats",
+    "unwantedDesc": "Què fer si la baixada porta executables o altres fitxers de la llista (al NZB o en extreure).",
+    "unwantedAction": {
+      "off": "No fer res",
+      "warn": "Avisar",
+      "skip": "Descartar-los",
+      "fail": "Rebutjar la baixada"
+    },
+    "unwantedList": "Extensions no desitjades",
+    "unwantedListDesc": "Sense punt: exe, scr, lnk…",
+    "addExtension": "Afegeix extensió…",
+    "precheck": "Comprovar abans de baixar",
+    "precheckDesc": "Pregunta al servidor per cada article (STAT) abans de baixar res i cancel·la si en falta més del que el PAR2 pot reparar. Triga una mica a començar, però no gasta dades en baixades impossibles.",
+    "duplicates": "Baixades repetides",
+    "duplicatesDesc": "Si ja és a la cua o baixat (mateix nom o mateix NZB).",
+    "duplicateAction": {
+      "off": "Afegir igualment",
+      "warn": "Afegir i avisar",
+      "pause": "Afegir en pausa",
+      "skip": "No afegir"
+    }
   },
   "sidebar": {
     "activeConns": {
@@ -802,7 +848,8 @@
       "rss": "Baixada automàtica amb regles",
       "finish": "Avisos, scripts i apagada",
       "categories": "tv, movies… amb la seva carpeta i opcions",
-      "server": "Usuari, contrasenya i sessió"
+      "server": "Usuari, contrasenya i sessió",
+      "schedule": "Pauses i velocitat per hores"
     }
   },
   "update": {
@@ -1208,5 +1255,17 @@
     "toolFound": "Es fa servir {path}. Deixa-ho buit per buscar-lo sol.",
     "toolMissing": "No es troba ({path}). Instal·la'l o indica on és: sense ell les baixades no es reparen ni es descomprimeixen.",
     "notFound": "No trobat"
+  },
+  "sched": {
+    "pause": "Pausar la cua",
+    "resume": "Reprendre la cua",
+    "speed": "Límit de velocitat",
+    "enabled": "Activa",
+    "time": "Hora",
+    "days": "Dies",
+    "action": "Acció",
+    "empty": "Sense tasques. Per exemple: pausar a les 8:00 de dilluns a divendres i reprendre a les 18:00.",
+    "add": "Afegeix tasca",
+    "hint": "Hora local de l'equip on s'executa Nebula. Sense dies marcats, cada dia."
   }
 }

@@ -18,14 +18,16 @@
 
   const st = $derived(f.STATUS[job.status] ?? f.STATUS.queued);
   const pp = $derived(['verifying', 'repairing', 'extracting', 'moving'].includes(job.status));
-  const percent = $derived(pp && job.post ? job.post.percent : job.percent);
+  // Precomprobación (STAT) antes de descargar.
+  const checking = $derived(job.checking != null && job.status === 'downloading');
+  const percent = $derived(checking ? job.checking : pp && job.post ? job.post.percent : job.percent);
   const rate = $derived(pp ? job.post?.speed ?? 0 : job.speed);
   // Descarga debrid mientras el servicio aún la tiene (antes de bajar los archivos al PC).
   const remote = $derived(!!job.debrid && job.debrid.phase !== 'fetch' && !pp);
   const barKind = $derived(
     remote && job.status === 'downloading'
       ? 'info'
-      : ({ downloading: 'accent', queued: 'muted', paused: 'paused', verifying: 'info', repairing: 'warn', extracting: 'teal', moving: 'teal' }[job.status] ?? 'accent')
+      : checking ? 'info' : ({ downloading: 'accent', queued: 'muted', paused: 'paused', verifying: 'info', repairing: 'warn', extracting: 'teal', moving: 'teal' }[job.status] ?? 'accent')
   );
   const waiting = $derived(pp && job.post?.stage === 'waiting');
   // Debrid: una barra por fase (subida del NZB, descarga en el servicio y bajada al dispositivo).
@@ -145,6 +147,7 @@
       const stage = job.post?.stage ? stageText(job.post.stage) : st.label;
       return job.post?.detail ? `${stage} · ${job.post.detail}` : stage;
     }
+    if (checking) return t('job.checkingDetail', { pct: Math.floor(job.checking) });
     if (remote) return job.status === 'paused' ? `${t('status.paused')} · ${job.debrid.state}` : job.debrid.state;
     const parts = [t('job.progress', { done: f.bytes(job.done + job.failed), total: f.bytes(job.total) })];
     parts.push(t('job.filesProgress', { done: job.filesDone, total: job.files }));
@@ -164,7 +167,7 @@
     <div class="main">
       <div class="name truncate" title={job.name}>{job.name}</div>
       <div class="meta">
-        <span class="chip {st.kind}">{waiting ? t('stage.waiting') : st.label}</span>
+        <span class="chip {checking ? 'info' : st.kind}">{waiting ? t('stage.waiting') : checking ? t('job.checking') : st.label}</span>
         {#if job.debrid}
           <span class="chip info" title={t('job.viaTitle', { provider: job.debrid.provider })}><Icon name="cloud" size={11} stroke={2.4} /> {job.debrid.provider}</span>
         {/if}

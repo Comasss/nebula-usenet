@@ -16,6 +16,8 @@
   import { showSend, showReceive, showPaste, scanCode } from '../lib/transfer.svelte.js';
   import FinishActions from '../components/FinishActions.svelte';
   import Categories from '../components/Categories.svelte';
+  import ChipList from '../components/ChipList.svelte';
+  import Schedule from '../components/Schedule.svelte';
 
   // `only`: muestra solo esa sección (el móvil abre cada sección como una página).
   // `query`: búsqueda que llega de fuera (la portada de Ajustes del móvil); sin ella se usa el buscador propio.
@@ -76,6 +78,7 @@
     { id: 'server', icon: 'server' },
     { id: 'finish', icon: 'bell' },
     { id: 'network', icon: 'wifi' },
+    { id: 'schedule', icon: 'clock' },
     { id: 'look', icon: 'palette' },
     { id: 'api', icon: 'plug' },
     { id: 'remote', icon: isAndroid ? 'monitor' : 'smartphone' },
@@ -133,6 +136,11 @@
     saveSettings({ clipboardPatterns: [...s.clipboardPatterns, p] });
     newPattern = '';
   }
+
+  const DEFAULT_UNWANTED = ['exe', 'scr', 'com', 'bat', 'cmd', 'lnk', 'vbs', 'msi', 'ps1', 'jar'];
+  const UNWANTED_ACTIONS = $derived(['off', 'warn', 'skip', 'fail'].map((v) => ({ value: v, label: t(`settings.unwantedAction.${v}`) })));
+  const DUP_ACTIONS = $derived(['off', 'warn', 'pause', 'skip'].map((v) => ({ value: v, label: t(`settings.duplicateAction.${v}`) })));
+  const ext = (v) => v.trim().replace(/^[.*]+/, '').toLowerCase();
 
   async function resetPatterns() {
     saveSettings({ clipboardPatterns: await invoke('default_patterns') });
@@ -385,6 +393,30 @@
           <SettingRow label={t('settings.deleteArchives')} description={t('settings.deleteArchivesDesc')} checked={s.deleteArchives} onchange={set('deleteArchives')} disabled={!s.extractEnabled} />
           <SettingRow label={t('settings.deletePar2')} checked={s.deletePar2} onchange={set('deletePar2')} />
           <SettingRow icon="zap" label={t('settings.abortHopeless')} description={t('settings.abortHopelessDesc')} checked={s.abortHopeless} onchange={set('abortHopeless')} />
+          <SettingRow icon="sparkles" label={t('settings.deobfuscate')} description={t('settings.deobfuscateDesc')} checked={s.deobfuscate !== false} onchange={set('deobfuscate')} />
+          <SettingRow label={t('settings.directUnpack')} description={t('settings.directUnpackDesc')} checked={!!s.directUnpack} onchange={set('directUnpack')} disabled={!s.extractEnabled} />
+          <div class="patterns" class:disabled={!s.extractEnabled}>
+            <div class="p-head">
+              <div>
+                <div class="p-title">{t('settings.passwords')}</div>
+                <div class="p-desc">{t('settings.passwordsDesc')}</div>
+              </div>
+            </div>
+            <ChipList items={s.extraPasswords ?? []} onchange={(v) => saveSettings({ extraPasswords: v })} placeholder={t('settings.addPassword')} removeLabel={t('common.remove')} />
+          </div>
+          <SettingRow icon="alert-triangle" label={t('settings.unwanted')} description={t('settings.unwantedDesc')} keywords="exe scr lnk">
+            <Select value={s.unwantedAction ?? 'warn'} options={UNWANTED_ACTIONS} onchange={set('unwantedAction')} label={t('settings.unwanted')} />
+          </SettingRow>
+          <div class="patterns" class:disabled={(s.unwantedAction ?? 'warn') === 'off'}>
+            <div class="p-head">
+              <div>
+                <div class="p-title">{t('settings.unwantedList')}</div>
+                <div class="p-desc">{t('settings.unwantedListDesc')}</div>
+              </div>
+              <button class="btn ghost sm" onclick={() => saveSettings({ unwantedExtensions: DEFAULT_UNWANTED })}><Icon name="refresh" size={13} /> {t('settings.restore')}</button>
+            </div>
+            <ChipList items={s.unwantedExtensions ?? []} normalize={ext} onchange={(v) => saveSettings({ unwantedExtensions: v })} placeholder={t('settings.addExtension')} removeLabel={t('common.remove')} />
+          </div>
           {#if !isWindows && !isAndroid}
             {#each tools as tl (tl.tool)}
               <SettingRow label={tl.tool === 'par2' ? t('web.par2Path') : t('web.sevenZipPath')} description={tl.found ? t('web.toolFound', { path: tl.path }) : t('web.toolMissing', { path: tl.path })}>
@@ -495,6 +527,10 @@
               onchange={(e) => { const v = Math.max(0, parseFloat(String(e.target.value).replace(',', '.')) || 0); saveSettings({ speedLimitKbps: Math.round(v * 1024) }); invoke('set_speed_limit', { kbps: Math.round(v * 1024) }); }} />
             <span class="unit">MB/s</span>
           </SettingRow>
+          <SettingRow icon="search" label={t('settings.precheck')} description={t('settings.precheckDesc')} keywords="STAT" checked={!!s.precheck} onchange={set('precheck')} />
+          <SettingRow icon="layers" label={t('settings.duplicates')} description={t('settings.duplicatesDesc')}>
+            <Select value={s.duplicateAction ?? 'warn'} options={DUP_ACTIONS} onchange={set('duplicateAction')} label={t('settings.duplicates')} />
+          </SettingRow>
           <SettingRow label={t('settings.retries')} description={t('settings.retriesDesc')}>
             <input class="input small" type="number" min="0" max="10" value={s.maxRetries} onchange={num('maxRetries', 0, 10)} />
           </SettingRow>
@@ -508,6 +544,15 @@
           <SettingRow icon="server" label={t('settings.nntpServers')} description={t('settings.nntpServersDesc')}>
             <button class="btn sm" onclick={() => (ui.view = 'servers')}>{t('settings.manage')} <Icon name="chevron-right" size={14} /></button>
           </SettingRow>
+        </div>
+      </section>
+      {/if}
+
+      {#if show('schedule')}
+      <section id="sec-schedule" class:hit={secHit('schedule')}>
+        <h2><Icon name="clock" size={18} /> {t('settings.section.schedule')}</h2>
+        <div class="card group">
+          <Schedule />
         </div>
       </section>
       {/if}

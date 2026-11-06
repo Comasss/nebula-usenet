@@ -88,6 +88,9 @@ pub enum Command {
         /// Add it paused.
         #[arg(long)]
         paused: bool,
+        /// Add it even if it looks like a duplicate.
+        #[arg(long)]
+        force: bool,
     },
     /// Show the queue.
     Queue,

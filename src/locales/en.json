@@ -291,7 +291,9 @@
     "serverTitle": "Downloads only from this server",
     "stepUpload": "Upload",
     "stepRemote": "On {provider}",
-    "stepFetch": "Download"
+    "stepFetch": "Download",
+    "checking": "Checking",
+    "checkingDetail": "Checking that the articles exist · {pct}%"
   },
   "logs": {
     "all": "All",
@@ -392,7 +394,18 @@
     "ssl": "Encrypted connection (SSL/TLS)",
     "test": "Test connection",
     "username": "Username",
-    "verifyCert": "Verify certificate"
+    "verifyCert": "Verify certificate",
+    "quota": "Download quota",
+    "quotaPlaceholder": "No quota",
+    "quotaPeriod": "Resets",
+    "quotaPeriods": {
+      "day": "every day",
+      "week": "every week",
+      "month": "every month",
+      "never": "never"
+    },
+    "quotaResetDay": "Day of the month",
+    "quotaResetWeekday": "Day of the week"
   },
   "servers": {
     "add": "Add server",
@@ -430,12 +443,16 @@
       "down": "Offline",
       "idle": "Connected",
       "ready": "Ready",
-      "warn": "Errors"
+      "warn": "Errors",
+      "quota": "Quota used up"
     },
     "subtitle": "Your Usenet providers. Backup servers are only used when the primary is missing an article.",
     "testing": "Testing connection…",
     "tip": "Servers with the same priority share the work. If an article isn't on the primary, backup servers are checked in order.",
-    "updated": "Server updated"
+    "updated": "Server updated",
+    "quotaSub": "{size} {period} quota",
+    "quotaUsed": "Quota: {used} of {total}",
+    "quotaReset": "Reset"
   },
   "settings": {
     "abortHopeless": "Cancel hopeless downloads",
@@ -545,7 +562,8 @@
       "transfer": "Move to another device",
       "remote": "Remote control",
       "finish": "On finish",
-      "categories": "Categories"
+      "categories": "Categories",
+      "schedule": "Scheduler"
     },
     "speedLimitDesc": "In MB/s. 0 = no limit.",
     "startMinimized": "Start minimized to tray",
@@ -561,7 +579,35 @@
     "haptics": "Vibrate on touch",
     "hapticsDesc": "A short vibration confirms what you tap and what you press and hold.",
     "searchPlaceholder": "Search settings…",
-    "noResults": "No settings match “{q}”"
+    "noResults": "No settings match “{q}”",
+    "deobfuscate": "Deobfuscate file names",
+    "deobfuscateDesc": "Restores the real names from the PAR2 and, if the main file still has a random name, gives it the download's name.",
+    "directUnpack": "Extract while downloading",
+    "directUnpackDesc": "Each archive is extracted as soon as it's complete, without waiting for the rest. Multi-archive packs finish sooner, but it uses more disk and CPU while downloading.",
+    "passwords": "Fallback passwords",
+    "passwordsDesc": "If an archive is protected and the download's password doesn't open it, these are tried in order.",
+    "addPassword": "Add password…",
+    "unwanted": "Unwanted files",
+    "unwantedDesc": "What to do if the download contains executables or other files from the list (in the NZB or after extracting).",
+    "unwantedAction": {
+      "off": "Do nothing",
+      "warn": "Warn",
+      "skip": "Discard them",
+      "fail": "Reject the download"
+    },
+    "unwantedList": "Unwanted extensions",
+    "unwantedListDesc": "Without the dot: exe, scr, lnk…",
+    "addExtension": "Add extension…",
+    "precheck": "Check before downloading",
+    "precheckDesc": "Asks the server about every article (STAT) before downloading anything and cancels if more is missing than the PAR2 can repair. It takes a moment to start, but doesn't waste data on impossible downloads.",
+    "duplicates": "Duplicate downloads",
+    "duplicatesDesc": "If it's already queued or downloaded (same name or same NZB).",
+    "duplicateAction": {
+      "off": "Add anyway",
+      "warn": "Add and warn",
+      "pause": "Add paused",
+      "skip": "Don't add"
+    }
   },
   "sidebar": {
     "activeConns": {
@@ -802,7 +848,8 @@
       "rss": "Automatic downloads with rules",
       "finish": "Alerts, scripts and shutdown",
       "categories": "tv, movies… with their folder and options",
-      "server": "Username, password and session"
+      "server": "Username, password and session",
+      "schedule": "Pauses and speed by time of day"
     }
   },
   "update": {
@@ -1208,5 +1255,17 @@
     "toolFound": "Using {path}. Leave it empty to find it automatically.",
     "toolMissing": "Not found ({path}). Install it or say where it is: without it downloads aren't repaired or extracted.",
     "notFound": "Not found"
+  },
+  "sched": {
+    "pause": "Pause the queue",
+    "resume": "Resume the queue",
+    "speed": "Speed limit",
+    "enabled": "Enabled",
+    "time": "Time",
+    "days": "Days",
+    "action": "Action",
+    "empty": "No tasks yet. For example: pause at 8:00 on weekdays and resume at 18:00.",
+    "add": "Add task",
+    "hint": "Local time of the machine running Nebula. With no days selected, every day."
   }
 }

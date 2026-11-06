@@ -10,7 +10,10 @@ const EXIT_USAGE: i32 = 2;
 pub async fn run(cli: &Cli, c: Client) -> Res {
     let json = cli.json;
     match &cli.command {
-        Command::Add { sources, cat, priority, via, name, paused } => add(&c, json, sources, cat, priority, via, name, *paused).await,
+        Command::Add { sources, cat, priority, via, name, paused, force } => {
+            FORCE.store(*force, std::sync::atomic::Ordering::Relaxed);
+            add(&c, json, sources, cat, priority, via, name, *paused).await
+        }
         Command::Queue => queue(&c, json).await,
         Command::History { limit, failed } => history(&c, json, *limit, *failed).await,
         Command::Pause { id } => pause(&c, json, id.as_deref(), true).await,
@@ -34,6 +37,9 @@ fn done(json: bool, v: Value) {
 // ---- add ----
 
 #[allow(clippy::too_many_arguments)]
+/// `nebula add --force`: añadir aunque parezca repetido.
+static FORCE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
 async fn add(c: &Client, json: bool, sources: &[String], cat: &Option<String>, priority: &Option<String>, via: &Option<String>, name: &Option<String>, paused: bool) -> Res {
     let prio = match priority {
         Some(p) => Some(fmt::parse_priority(p).ok_or_else(|| Fail::code(EXIT_USAGE, t!("cli.badPriority", value = p)))?),
@@ -142,6 +148,7 @@ pub async fn add_source(
         "category": cat,
         "priority": prio,
         "newznab": newznab,
+        "force": FORCE.load(std::sync::atomic::Ordering::Relaxed),
     });
     let id = c.invoke("add_job", json!({ "req": req })).await?;
     Ok((id.as_str().unwrap_or_default().to_string(), name))

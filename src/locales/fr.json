@@ -291,7 +291,9 @@
     "serverTitle": "Téléchargé uniquement depuis ce serveur",
     "stepUpload": "Envoi",
     "stepRemote": "Sur {provider}",
-    "stepFetch": "Téléchargement"
+    "stepFetch": "Téléchargement",
+    "checking": "Vérification",
+    "checkingDetail": "Vérification de la présence des articles · {pct} %"
   },
   "logs": {
     "all": "Tout",
@@ -392,7 +394,18 @@
     "ssl": "Connexion chiffrée (SSL/TLS)",
     "test": "Tester la connexion",
     "username": "Nom d'utilisateur",
-    "verifyCert": "Vérifier le certificat"
+    "verifyCert": "Vérifier le certificat",
+    "quota": "Quota de téléchargement",
+    "quotaPlaceholder": "Pas de quota",
+    "quotaPeriod": "Réinitialisation",
+    "quotaPeriods": {
+      "day": "chaque jour",
+      "week": "chaque semaine",
+      "month": "chaque mois",
+      "never": "jamais"
+    },
+    "quotaResetDay": "Jour du mois",
+    "quotaResetWeekday": "Jour de la semaine"
   },
   "servers": {
     "add": "Ajouter un serveur",
@@ -430,12 +443,16 @@
       "down": "Hors ligne",
       "idle": "Connecté",
       "ready": "Prêt",
-      "warn": "Erreurs"
+      "warn": "Erreurs",
+      "quota": "Quota épuisé"
     },
     "subtitle": "Vos fournisseurs Usenet. Les serveurs de secours ne sont utilisés que lorsqu'un article manque sur le principal.",
     "testing": "Test de la connexion…",
     "tip": "Les serveurs de même priorité se partagent le travail. Si un article est absent du principal, il est cherché dans les serveurs de secours, dans l'ordre.",
-    "updated": "Serveur mis à jour"
+    "updated": "Serveur mis à jour",
+    "quotaSub": "quota {size} {period}",
+    "quotaUsed": "Quota : {used} sur {total}",
+    "quotaReset": "Remettre à zéro"
   },
   "settings": {
     "abortHopeless": "Annuler les téléchargements irrécupérables",
@@ -545,7 +562,8 @@
       "transfer": "Transférer vers un autre appareil",
       "remote": "Contrôle à distance",
       "finish": "À la fin",
-      "categories": "Catégories"
+      "categories": "Catégories",
+      "schedule": "Planificateur"
     },
     "speedLimitDesc": "En MB/s. 0 = illimitée.",
     "startMinimized": "Démarrer réduit dans la zone de notification",
@@ -561,7 +579,35 @@
     "haptics": "Vibrer au toucher",
     "hapticsDesc": "Une courte vibration confirme ce que vous touchez et ce que vous maintenez appuyé.",
     "searchPlaceholder": "Rechercher dans les réglages…",
-    "noResults": "Aucun réglage ne correspond à « {q} »"
+    "noResults": "Aucun réglage ne correspond à « {q} »",
+    "deobfuscate": "Désobfusquer les noms",
+    "deobfuscateDesc": "Retrouve les vrais noms grâce au PAR2 et, si le fichier principal garde un nom aléatoire, lui donne le nom du téléchargement.",
+    "directUnpack": "Extraire pendant le téléchargement",
+    "directUnpackDesc": "Chaque archive est extraite dès qu'elle est complète, sans attendre le reste. Les packs de plusieurs archives finissent plus tôt, mais le disque et le processeur travaillent davantage pendant le téléchargement.",
+    "passwords": "Mots de passe de secours",
+    "passwordsDesc": "Si une archive est protégée et que le mot de passe du téléchargement ne l'ouvre pas, ceux-ci sont essayés dans l'ordre.",
+    "addPassword": "Ajouter un mot de passe…",
+    "unwanted": "Fichiers indésirables",
+    "unwantedDesc": "Que faire si le téléchargement contient des exécutables ou d'autres fichiers de la liste (dans le NZB ou après extraction).",
+    "unwantedAction": {
+      "off": "Ne rien faire",
+      "warn": "Avertir",
+      "skip": "Les écarter",
+      "fail": "Refuser le téléchargement"
+    },
+    "unwantedList": "Extensions indésirables",
+    "unwantedListDesc": "Sans le point : exe, scr, lnk…",
+    "addExtension": "Ajouter une extension…",
+    "precheck": "Vérifier avant de télécharger",
+    "precheckDesc": "Interroge le serveur sur chaque article (STAT) avant de télécharger quoi que ce soit et annule s'il manque plus que ce que le PAR2 peut réparer. Le démarrage est un peu plus lent, mais aucune donnée n'est gaspillée pour un téléchargement impossible.",
+    "duplicates": "Téléchargements en double",
+    "duplicatesDesc": "S'il est déjà en file ou téléchargé (même nom ou même NZB).",
+    "duplicateAction": {
+      "off": "Ajouter quand même",
+      "warn": "Ajouter et avertir",
+      "pause": "Ajouter en pause",
+      "skip": "Ne pas ajouter"
+    }
   },
   "sidebar": {
     "activeConns": {
@@ -802,7 +848,8 @@
       "rss": "Téléchargement automatique par règles",
       "finish": "Alertes, scripts et extinction",
       "categories": "tv, movies… avec leur dossier et leurs options",
-      "server": "Identifiant, mot de passe et session"
+      "server": "Identifiant, mot de passe et session",
+      "schedule": "Pauses et vitesse selon l'heure"
     }
   },
   "update": {
@@ -1208,5 +1255,17 @@
     "toolFound": "Utilise {path}. Laissez vide pour le trouver automatiquement.",
     "toolMissing": "Introuvable ({path}). Installez-le ou indiquez son emplacement : sans lui, les téléchargements ne sont ni réparés ni extraits.",
     "notFound": "Introuvable"
+  },
+  "sched": {
+    "pause": "Mettre la file en pause",
+    "resume": "Reprendre la file",
+    "speed": "Limite de vitesse",
+    "enabled": "Active",
+    "time": "Heure",
+    "days": "Jours",
+    "action": "Action",
+    "empty": "Aucune tâche. Par exemple : mettre en pause à 8:00 du lundi au vendredi et reprendre à 18:00.",
+    "add": "Ajouter une tâche",
+    "hint": "Heure locale de la machine qui exécute Nebula. Sans jour coché, tous les jours."
   }
 }

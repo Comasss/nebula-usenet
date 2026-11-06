@@ -291,7 +291,9 @@
     "serverTitle": "Lädt nur von diesem Server",
     "stepUpload": "Upload",
     "stepRemote": "Bei {provider}",
-    "stepFetch": "Download"
+    "stepFetch": "Download",
+    "checking": "Prüfen",
+    "checkingDetail": "Prüfe, ob die Artikel vorhanden sind · {pct} %"
   },
   "logs": {
     "all": "Alle",
@@ -392,7 +394,18 @@
     "ssl": "Verschlüsselte Verbindung (SSL/TLS)",
     "test": "Verbindung testen",
     "username": "Benutzername",
-    "verifyCert": "Zertifikat prüfen"
+    "verifyCert": "Zertifikat prüfen",
+    "quota": "Download-Kontingent",
+    "quotaPlaceholder": "Kein Kontingent",
+    "quotaPeriod": "Zurücksetzen",
+    "quotaPeriods": {
+      "day": "täglich",
+      "week": "wöchentlich",
+      "month": "monatlich",
+      "never": "nie"
+    },
+    "quotaResetDay": "Tag im Monat",
+    "quotaResetWeekday": "Wochentag"
   },
   "servers": {
     "add": "Server hinzufügen",
@@ -430,12 +443,16 @@
       "down": "Keine Verbindung",
       "idle": "Verbunden",
       "ready": "Bereit",
-      "warn": "Mit Fehlern"
+      "warn": "Mit Fehlern",
+      "quota": "Kontingent aufgebraucht"
     },
     "subtitle": "Deine Usenet-Anbieter. Backup-Server werden nur verwendet, wenn dem primären Server ein Artikel fehlt.",
     "testing": "Verbindung wird getestet …",
     "tip": "Server mit gleicher Priorität teilen sich die Arbeit. Fehlt ein Artikel auf dem primären Server, wird er der Reihe nach auf den Backup-Servern gesucht.",
-    "updated": "Server aktualisiert"
+    "updated": "Server aktualisiert",
+    "quotaSub": "Kontingent {size} {period}",
+    "quotaUsed": "Kontingent: {used} von {total}",
+    "quotaReset": "Zurücksetzen"
   },
   "settings": {
     "abortHopeless": "Aussichtslose Downloads abbrechen",
@@ -545,7 +562,8 @@
       "transfer": "Auf anderes Gerät übertragen",
       "remote": "Fernsteuerung",
       "finish": "Nach Abschluss",
-      "categories": "Kategorien"
+      "categories": "Kategorien",
+      "schedule": "Zeitplan"
     },
     "speedLimitDesc": "In MB/s. 0 = kein Limit.",
     "startMinimized": "Minimiert im Infobereich starten",
@@ -561,7 +579,35 @@
     "haptics": "Vibration beim Tippen",
     "hapticsDesc": "Eine kurze Vibration bestätigt Tippen und langes Drücken.",
     "searchPlaceholder": "Einstellungen durchsuchen…",
-    "noResults": "Keine Einstellung passt zu „{q}“"
+    "noResults": "Keine Einstellung passt zu „{q}“",
+    "deobfuscate": "Dateinamen entschleiern",
+    "deobfuscateDesc": "Stellt die echten Namen aus dem PAR2 wieder her und gibt der Hauptdatei den Namen des Downloads, falls sie noch einen zufälligen Namen hat.",
+    "directUnpack": "Während des Downloads entpacken",
+    "directUnpackDesc": "Jedes Archiv wird entpackt, sobald es vollständig ist, ohne auf den Rest zu warten. Pakete mit mehreren Archiven sind früher fertig, aber Festplatte und CPU arbeiten während des Downloads mehr.",
+    "passwords": "Ersatzpasswörter",
+    "passwordsDesc": "Wenn ein Archiv geschützt ist und das Passwort des Downloads es nicht öffnet, werden diese der Reihe nach probiert.",
+    "addPassword": "Passwort hinzufügen…",
+    "unwanted": "Unerwünschte Dateien",
+    "unwantedDesc": "Was passieren soll, wenn der Download ausführbare Dateien oder andere Dateien der Liste enthält (im NZB oder nach dem Entpacken).",
+    "unwantedAction": {
+      "off": "Nichts tun",
+      "warn": "Warnen",
+      "skip": "Verwerfen",
+      "fail": "Download ablehnen"
+    },
+    "unwantedList": "Unerwünschte Endungen",
+    "unwantedListDesc": "Ohne Punkt: exe, scr, lnk…",
+    "addExtension": "Endung hinzufügen…",
+    "precheck": "Vor dem Download prüfen",
+    "precheckDesc": "Fragt den Server vor dem Download nach jedem Artikel (STAT) und bricht ab, wenn mehr fehlt, als PAR2 reparieren kann. Der Start dauert etwas, aber es werden keine Daten für unmögliche Downloads verschwendet.",
+    "duplicates": "Doppelte Downloads",
+    "duplicatesDesc": "Wenn es schon in der Warteschlange oder heruntergeladen ist (gleicher Name oder gleiches NZB).",
+    "duplicateAction": {
+      "off": "Trotzdem hinzufügen",
+      "warn": "Hinzufügen und warnen",
+      "pause": "Pausiert hinzufügen",
+      "skip": "Nicht hinzufügen"
+    }
   },
   "sidebar": {
     "activeConns": {
@@ -802,7 +848,8 @@
       "rss": "Automatische Downloads mit Regeln",
       "finish": "Benachrichtigungen, Skripte, Herunterfahren",
       "categories": "tv, movies… mit Ordner und Optionen",
-      "server": "Benutzername, Passwort und Sitzung"
+      "server": "Benutzername, Passwort und Sitzung",
+      "schedule": "Pausen und Tempo nach Uhrzeit"
     }
   },
   "update": {
@@ -1208,5 +1255,17 @@
     "toolFound": "Verwendet {path}. Leer lassen, um es automatisch zu suchen.",
     "toolMissing": "Nicht gefunden ({path}). Installiere es oder gib den Pfad an: ohne es werden Downloads weder repariert noch entpackt.",
     "notFound": "Nicht gefunden"
+  },
+  "sched": {
+    "pause": "Warteschlange pausieren",
+    "resume": "Warteschlange fortsetzen",
+    "speed": "Geschwindigkeitslimit",
+    "enabled": "Aktiv",
+    "time": "Uhrzeit",
+    "days": "Tage",
+    "action": "Aktion",
+    "empty": "Noch keine Aufgaben. Zum Beispiel: werktags um 8:00 pausieren und um 18:00 fortsetzen.",
+    "add": "Aufgabe hinzufügen",
+    "hint": "Ortszeit des Geräts, auf dem Nebula läuft. Ohne markierte Tage: jeden Tag."
   }
 }

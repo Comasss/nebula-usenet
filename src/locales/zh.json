@@ -283,7 +283,9 @@
     "serverTitle": "仅从此服务器下载",
     "stepUpload": "上传",
     "stepRemote": "在 {provider}",
-    "stepFetch": "下载"
+    "stepFetch": "下载",
+    "checking": "检查中",
+    "checkingDetail": "正在检查文章是否存在 · {pct}%"
   },
   "logs": {
     "all": "全部",
@@ -378,7 +380,18 @@
     "ssl": "加密连接（SSL/TLS）",
     "test": "测试连接",
     "username": "用户名",
-    "verifyCert": "验证证书"
+    "verifyCert": "验证证书",
+    "quota": "下载配额",
+    "quotaPlaceholder": "无配额",
+    "quotaPeriod": "重置周期",
+    "quotaPeriods": {
+      "day": "每天",
+      "week": "每周",
+      "month": "每月",
+      "never": "从不"
+    },
+    "quotaResetDay": "每月日期",
+    "quotaResetWeekday": "星期几"
   },
   "servers": {
     "add": "添加服务器",
@@ -412,12 +425,16 @@
       "down": "无连接",
       "idle": "已连接",
       "ready": "就绪",
-      "warn": "有错误"
+      "warn": "有错误",
+      "quota": "配额已用完"
     },
     "subtitle": "你的 Usenet 服务商。备用服务器仅在主服务器缺少文章时使用。",
     "testing": "正在测试连接…",
     "tip": "优先级相同的服务器会分担工作。如果主服务器上没有某篇文章，将按顺序在备用服务器中查找。",
-    "updated": "已更新服务器"
+    "updated": "已更新服务器",
+    "quotaSub": "配额 {size}（{period}）",
+    "quotaUsed": "配额：{used} / {total}",
+    "quotaReset": "清零"
   },
   "settings": {
     "abortHopeless": "取消无法完成的下载",
@@ -527,7 +544,8 @@
       "transfer": "迁移到其他设备",
       "remote": "远程控制",
       "finish": "完成后",
-      "categories": "分类"
+      "categories": "分类",
+      "schedule": "计划任务"
     },
     "speedLimitDesc": "单位为 MB/s。0 = 不限速。",
     "startMinimized": "启动时最小化到托盘",
@@ -543,7 +561,35 @@
     "haptics": "触摸振动",
     "hapticsDesc": "轻触或长按时以短暂振动确认。",
     "searchPlaceholder": "搜索设置…",
-    "noResults": "没有与“{q}”匹配的设置"
+    "noResults": "没有与“{q}”匹配的设置",
+    "deobfuscate": "还原混淆文件名",
+    "deobfuscateDesc": "通过 PAR2 恢复真实文件名；如果主文件名仍是随机的，则改为下载的名称。",
+    "directUnpack": "边下载边解压",
+    "directUnpackDesc": "每个压缩包一完成就解压，不必等待其余部分。多压缩包的合集会更早完成，但下载时会占用更多磁盘和 CPU。",
+    "passwords": "备用密码",
+    "passwordsDesc": "如果压缩包受保护且下载自带的密码无法打开，将依次尝试这些密码。",
+    "addPassword": "添加密码…",
+    "unwanted": "不需要的文件",
+    "unwantedDesc": "当下载包含可执行文件或列表中的其他文件时（NZB 内或解压后）的处理方式。",
+    "unwantedAction": {
+      "off": "不处理",
+      "warn": "提醒",
+      "skip": "丢弃这些文件",
+      "fail": "拒绝该下载"
+    },
+    "unwantedList": "不需要的扩展名",
+    "unwantedListDesc": "不带点：exe、scr、lnk…",
+    "addExtension": "添加扩展名…",
+    "precheck": "下载前检查",
+    "precheckDesc": "下载前向服务器逐一查询每篇文章（STAT），若缺失量超过 PAR2 可修复的范围则取消。开始时稍慢，但不会在无法完成的下载上浪费流量。",
+    "duplicates": "重复下载",
+    "duplicatesDesc": "如果已在队列中或已下载（名称相同或 NZB 相同）。",
+    "duplicateAction": {
+      "off": "照常添加",
+      "warn": "添加并提醒",
+      "pause": "添加并暂停",
+      "skip": "不添加"
+    }
   },
   "sidebar": {
     "activeConns": {
@@ -781,7 +827,8 @@
       "rss": "按规则自动下载",
       "finish": "通知、脚本和关机",
       "categories": "tv、movies…及其文件夹和选项",
-      "server": "用户名、密码和会话"
+      "server": "用户名、密码和会话",
+      "schedule": "按时间暂停和限速"
     }
   },
   "update": {
@@ -1187,5 +1234,17 @@
     "toolFound": "正在使用 {path}。留空则自动查找。",
     "toolMissing": "未找到({path})。请安装或指定位置:缺少它将无法修复或解压下载。",
     "notFound": "未找到"
+  },
+  "sched": {
+    "pause": "暂停队列",
+    "resume": "恢复队列",
+    "speed": "速度限制",
+    "enabled": "启用",
+    "time": "时间",
+    "days": "日期",
+    "action": "操作",
+    "empty": "暂无任务。例如：工作日 8:00 暂停，18:00 恢复。",
+    "add": "添加任务",
+    "hint": "按运行 Nebula 的设备本地时间。未选日期即每天。"
   }
 }
