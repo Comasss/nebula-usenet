@@ -1,10 +1,11 @@
 # How Nebula is put together
 
-Nebula is a Cargo workspace with the engine on one side and the programs that host it on the other. The engine doesn't know whether it runs inside the Windows app, the Android app or (later) a server: it asks the host for what depends on the platform and announces every change on an event bus.
+Nebula is a Cargo workspace with the engine on one side and the programs that host it on the other. The engine doesn't know whether it runs inside the Windows app, the Android app or the server: it asks the host for what depends on the platform and announces every change on an event bus.
 
 ```
 crates/nebula-core   the engine, without Tauri
 src-tauri            the Windows and Android app (Tauri) on top of nebula-core
+crates/nebula-server the headless server (axum): the interface in the browser and the APIs
 src                  the interface (Svelte), shared by every host
 ```
 
@@ -21,8 +22,8 @@ It depends on tokio, reqwest and the like, never on Tauri; CI checks that `cargo
 | `bus.rs` | The event bus (below). |
 | `platform.rs` | The `Platform` trait (below) and `Headless`, the host with no interface. |
 | `rt.rs` | `rt::spawn`: launches a task on the host's tokio runtime (`rt::set_handle`) or on one of its own if there is none. |
-| `secrets.rs` | How passwords and API keys are stored in `config.json`: DPAPI on Windows, base64 on Android (the file lives in the app's private folder). |
-| `tools.rs` | Where par2 and 7-Zip are: bundled in the `tools` folder on Windows, inside the APK on Android, and the system ones (`par2`, `7zz`/`7z`) found in `PATH` elsewhere. |
+| `secrets.rs` | How passwords and API keys are stored in `config.json`: DPAPI on Windows, base64 on Android (the file lives in the app's private folder), ChaCha20-Poly1305 elsewhere with the key in `<data>/secret.key` (600). |
+| `tools.rs` | Where par2 and 7-Zip are: bundled in the `tools` folder on Windows, inside the APK on Android, and elsewhere the paths in the settings (`par2Path`, `sevenZipPath`) or the system ones (`par2`, `7zz`/`7z`/`7za`) found in `PATH`. |
 | `sys.rs` | Free disk space on each system. |
 
 Code that only exists on one system stays in the same file behind `#[cfg(windows)]`, `#[cfg(unix)]` or `#[cfg(target_os = "android")]`.
@@ -76,10 +77,23 @@ What the engine needs from its host and depends on the system goes through the `
 
 The package is still called `nebula`, so the executable is still `nebula.exe` and the Android library `libnebula_lib.so`.
 
+## The server (crates/nebula-server)
+
+A binary with axum on top of nebula-core, with `Headless` as its platform. See [SERVER.md](SERVER.md) for how to use it.
+
+| File | What it is |
+|---|---|
+| `main.rs` | Options (clap), the data folder, starting the engine, and stopping cleanly on SIGTERM/Ctrl+C. |
+| `auth.rs` | The web user: argon2 hash and HMAC-signed session cookies in `auth.json`. |
+| `rpc.rs` | `POST /api/v1/invoke/<command>`: the app's command names mapped to the same engine and facade calls. |
+| `http.rs` | The routes: sign in, commands, events over WebSocket and SSE, the Newznab/SABnzbd APIs (`api::handle_http`, the same handler as the app's API port) and the interface embedded with rust-embed. |
+
 ## The interface
 
-Components talk to the engine only through `src/lib/transport.js`: `invoke(command, args)` and `listen(event, handler)`. Inside the app it's Tauri's IPC. Keeping it in one place lets the same interface talk to the engine another way, over HTTP and WebSocket from a browser, without touching the components.
+Components talk to the engine only through `src/lib/transport.js`: `invoke(command, args)` and `listen(event, handler)`. Inside the app it's Tauri's IPC; in a browser (nebula-server) it's `fetch` to `/api/v1/invoke/…` and one shared WebSocket for the events, which reconnects by itself and then sends a `reconnected` event so the interface reloads the queue and the settings.
+
+`src/lib/platform.js` says where the interface runs (`isDesktopApp`, `isAndroid`, `isServer`, `isMobile`), and components use it to hide what doesn't apply: window controls, tray, clipboard, updater and opening files exist only in the app; the phone layout is used on Android and in a narrow browser.
 
 ## Data
 
-Splitting the engine out of the app didn't change any file: `config.json`, `queue.json`, `history.json` and the rest are read and written exactly as before, in the same folder (`%APPDATA%\Nebula` on Windows, the app's private folder on Android, or `NEBULA_DATA_DIR`).
+Splitting the engine out of the app didn't change any file: `config.json`, `queue.json`, `history.json` and the rest are read and written exactly as before, in the same folder (`%APPDATA%\Nebula` on Windows, the app's private folder on Android, or `NEBULA_DATA_DIR`). nebula-server uses the same files in its own data folder, plus `auth.json` and, outside Windows, `secret.key`.
