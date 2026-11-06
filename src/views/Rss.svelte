@@ -2,9 +2,8 @@
   // Descarga automática por RSS: reglas, feeds y registro de capturas. En el escritorio es una
   // pestaña de Indexadores; en Android, una página de Ajustes.
   import { t, tn } from '../lib/i18n.svelte.js';
-  import { invoke } from '@tauri-apps/api/core';
-  import { listen } from '@tauri-apps/api/event';
-  import { onMount } from 'svelte';
+  import { invoke, listen } from '../lib/transport.js';
+    import { onMount } from 'svelte';
   import { fly, fade } from 'svelte/transition';
   import Icon from '../components/Icon.svelte';
   import Modal from '../components/Modal.svelte';

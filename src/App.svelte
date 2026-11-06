@@ -24,7 +24,7 @@
   import { initUpdater } from './lib/updater.svelte.js';
   import { installRipples } from './lib/feedback.js';
   import Icon from './components/Icon.svelte';
-  import { invoke } from '@tauri-apps/api/core';
+  import { invoke } from './lib/transport.js';
   import { isAndroid } from './lib/platform.js';
   import { onBackButtonPress } from '@tauri-apps/api/app';
   import Downloads from './views/Downloads.svelte';

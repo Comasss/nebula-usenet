@@ -118,7 +118,7 @@ From then on the phone reaches the PC wherever you are, as long as Tailscale is 
 
   Each download goes through three stages: sending the NZB, downloading on the service (its progress and speed are shown) and downloading to the PC (8 connections and 32 MB chunks by default, resumable after closing Nebula). Afterwards it is verified/extracted by the usual post-processing if needed and, optionally, removed from the service. When adding an NZB, if TorBox already has it cached it is marked as instant (⚡).
 - Scripts on finish receive `NEBULA_NAME`, `NEBULA_STATUS` (`completed`, `failed` or `queueEmpty`), `NEBULA_PATH`, `NEBULA_SIZE` (bytes), `NEBULA_ERROR` and `NEBULA_STAGE` (the stage that failed, empty otherwise) as environment variables, plus `NEBULA_EVENT`. `.ps1` files run through PowerShell; past the time limit the process is stopped. The generic webhook receives the same data as JSON (`event`, `name`, `status`, `path`, `size`, `durationSecs`, `avgSpeed`, `via`, `error`, `stage`, `completed`, `failed`, `title`, `message`).
-- Translations: UI strings live in `src/locales/<code>.json` and engine strings in `src-tauri/locales/<code>.json` (`es` is the original). To add a language, create both files and add it to `LANGUAGES` in `src/lib/i18n.svelte.js` and to `LOCALES` in `src-tauri/src/i18n.rs`; `cargo test` checks that every translation has the same keys and variables.
+- Translations: UI strings live in `src/locales/<code>.json` and engine strings in `crates/nebula-core/locales/<code>.json` (`es` is the original). To add a language, create both files and add it to `LANGUAGES` in `src/lib/i18n.svelte.js` and to `LOCALES` in `crates/nebula-core/src/i18n.rs`; `cargo test` checks that every translation has the same keys and variables.
 - Data: `%APPDATA%\Nebula` (settings, queue, history, statistics, logs). Server passwords are encrypted with DPAPI.
   The `NEBULA_DATA_DIR` environment variable lets you use another folder (portable mode or testing).
 
@@ -135,14 +135,14 @@ Nebula checks the latest [Release](../../releases) on GitHub when it opens and e
 
 `.github/workflows/build.yml` builds Nebula on `windows-latest` (and the Android APK on `ubuntu-latest`) on every push and pull request:
 
-- Runs the engine tests (`cargo test`) and builds the interface.
+- Runs the tests of the whole workspace (`cargo test --workspace`), checks that `nebula-core` builds without Tauri and builds the interface.
 - Produces the installer and the portable exe and uploads them as a run artifact (**Actions** tab → the run → **Artifacts**).
 - On every push to `main` it publishes the **Release** `vX.Y.Z` for the version in `src-tauri/tauri.conf.json` with `Nebula_<version>_x64-setup.exe`, `Nebula_<version>_x64_portable.exe`, `Nebula_<version>_android_arm64.apk` and `SHA256SUMS.txt`:
   - If that version has no Release yet, it creates it.
   - If this same workflow created it, it updates it with the new build (and moves the tag to the latest commit).
   - If you published it by hand, it leaves it alone.
 
-  To publish a new version, bump the number in `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml` and `package.json` (for example, `npm version 1.3.0 --no-git-tag-version` for `package.json`). You can also publish by pushing a `vX.Y.Z` tag with that same version.
+  To publish a new version, bump the number in `src-tauri/tauri.conf.json`, `Cargo.toml` (the workspace's `version`) and `package.json` (for example, `npm version 1.3.0 --no-git-tag-version` for `package.json`). You can also publish by pushing a `vX.Y.Z` tag with that same version.
 
 ## Building
 
@@ -153,7 +153,7 @@ npm install
 npx tauri build
 ```
 
-This produces `src-tauri/target/release/nebula.exe` (portable) and the installer in `src-tauri/target/release/bundle/nsis/`.
+This produces `target/release/nebula.exe` (portable) and the installer in `target/release/bundle/nsis/`.
 
 Development with hot reload:
 
@@ -169,10 +169,16 @@ src-tauri/gen/android/build-native-tools.sh   # 7-Zip and par2 for arm64, only o
 npx tauri android build --apk --target aarch64
 ```
 
+The code is a Cargo workspace: `crates/nebula-core` is the engine (queue, NNTP, post-processing, APIs, RSS…) and doesn't depend on Tauri; `src-tauri` is the Windows and Android app on top of it. How they fit together is in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). The engine alone builds on any platform:
+
+```bash
+cargo build -p nebula-core
+```
+
 ## Testing
 
 ```bash
-cd src-tauri && cargo test
+cargo test --workspace
 ```
 
 `dev/mock_nntp.py` is a mock NNTP server that publishes a folder as yEnc articles, generates the `.nzb` and serves it over HTTP. It can simulate missing articles (`--missing`), a connection limit (`--max-conns`) and speed (`--kbps`):
@@ -186,7 +192,7 @@ python dev/mock_nntp.py --src folder_to_publish --nzb test.nzb --missing 3 --kbp
 The mock API also exposes a Newznab indexer at `http://127.0.0.1:8119/api` (API key `--indexer-key`, `testkey` by default). Test the indexer client against it or against a real one:
 
 ```bash
-cd src-tauri && NEBULA_NEWZNAB=http://127.0.0.1:8119 NEBULA_NEWZNAB_KEY=testkey cargo test live_indexer -- --ignored --nocapture
+NEBULA_NEWZNAB=http://127.0.0.1:8119 NEBULA_NEWZNAB_KEY=testkey cargo test -p nebula-core live_indexer -- --ignored --nocapture
 ```
 
 The same server mocks the **TorBox** and **Premiumize** APIs (they receive the NZB, "download" for `--debrid-secs` seconds and serve the files from `--src` with ranges). To test debrid downloads without an account, start Nebula pointed at them and use the API key `--debrid-key` (`debridkey` by default); `--debrid-kbps` limits the speed and `--debrid-fail` simulates a failed download:
@@ -203,7 +209,7 @@ npx tauri dev
 To check the connection to a real server without credentials (TCP + TLS + greeting):
 
 ```bash
-cd src-tauri && NEBULA_PROBE=news.server.com:563:ssl cargo test probe -- --ignored --nocapture
+NEBULA_PROBE=news.server.com:563:ssl cargo test -p nebula-core probe -- --ignored --nocapture
 ```
 
 ## License

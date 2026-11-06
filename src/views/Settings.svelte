@@ -1,8 +1,7 @@
 <script>
   import { t, th, LANGUAGES, setLanguage, systemLanguage, locale } from '../lib/i18n.svelte.js';
-  import { invoke } from '@tauri-apps/api/core';
-  import { listen } from '@tauri-apps/api/event';
-  import { pickFolder, isAndroid } from '../lib/platform.js';
+  import { invoke, listen } from '../lib/transport.js';
+    import { pickFolder, isAndroid } from '../lib/platform.js';
   import { fly, scale } from 'svelte/transition';
   import Icon from '../components/Icon.svelte';
   import SettingRow from '../components/SettingRow.svelte';

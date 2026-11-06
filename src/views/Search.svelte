@@ -1,7 +1,7 @@
 <script>
   import Select from '../components/Select.svelte';
   import { t, tn, num } from '../lib/i18n.svelte.js';
-  import { invoke } from '@tauri-apps/api/core';
+  import { invoke } from '../lib/transport.js';
   import { pickFolder } from '../lib/platform.js';
   import { fly, fade, scale, slide } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';

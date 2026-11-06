@@ -1,8 +1,7 @@
 // Actualizaciones de Nebula: comprueba las Releases de GitHub al abrir la app (y cada pocas horas),
 // avisa con una ventana que se puede cerrar u omitir y deja actualizar también desde Configuración.
 // La descarga y la instalación las hace el motor (src-tauri/src/updater.rs, en la app).
-import { invoke } from '@tauri-apps/api/core';
-import { listen } from '@tauri-apps/api/event';
+import { invoke, listen } from './transport.js';
 import { t } from './i18n.svelte.js';
 import { isAndroid } from './platform.js';
 import { ui, saveSettings, toast } from './state.svelte.js';

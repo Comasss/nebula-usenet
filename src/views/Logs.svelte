@@ -1,7 +1,7 @@
 <script>
   import { isAndroid } from '../lib/platform.js';
   import { t } from '../lib/i18n.svelte.js';
-  import { invoke } from '@tauri-apps/api/core';
+  import { invoke } from '../lib/transport.js';
   import { tick } from 'svelte';
   import Icon from '../components/Icon.svelte';
   import { ui, toast } from '../lib/state.svelte.js';

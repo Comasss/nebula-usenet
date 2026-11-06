@@ -2,7 +2,7 @@
   // Ajustes › Al terminar: acciones que se ejecutan cuando una descarga termina, falla o la cola
   // se queda vacía. En Android solo hay notificaciones; la energía solo existe en Windows.
   import { t } from '../lib/i18n.svelte.js';
-  import { invoke } from '@tauri-apps/api/core';
+  import { invoke } from '../lib/transport.js';
   import { open } from '@tauri-apps/plugin-dialog';
   import { scale } from 'svelte/transition';
   import { getContext } from 'svelte';

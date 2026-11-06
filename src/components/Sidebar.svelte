@@ -1,6 +1,6 @@
 <script>
   import { t, tn } from '../lib/i18n.svelte.js';
-  import { invoke } from '@tauri-apps/api/core';
+  import { invoke } from '../lib/transport.js';
   import Icon from './Icon.svelte';
   import SpeedGraph from './SpeedGraph.svelte';
   import { ui } from '../lib/state.svelte.js';

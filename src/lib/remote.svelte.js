@@ -2,8 +2,7 @@
 // - En el PC: avisos de emparejamiento (código de 6 dígitos que hay que aprobar).
 // - En Android: buscar PCs, emparejarlos y controlarlos. Mientras se controla un PC, Descargas,
 //   Historial y Estadísticas enseñan las suyas y las acciones de esas pantallas van a él.
-import { invoke } from '@tauri-apps/api/core';
-import { listen } from '@tauri-apps/api/event';
+import { invoke, listen } from './transport.js';
 import { t } from './i18n.svelte.js';
 import { ui, ask, closeDialog, toast, queueAdd } from './state.svelte.js';
 import { actionSheet, haptic } from './feedback.js';

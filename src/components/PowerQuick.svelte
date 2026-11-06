@@ -1,8 +1,7 @@
 <script>
   // Panel de velocidad (Windows): apagar, suspender o hibernar al vaciarse la cola, solo esta vez.
-  import { invoke } from '@tauri-apps/api/core';
-  import { listen } from '@tauri-apps/api/event';
-  import { onMount } from 'svelte';
+  import { invoke, listen } from '../lib/transport.js';
+    import { onMount } from 'svelte';
   import { scale } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
   import { t } from '../lib/i18n.svelte.js';

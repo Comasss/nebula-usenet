@@ -1,5 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
-import { listen } from '@tauri-apps/api/event';
+import { invoke, listen } from './transport.js';
 import { t, setLanguage } from './i18n.svelte.js';
 import { haptic } from './feedback.js';
 import { remote, call, initRemote, routeShared } from './remote.svelte.js';

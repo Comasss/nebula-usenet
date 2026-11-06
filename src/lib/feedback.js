@@ -1,6 +1,6 @@
 // Respuesta a lo que hace el usuario: vibración breve (Android), ondas al tocar, pulsación larga
 // y la animación de "enviado a Descargas".
-import { invoke } from '@tauri-apps/api/core';
+import { invoke } from './transport.js';
 import { isAndroid } from './platform.js';
 import { ui } from './state.svelte.js';
 

@@ -1,6 +1,6 @@
 // Diferencias entre el escritorio (Windows) y el móvil (Android). La interfaz es la misma; aquí
 // se resuelve lo que en Android funciona de otra forma: elegir carpetas y archivos.
-import { invoke } from '@tauri-apps/api/core';
+import { invoke } from './transport.js';
 import { open } from '@tauri-apps/plugin-dialog';
 import { ui } from './state.svelte.js';
 

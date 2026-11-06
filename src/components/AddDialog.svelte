@@ -1,6 +1,6 @@
 <script>
   import { t, tn, th } from '../lib/i18n.svelte.js';
-  import { invoke } from '@tauri-apps/api/core';
+  import { invoke } from '../lib/transport.js';
   import { pickFolder } from '../lib/platform.js';
   import { slide, fade } from 'svelte/transition';
   import Modal from './Modal.svelte';

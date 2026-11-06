@@ -1,6 +1,6 @@
 <script>
   import { t, tn } from '../lib/i18n.svelte.js';
-  import { invoke } from '@tauri-apps/api/core';
+  import { invoke } from '../lib/transport.js';
   import { remote, call } from '../lib/remote.svelte.js';
   import { fly, fade, slide } from 'svelte/transition';
   import { flip } from 'svelte/animate';
