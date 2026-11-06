@@ -29,9 +29,30 @@ pub struct PpCtx {
     /// par2 y 7-Zip que se van a usar.
     pub par2: PathBuf,
     pub sevenzip: PathBuf,
+    /// Desofuscar nombres.
+    pub deobfuscate: bool,
+    /// Contraseñas que se prueban después de la del trabajo.
+    pub extra_passwords: Vec<String>,
+    /// Extensiones no deseadas y qué hacer con ellas ("off", "warn", "skip", "fail").
+    pub unwanted: Vec<String>,
+    pub unwanted_action: String,
 }
 
-struct PpError {
+impl PpCtx {
+    /// Contraseñas a probar, en orden: la del trabajo y luego las de reserva (sin repetir).
+    fn passwords(&self) -> Vec<String> {
+        let mut v: Vec<String> = Vec::new();
+        for p in self.password.iter().chain(self.extra_passwords.iter()) {
+            let p = p.trim();
+            if !p.is_empty() && !v.iter().any(|x| x == p) {
+                v.push(p.to_string());
+            }
+        }
+        v
+    }
+}
+
+pub(crate) struct PpError {
     stage: &'static str,
     msg: String,
     retry_extract: bool,
@@ -75,6 +96,14 @@ async fn pipeline(engine: &Arc<Engine>, c: &PpCtx) -> Result<Flow, PpError> {
         ));
     }
 
+    // 0) Nombres reales de los archivos ofuscados, con el PAR2.
+    if c.deobfuscate && !c.pp_only {
+        let dir = c.work_dir.clone();
+        let _ = tokio::task::spawn_blocking(move || crate::deobfuscate::rename_from_par2(&dir)).await;
+    }
+    let before_final: HashSet<PathBuf> = crate::deobfuscate::walk(&c.final_dir).into_iter().map(|(p, _)| p).collect();
+    let mut repaired = false;
+
     // 1) Verificación y reparación PAR2
     if c.options.par2 && !c.pp_only {
         match find_main_par2(&c.work_dir) {
@@ -117,6 +146,7 @@ async fn pipeline(engine: &Arc<Engine>, c: &PpCtx) -> Result<Flow, PpError> {
                         Par2Result::Repaired | Par2Result::AllCorrect => {
                             linfo!("{}", t!("log.pp.repaired", name = c.name));
                             cleanup_par2_backups(&c.work_dir, &before);
+                            repaired = true;
                         }
                         Par2Result::NeedBlocks(n, bs) => {
                             if engine.unhold_vols(&c.id, n, bs) {
@@ -124,7 +154,7 @@ async fn pipeline(engine: &Arc<Engine>, c: &PpCtx) -> Result<Flow, PpError> {
                             }
                             return Err(PpError::new("repair", t!("pp.needBlocks", n = n)));
                         }
-                        Par2Result::RepairPossible => {}
+                        Par2Result::RepairPossible => repaired = true,
                         Par2Result::Failed(msg) => return Err(PpError::new("repair", t!("pp.repairFailed", error = msg))),
                     }
                 }
@@ -134,17 +164,31 @@ async fn pipeline(engine: &Arc<Engine>, c: &PpCtx) -> Result<Flow, PpError> {
         warnings.push(t!("pp.missingPar2Off", n = c.failed_segs));
     }
 
-    // 2) Extracción
+    // 2) Extracción (después de la que pueda estar en marcha durante la descarga)
+    while engine.is_unpacking(&c.id) && !c.cancel.is() {
+        tokio::time::sleep(Duration::from_millis(300)).await;
+    }
+    let (unpacked, unpacked_out) = engine.unpacked(&c.id);
     let mut extracted: HashSet<PathBuf> = HashSet::new();
     if c.options.extract {
-        let sets = find_archives(&c.work_dir);
+        // Lo extraído durante la descarga vale si el PAR2 no tuvo que reparar nada.
+        let sets: Vec<ArchiveSet> = find_archives(&c.work_dir)
+            .into_iter()
+            .filter(|set| {
+                let done = !repaired && unpacked.contains(&util::file_name(&set.first));
+                if done {
+                    extracted.extend(set.members.iter().cloned());
+                }
+                !done
+            })
+            .collect();
         let total: u64 = sets.iter().map(|s| s.size).sum::<u64>().max(1);
         let mut before = 0u64;
         let n = sets.len();
         for (i, set) in sets.iter().enumerate() {
             let detail = if n > 1 { format!("{} ({}/{})", set.label, i + 1, n) } else { set.label.clone() };
             engine.set_stage(&c.id, JobStatus::Extracting, "extracting", before as f64 / total as f64 * 100.0, 0, &detail);
-            extract_set(engine, c, set, before, total, &detail).await?;
+            extract_set(engine, c, set, Some((before, total, &detail))).await?;
             linfo!("{}", t!("log.pp.extracted", name = c.name, file = set.label));
             before += set.size;
             extracted.extend(set.members.iter().cloned());
@@ -204,7 +248,66 @@ async fn pipeline(engine: &Arc<Engine>, c: &PpCtx) -> Result<Flow, PpError> {
     .await
     .map_err(|_| PpError::new("move", t!("pp.moveInternal")))??;
 
+    // 4) Lo que ha quedado en el destino: extensiones no deseadas y nombres ofuscados.
+    let new_files: Vec<(PathBuf, u64)> = crate::deobfuscate::walk(&c.final_dir)
+        .into_iter()
+        .filter(|(p, _)| !before_final.contains(p) || unpacked_out.contains(p))
+        .collect();
+    if c.unwanted_action != "off" {
+        let bad: Vec<&PathBuf> = new_files.iter().map(|(p, _)| p).filter(|p| util::has_extension(&util::file_name(p), &c.unwanted)).collect();
+        if !bad.is_empty() {
+            let list = bad.iter().take(3).map(|p| util::file_name(p)).collect::<Vec<_>>().join(", ");
+            lwarn!("{}", t!("log.unwanted", name = c.name, files = list));
+            match c.unwanted_action.as_str() {
+                "fail" => return Err(PpError::new("extract", t!("err.unwanted", files = list))),
+                "skip" => {
+                    for p in &bad {
+                        let _ = std::fs::remove_file(p);
+                    }
+                    warnings.push(t!("warn.unwantedDeleted", files = list));
+                }
+                _ => warnings.push(t!("warn.unwanted", files = list)),
+            }
+        }
+    }
+    if c.deobfuscate {
+        let files: Vec<(PathBuf, u64)> = new_files.into_iter().filter(|(p, _)| p.exists()).collect();
+        if let Some(n) = crate::deobfuscate::rename_main(&files, &c.name) {
+            linfo!("{}", t!("log.pp.renamedMain", name = c.name, file = n));
+        }
+    }
+
     Ok(Flow::Done(if warnings.is_empty() { None } else { Some(warnings.join(" ")) }))
+}
+
+// ---------------------------------------------------------------------------
+// Extracción durante la descarga (direct unpack)
+// ---------------------------------------------------------------------------
+
+/// Extrae, uno tras otro, los archivos comprimidos del trabajo que ya están completos y sin
+/// errores mientras se descarga el resto. Lo que falle se vuelve a intentar al final, en el
+/// post-procesado normal.
+pub async fn direct_unpack(engine: Arc<Engine>, id: String) {
+    let Ok(_permit) = engine.unpack_sem.acquire().await else { return };
+    while let Some((set, ctx)) = engine.next_unpack(&id) {
+        let first = util::file_name(&set.first);
+        linfo!("{}", t!("log.pp.directStart", name = ctx.name, file = set.label));
+        let before: HashSet<PathBuf> = crate::deobfuscate::walk(&ctx.final_dir).into_iter().map(|(p, _)| p).collect();
+        let res = extract_set(&engine, &ctx, &set, None).await;
+        let out: Vec<PathBuf> = crate::deobfuscate::walk(&ctx.final_dir).into_iter().map(|(p, _)| p).filter(|p| !before.contains(p)).collect();
+        match res {
+            Ok(()) => {
+                linfo!("{}", t!("log.pp.directDone", file = set.label));
+                engine.unpack_done(&id, first, out);
+            }
+            Err(e) => {
+                if ctx.cancel.is() {
+                    break;
+                }
+                lwarn!("{}", t!("log.pp.directFailed", file = set.label, error = e.msg));
+            }
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -529,6 +632,11 @@ static RE_ZIP: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(?i)^(.*)\.zip$")
 static RE_SPLIT: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(?i)^(.*)\.(\d{3})$").unwrap());
 
 pub fn find_archives(dir: &Path) -> Vec<ArchiveSet> {
+    group_archives(util::list_files(dir))
+}
+
+/// Agrupa archivos (ruta, tamaño) en conjuntos de volúmenes con su primer volumen.
+pub fn group_archives(files: Vec<(PathBuf, u64)>) -> Vec<ArchiveSet> {
     struct Acc {
         first: Option<(u32, PathBuf)>,
         members: Vec<PathBuf>,
@@ -546,7 +654,7 @@ pub fn find_archives(dir: &Path) -> Vec<ArchiveSet> {
             }
         }
     };
-    for (p, size) in util::list_files(dir) {
+    for (p, size) in files {
         let name = util::file_name(&p);
         if name.to_ascii_lowercase().ends_with(".par2") {
             continue;
@@ -582,11 +690,38 @@ pub fn find_archives(dir: &Path) -> Vec<ArchiveSet> {
 
 static RE_PCT: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^(\d{1,3})%").unwrap());
 
-async fn extract_set(engine: &Arc<Engine>, c: &PpCtx, set: &ArchiveSet, before: u64, total: u64, detail: &str) -> Result<(), PpError> {
+/// Extrae un archivo con la contraseña del trabajo (o sin ninguna) y, si 7-Zip dice que no es
+/// la buena, con las de reserva una tras otra. `progress`: (bytes extraídos antes, total, detalle)
+/// para mostrar el avance; sin él (extracción durante la descarga) no se toca el estado del trabajo.
+pub(crate) async fn extract_set(engine: &Arc<Engine>, c: &PpCtx, set: &ArchiveSet, progress: Option<(u64, u64, &str)>) -> Result<(), PpError> {
+    let first = c.password.clone().filter(|p| !p.trim().is_empty());
+    let mut tries: Vec<Option<String>> = vec![first.clone()];
+    tries.extend(c.passwords().into_iter().filter(|p| Some(p) != first.as_ref()).map(Some));
+    let mut last = None;
+    for (i, pw) in tries.iter().enumerate() {
+        match extract_once(engine, c, set, pw.as_deref(), progress).await {
+            Ok(()) => {
+                if i > 0 {
+                    linfo!("{}", t!("log.pp.passwordFound", file = set.label));
+                }
+                return Ok(());
+            }
+            Err((e, wrong_pw)) => {
+                if !wrong_pw || c.cancel.is() {
+                    return Err(e);
+                }
+                last = Some(e);
+            }
+        }
+    }
+    Err(last.unwrap_or_else(|| PpError::new("extract", t!("pp.wrongPassword"))))
+}
+
+async fn extract_once(engine: &Arc<Engine>, c: &PpCtx, set: &ArchiveSet, pw: Option<&str>, progress: Option<(u64, u64, &str)>) -> Result<(), (PpError, bool)> {
     std::fs::create_dir_all(&c.final_dir)
-        .map_err(|e| PpError::new("extract", t!("pp.createDest", error = e)))?;
+        .map_err(|e| (PpError::new("extract", t!("pp.createDest", error = e)), false))?;
     let exe = c.sevenzip.clone();
-    let pw = c.password.clone().filter(|p| !p.is_empty()).unwrap_or_else(|| "nebula-no-password".into());
+    let pw = pw.unwrap_or("nebula-no-password");
     let mut cmd = command(&exe);
     cmd.current_dir(&c.work_dir)
         .arg("x")
@@ -601,7 +736,7 @@ async fn extract_set(engine: &Arc<Engine>, c: &PpCtx, set: &ArchiveSet, before: 
         .arg(&set.first);
     let mut child = cmd
         .spawn()
-        .map_err(|e| PpError::new("extract", t!("pp.7zSpawn", error = e)))?;
+        .map_err(|e| (PpError::new("extract", t!("pp.7zSpawn", error = e)), false))?;
     attach_child(&child);
 
     let mut speedo = Speedo::new(2500);
@@ -609,6 +744,7 @@ async fn extract_set(engine: &Arc<Engine>, c: &PpCtx, set: &ArchiveSet, before: 
     let mut text = String::new();
     let res = pump(&mut child, &c.cancel, |piece| {
         if let Some(cap) = RE_PCT.captures(piece) {
+            let Some((before, total, detail)) = progress else { return };
             let pct: f64 = cap[1].parse().unwrap_or(0.0);
             let done = before + (pct / 100.0 * set.size as f64) as u64;
             speedo.push(done);
@@ -624,7 +760,7 @@ async fn extract_set(engine: &Arc<Engine>, c: &PpCtx, set: &ArchiveSet, before: 
     .await;
     let (code, stderr) = match res {
         Ok(r) => r,
-        Err(e) => return Err(PpError::new("extract", t!("pp.7zInterrupted", error = e))),
+        Err(e) => return Err((PpError::new("extract", t!("pp.7zInterrupted", error = e)), false)),
     };
     if code == 0 {
         return Ok(());
@@ -635,8 +771,9 @@ async fn extract_set(engine: &Arc<Engine>, c: &PpCtx, set: &ArchiveSet, before: 
         return Ok(());
     }
     let lower = all.to_ascii_lowercase();
-    let msg = if lower.contains("wrong password") || lower.contains("encrypted archive") {
-        if c.password.as_deref().map_or(true, |p| p.is_empty()) {
+    let wrong_pw = lower.contains("wrong password") || lower.contains("encrypted archive");
+    let msg = if wrong_pw {
+        if pw == "nebula-no-password" {
             t!("pp.passwordNeeded")
         } else {
             t!("pp.wrongPassword")
@@ -654,7 +791,7 @@ async fn extract_set(engine: &Arc<Engine>, c: &PpCtx, set: &ArchiveSet, before: 
         format!("{}{}", t!("pp.extractError", file = set.label, code = code), if last.is_empty() { String::new() } else { format!(": {}", last) })
     };
     lerror!("7-Zip ({}): {}", set.label, all.trim().lines().rev().take(4).collect::<Vec<_>>().join(" | "));
-    Err(PpError { stage: "extract", msg, retry_extract: true })
+    Err((PpError { stage: "extract", msg, retry_extract: true }, wrong_pw))
 }
 
 #[cfg(test)]

@@ -29,6 +29,8 @@ uuid = { version = "1", features = ["v4"] }
 dirs = "6"
 flate2 = "1"
 md-5 = "0.10"
+# Hora local para el programador y el reinicio de las cuotas.
+chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
 # Pasar los ajustes a otro dispositivo: QR y cifrado del envío por la red local.
 qrcode = { version = "0.14", default-features = false, features = ["svg"] }
 chacha20poly1305 = "0.10"

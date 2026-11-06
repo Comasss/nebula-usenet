@@ -80,6 +80,19 @@ fn decode_text(data: &[u8]) -> String {
     }
 }
 
+/// Huella de un NZB: los primeros artículos de cada archivo, ordenados. Dos NZB del mismo
+/// release (aunque vengan de indexadores distintos o con otro nombre) dan la misma.
+pub fn fingerprint(nzb: &Nzb) -> String {
+    use sha2::{Digest, Sha256};
+    let mut ids: Vec<&str> = nzb.files.iter().filter_map(|f| f.segments.first().map(|s| s.message_id.as_str())).collect();
+    if ids.is_empty() {
+        return String::new();
+    }
+    ids.sort_unstable();
+    let h = Sha256::digest(ids.join("\n").as_bytes());
+    h.iter().take(12).map(|b| format!("{:02x}", b)).collect()
+}
+
 pub fn maybe_gunzip(data: &[u8]) -> Result<Vec<u8>, String> {
     if data.len() > 2 && data[0] == 0x1f && data[1] == 0x8b {
         let mut out = Vec::new();

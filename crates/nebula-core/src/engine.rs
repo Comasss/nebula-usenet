@@ -174,6 +174,27 @@ pub struct Job {
     pub category: String,
     /// Prioridad: -1 baja, 0 normal, 1 alta, 2 forzar (descarga aunque la cola esté en pausa).
     pub priority: i32,
+    /// Precomprobación, huella y extracción directa.
+    pub x: JobExt,
+}
+
+#[derive(Default)]
+pub struct JobExt {
+    /// Precomprobación STAT en curso: aún no se descarga nada de este trabajo.
+    pub checking: bool,
+    pub check: VecDeque<(u32, u32)>,
+    pub check_retry: Vec<(u32, u32)>,
+    pub check_total: u32,
+    pub check_done: u32,
+    /// Huella del NZB para reconocer descargas repetidas.
+    pub fingerprint: String,
+    /// Archivos comprimidos ya extraídos mientras se descargaba (su primer volumen).
+    pub unpacked: Vec<String>,
+    /// Hay una extracción directa en marcha.
+    pub unpacking: bool,
+    /// Archivos comprimidos ya intentados (bien o mal) y lo que dejaron los que salieron bien.
+    pub unpack_tried: Vec<String>,
+    pub unpack_out: Vec<PathBuf>,
 }
 
 impl Job {
@@ -269,6 +290,7 @@ impl Job {
             pp_only: false,
             debrid: None,
             live_bytes: 0,
+            x: JobExt::default(),
         };
         job.recount();
         job
@@ -321,6 +343,7 @@ impl Job {
             pp_only: false,
             debrid: Some(debrid),
             live_bytes: 0,
+            x: JobExt::default(),
         };
         job.recount();
         job
@@ -355,6 +378,7 @@ impl Job {
             pp_only: true,
             debrid: None,
             live_bytes: 0,
+            x: JobExt::default(),
             stats_id: e.stats_id.clone().unwrap_or_else(|| e.id.clone()),
             server_use: Vec::new(),
             indexer: e.indexer.clone(),
@@ -432,7 +456,52 @@ impl Job {
             seg: si,
             message_id: seg.message_id.clone(),
             bytes: seg.bytes,
+            stat: false,
         }
+    }
+
+    fn take_check(&mut self, fi: u32, si: u32) -> Task {
+        let mut t = self.take(fi, si);
+        // Solo se pregunta si existe: el segmento sigue pendiente de descargar.
+        self.files[fi as usize].segments[si as usize].state = SegState::Pending;
+        t.stat = true;
+        t
+    }
+
+    /// Prepara la precomprobación de todos los artículos que faltan por descargar.
+    pub(crate) fn start_check(&mut self) {
+        self.x.check.clear();
+        self.x.check_retry.clear();
+        for (fi, f) in self.files.iter().enumerate() {
+            if f.held {
+                continue;
+            }
+            for (si, s) in f.segments.iter().enumerate() {
+                if s.state == SegState::Pending {
+                    self.x.check.push_back((fi as u32, si as u32));
+                }
+            }
+        }
+        self.x.check_total = self.x.check.len() as u32;
+        self.x.check_done = 0;
+        self.x.checking = self.x.check_total > 0;
+    }
+
+    /// Un archivo comprimido con todos sus volúmenes descargados sin errores y aún sin extraer.
+    fn ready_archive(&self) -> Option<crate::postproc::ArchiveSet> {
+        let files: Vec<(PathBuf, u64)> = self.files.iter().filter(|f| !f.is_par2).map(|f| (self.work_dir.join(&f.name), f.bytes)).collect();
+        let ok = |p: &PathBuf| {
+            let n = util::file_name(p);
+            self.files.iter().any(|f| f.name == n && f.complete && f.failed_segs == 0 && !f.held)
+        };
+        crate::postproc::group_archives(files)
+            .into_iter()
+            .find(|s| !self.x.unpack_tried.contains(&util::file_name(&s.first)) && s.members.iter().all(ok))
+    }
+
+    /// La precomprobación ya sabe que el trabajo no se podrá completar.
+    fn check_hopeless(&self) -> bool {
+        self.failed_bytes > 0 && (self.is_hopeless() || !self.files.iter().any(|f| f.is_par2))
     }
 
     pub(crate) fn seg_done(&mut self, fi: usize, bytes: u64) {
@@ -542,7 +611,7 @@ impl Job {
             eta,
             files: self.files.iter().filter(|f| !f.held).count(),
             files_done: self.files.iter().filter(|f| !f.held && f.complete).count(),
-            held_par2: self.files.iter().filter(|f| f.held).count(),
+            held_par2: self.files.iter().filter(|f| f.held && f.is_par2).count(),
             dest: self.dest_dir.to_string_lossy().to_string(),
             error: self.error.clone(),
             warning,
@@ -552,6 +621,7 @@ impl Job {
             server: self.server_name.clone(),
             category: self.category.clone(),
             priority: self.priority,
+            checking: self.x.checking.then(|| self.x.check_done as f64 / self.x.check_total.max(1) as f64 * 100.0),
         }
     }
 
@@ -570,6 +640,8 @@ pub struct Task {
     pub seg: u32,
     pub message_id: String,
     pub bytes: u64,
+    /// Solo comprobar que existe (STAT), sin descargarlo.
+    pub stat: bool,
 }
 
 pub enum Outcome {
@@ -599,11 +671,14 @@ pub struct ServerRt {
     pub articles_ok: u64,
     pub articles_missing: u64,
     pub bytes: u64,
+    /// Cuota en bytes (0 = sin cuota) y si ya se ha agotado en este periodo.
+    pub quota: u64,
+    pub quota_hit: bool,
 }
 
 impl ServerRt {
     fn available(&self, now: Instant) -> bool {
-        !self.auth_failed && self.down_until.map_or(true, |t| now >= t)
+        !self.auth_failed && !self.quota_hit && self.down_until.map_or(true, |t| now >= t)
     }
 }
 
@@ -638,6 +713,8 @@ pub struct HistoryEntry {
     pub indexer: Option<String>,
     /// Categoría (`*` = Default; las entradas de versiones anteriores cargan así).
     pub category: String,
+    /// Huella del NZB (para reconocer descargas repetidas).
+    pub fingerprint: String,
 }
 
 impl Default for HistoryEntry {
@@ -666,6 +743,7 @@ impl Default for HistoryEntry {
             stats_id: None,
             indexer: None,
             category: crate::categories::default_name(),
+            fingerprint: String::new(),
         }
     }
 }
@@ -706,6 +784,9 @@ pub struct JobView {
     pub server: Option<String>,
     pub category: String,
     pub priority: i32,
+    /// Porcentaje de la precomprobación, mientras se hace.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub checking: Option<f64>,
 }
 
 #[derive(Serialize, Clone, PartialEq)]
@@ -722,6 +803,9 @@ pub struct ServerView {
     pub articles_ok: u64,
     pub articles_missing: u64,
     pub bytes: u64,
+    /// Cuota en bytes (0 = sin cuota) y lo usado en el periodo actual.
+    pub quota: u64,
+    pub quota_used: u64,
 }
 
 #[derive(Serialize, Clone, PartialEq)]
@@ -805,6 +889,9 @@ pub struct AddRequest {
     /// Categorías Newznab del resultado del indexador, para elegir la categoría.
     #[serde(default)]
     pub newznab: Vec<u32>,
+    /// Añadir aunque parezca repetido.
+    #[serde(default)]
+    pub force: bool,
 }
 
 impl AddRequest {
@@ -822,6 +909,7 @@ impl AddRequest {
             category: None,
             priority: None,
             newznab: Vec::new(),
+            force: false,
         }
     }
 }
@@ -875,6 +963,12 @@ struct SavedJob {
     category: String,
     #[serde(default)]
     priority: i32,
+    #[serde(default)]
+    checking: bool,
+    #[serde(default)]
+    fingerprint: String,
+    #[serde(default)]
+    unpacked: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -968,6 +1062,11 @@ pub struct State {
     speed: u64,
     speedo: Speedo,
     last_snapshot: Option<Snapshot>,
+    /// Lo descargado de cada servidor en su periodo de cuota (por id).
+    pub quota: HashMap<String, crate::quota::QuotaUse>,
+    quota_dirty: bool,
+    /// Último minuto (hora local) en que se miró el programador.
+    sched_minute: Option<i64>,
 }
 
 pub struct Engine {
@@ -983,6 +1082,8 @@ pub struct Engine {
     pub rx_bytes: AtomicU64,
     pub limiter: RateLimiter,
     pub pp_sem: Semaphore,
+    /// Extracciones durante la descarga (una a la vez).
+    pub unpack_sem: Semaphore,
     /// Descargas debrid bajando archivos a la vez (una: se termina antes cada trabajo).
     pub debrid_fetch: Semaphore,
     /// Serializa las peticiones de enlaces de descarga debrid.
@@ -1096,12 +1197,16 @@ impl Engine {
                 speed: 0,
                 speedo: Speedo::default(),
                 last_snapshot: None,
+                quota: HashMap::new(),
+                quota_dirty: false,
+                sched_minute: None,
             }),
             work: Notify::new(),
             gen: AtomicU64::new(0),
             rx_bytes: AtomicU64::new(0),
             limiter,
             pp_sem: Semaphore::new(1),
+            unpack_sem: Semaphore::new(1),
             debrid_fetch: Semaphore::new(1),
             debrid_links: tokio::sync::Mutex::new(()),
             dirty: AtomicBool::new(false),
@@ -1116,10 +1221,13 @@ impl Engine {
 
     pub fn start(self: &Arc<Self>) {
         self.load_history();
+        self.st.lock().quota = crate::quota::load(&self.paths);
         let stats = stats::load(&self.paths, &self.st.lock().history);
         *self.stats.lock() = stats;
         *self.indexer_stats.lock() = stats::load_indexer(&self.paths);
         let pp = self.load_queue();
+        self.roll_quotas();
+        self.apply_schedule_state();
         self.restart_workers();
         for id in pp {
             self.start_pp(id);
@@ -1185,9 +1293,15 @@ impl Engine {
                         articles_ok: ok,
                         articles_missing: miss,
                         bytes,
+                        quota: s.quota_bytes(),
+                        quota_hit: false,
                     }
                 })
                 .collect();
+            let st = &mut *st;
+            for r in st.servers.iter_mut() {
+                r.quota_hit = r.quota > 0 && st.quota.get(&r.id).is_some_and(|u| u.used >= r.quota);
+            }
             // Los índices de servidor han podido cambiar: reiniciar los intentos.
             for job in st.jobs.iter_mut() {
                 for f in job.files.iter_mut() {
@@ -1232,6 +1346,28 @@ impl Engine {
                 continue;
             }
             let (higher, top) = if pinned.is_some() { (0, true) } else { (higher, top) };
+            if job.x.checking {
+                let mut i = 0;
+                while i < job.x.check_retry.len() {
+                    let (fi, si) = job.x.check_retry[i];
+                    let seg = &job.files[fi as usize].segments[si as usize];
+                    if seg.state != SegState::Pending {
+                        job.x.check_retry.swap_remove(i);
+                        continue;
+                    }
+                    if seg.tried & bit == 0 && seg.tried & higher == higher {
+                        job.x.check_retry.swap_remove(i);
+                        return Some(job.take_check(fi, si));
+                    }
+                    i += 1;
+                }
+                if top {
+                    if let Some((fi, si)) = job.x.check.pop_front() {
+                        return Some(job.take_check(fi, si));
+                    }
+                }
+                continue;
+            }
             let mut i = 0;
             while i < job.retry.len() {
                 let (fi, si) = job.retry[i];
@@ -1249,7 +1385,13 @@ impl Engine {
             if top {
                 while let Some((fi, si)) = job.fresh.pop_front() {
                     let f = &job.files[fi as usize];
-                    if f.held || f.segments[si as usize].state != SegState::Pending {
+                    let seg = &f.segments[si as usize];
+                    if f.held || seg.state != SegState::Pending {
+                        continue;
+                    }
+                    // La precomprobación ya vio que este servidor no lo tiene: a los de respaldo.
+                    if seg.tried & bit != 0 {
+                        job.retry.push((fi, si));
                         continue;
                     }
                     return Some(job.take(fi, si));
@@ -1260,9 +1402,9 @@ impl Engine {
     }
 
     pub fn complete(self: &Arc<Self>, t: &Task, s: usize, gen: u64, outcome: Outcome) {
-        let (max_retries, abort_hopeless) = {
+        let (max_retries, abort_hopeless, direct_unpack) = {
             let st = self.settings.read();
-            (st.max_retries, st.abort_hopeless)
+            (st.max_retries, st.abort_hopeless, st.direct_unpack)
         };
         let stale = gen != self.gen.load(Ordering::SeqCst);
         let outcome = match outcome {
@@ -1271,6 +1413,8 @@ impl Engine {
         };
         let mut start_pp = None;
         let mut hopeless = None;
+        let mut quota_hit = None;
+        let mut unpack = None;
         {
             let mut guard = self.st.lock();
             let st = &mut *guard;
@@ -1282,6 +1426,15 @@ impl Engine {
                             r.articles_ok += 1;
                             r.bytes += t.bytes;
                             counted = Some(true);
+                            if r.quota > 0 {
+                                let u = st.quota.entry(r.id.clone()).or_insert_with(|| crate::quota::QuotaUse { used: 0, since: util::now_secs() });
+                                u.used += t.bytes;
+                                st.quota_dirty = true;
+                                if u.used >= r.quota && !r.quota_hit {
+                                    r.quota_hit = true;
+                                    quota_hit = Some(r.name.clone());
+                                }
+                            }
                         }
                         Outcome::Missing => {
                             r.articles_missing += 1;
@@ -1329,7 +1482,7 @@ impl Engine {
                 Outcome::Missing => {
                     seg.tried |= bit;
                     seg.attempts = 0;
-                    if seg.tried & avail == avail {
+                    if avail != 0 && seg.tried & avail == avail {
                         Next::Failed
                     } else {
                         Next::Requeue
@@ -1349,19 +1502,24 @@ impl Engine {
                 }
                 Outcome::Returned => Next::Requeue,
             };
+            let was_complete = job.files[fi].complete;
             match next {
                 Next::Done => {
-                    seg.state = SegState::Done;
+                    job.files[fi].segments[si].state = SegState::Done;
                     job.seg_done(fi, t.bytes);
                 }
                 Next::Failed => {
-                    seg.state = SegState::Failed;
+                    job.files[fi].segments[si].state = SegState::Failed;
                     job.seg_failed(fi, t.bytes);
                 }
                 Next::Requeue => {
-                    seg.state = SegState::Pending;
+                    job.files[fi].segments[si].state = SegState::Pending;
                     job.retry.push((t.file, t.seg));
                 }
+            }
+            if !was_complete && job.files[fi].complete && direct_unpack && !job.x.unpacking && job.remaining > 0 && job.options.extract && job.ready_archive().is_some() {
+                job.x.unpacking = true;
+                unpack = Some(job.id.clone());
             }
             if job.status.is_download() {
                 if abort_hopeless && job.is_hopeless() {
@@ -1377,6 +1535,15 @@ impl Engine {
         if matches!(outcome, Outcome::Returned) {
             self.work.notify_one();
         }
+        if let Some(id) = unpack {
+            let e = self.clone();
+            crate::rt::spawn(async move { crate::postproc::direct_unpack(e, id).await });
+        }
+        if let Some(name) = quota_hit {
+            lwarn!("{}", t!("log.quotaReached", name = name));
+            self.toast("info", t!("toast.quotaReached", name = name));
+            self.work.notify_waiters();
+        }
         if let Some(id) = hopeless {
             let msg = t!("err.hopeless");
             lerror!("{}", t!("log.hopeless", id = id));
@@ -1384,6 +1551,203 @@ impl Engine {
         }
         if let Some(id) = start_pp {
             self.start_pp(id);
+        }
+    }
+
+    /// Resultado de un STAT de la precomprobación: `Some(existe)` o `None` si no se pudo preguntar.
+    pub fn complete_check(self: &Arc<Self>, t: &Task, s: usize, gen: u64, found: Option<bool>) {
+        let stale = gen != self.gen.load(Ordering::SeqCst);
+        let found = if stale { None } else { found };
+        let verdict = {
+            let mut guard = self.st.lock();
+            let st = &mut *guard;
+            let avail = avail_mask(&st.servers);
+            if found == Some(false) {
+                if let Some(r) = st.servers.get_mut(s) {
+                    r.articles_missing += 1;
+                }
+            }
+            let Some(job) = st.jobs.iter_mut().find(|j| j.id == t.job_id) else { return };
+            if !job.x.checking {
+                return;
+            }
+            let avail = match pin_index(&st.servers, job) {
+                Some(p) => 1u64 << p,
+                None => avail,
+            };
+            let (fi, si) = (t.file as usize, t.seg as usize);
+            let bit = if s < 64 { 1u64 << s } else { 0 };
+            let seg = &mut job.files[fi].segments[si];
+            match found {
+                Some(true) => job.x.check_done += 1,
+                Some(false) => {
+                    seg.tried |= bit;
+                    if avail != 0 && seg.tried & avail == avail {
+                        seg.state = SegState::Failed;
+                        job.seg_failed(fi, t.bytes);
+                        job.x.check_done += 1;
+                    } else {
+                        job.x.check_retry.push((t.file, t.seg));
+                    }
+                }
+                None => job.x.check_retry.push((t.file, t.seg)),
+            }
+            self.check_verdict(job)
+        };
+        self.dirty.store(true, Ordering::Relaxed);
+        if found.is_none() {
+            self.work.notify_one();
+        }
+        if let Some(v) = verdict {
+            self.after_check(v);
+        }
+    }
+
+    /// ¿Ha terminado (o fracasado ya) la precomprobación de este trabajo?
+    fn check_verdict(&self, job: &mut Job) -> Option<(String, String, bool, u32)> {
+        if job.check_hopeless() {
+            job.x.checking = false;
+            return Some((job.id.clone(), job.name.clone(), false, job.failed_segs));
+        }
+        if job.x.check_done >= job.x.check_total {
+            job.x.checking = false;
+            job.x.check.clear();
+            job.x.check_retry.clear();
+            return Some((job.id.clone(), job.name.clone(), true, job.failed_segs));
+        }
+        None
+    }
+
+    fn after_check(self: &Arc<Self>, (id, name, ok, missing): (String, String, bool, u32)) {
+        if ok {
+            linfo!("{}", t!("log.precheckDone", name = name, n = missing));
+            let pp = {
+                let mut st = self.st.lock();
+                match st.jobs.iter_mut().find(|j| j.id == id) {
+                    Some(job) if job.remaining == 0 && job.status.is_download() => {
+                        job.status = JobStatus::Verifying;
+                        job.post = Some(PostInfo { stage: "waiting".into(), ..Default::default() });
+                        true
+                    }
+                    _ => false,
+                }
+            };
+            if pp {
+                self.start_pp(id);
+            }
+            self.work.notify_waiters();
+        } else {
+            lerror!("{}", t!("log.precheckFailed", name = name, n = missing));
+            self.fail_job(&id, t!("err.precheckFailed", n = missing), "download", false);
+        }
+    }
+
+    /// Devuelve una tarea sin resultado (conexión caída, motor reiniciado…).
+    fn give_back(self: &Arc<Self>, t: &Task, s: usize, gen: u64) {
+        if t.stat {
+            self.complete_check(t, s, gen, None);
+        } else {
+            self.complete(t, s, gen, Outcome::Returned);
+        }
+    }
+
+    /// Reinicia las cuotas cuyo periodo terminó y vuelve a usar esos servidores.
+    fn roll_quotas(&self) {
+        let servers = self.settings.read().servers.clone();
+        let mut st = self.st.lock();
+        let st = &mut *st;
+        let changed = crate::quota::roll(&servers, &mut st.quota);
+        let mut freed = false;
+        for r in st.servers.iter_mut() {
+            let hit = r.quota > 0 && st.quota.get(&r.id).is_some_and(|u| u.used >= r.quota);
+            if r.quota_hit && !hit {
+                linfo!("{}", t!("log.quotaReset", name = r.name));
+                freed = true;
+            }
+            r.quota_hit = hit;
+        }
+        if changed {
+            st.quota_dirty = true;
+        }
+        if freed {
+            self.work.notify_waiters();
+        }
+    }
+
+    fn save_quotas(&self) {
+        let q = {
+            let mut st = self.st.lock();
+            if !st.quota_dirty {
+                return;
+            }
+            st.quota_dirty = false;
+            st.quota.clone()
+        };
+        crate::quota::save(&self.paths, &q);
+    }
+
+    /// Pone a cero lo usado de la cuota de un servidor.
+    pub fn reset_quota(&self, id: &str) {
+        {
+            let mut st = self.st.lock();
+            if let Some(u) = st.quota.get_mut(id) {
+                u.used = 0;
+            }
+            if let Some(r) = st.servers.iter_mut().find(|r| r.id == id) {
+                r.quota_hit = false;
+            }
+            st.quota_dirty = true;
+        }
+        self.save_quotas();
+        self.work.notify_waiters();
+    }
+
+    /// Al arrancar: el estado que dejaron las últimas tareas del programador.
+    fn apply_schedule_state(&self) {
+        let rules = self.settings.read().schedule.clone();
+        if rules.is_empty() {
+            return;
+        }
+        let now = chrono::Local::now().naive_local();
+        let (pause, speed) = crate::schedule::current(&rules, now);
+        if let Some(p) = pause {
+            self.st.lock().paused = p;
+            self.platform.tray_paused(p);
+        }
+        if let Some(kbps) = speed {
+            if kbps != self.settings.read().speed_limit_kbps {
+                let _ = self.set_speed_limit(kbps);
+            }
+        }
+    }
+
+    /// Cada minuto: las tareas del programador que tocan ahora.
+    fn run_schedule(&self) {
+        let now = chrono::Local::now().naive_local();
+        let minute = now.and_utc().timestamp() / 60;
+        {
+            let mut st = self.st.lock();
+            if st.sched_minute == Some(minute) {
+                return;
+            }
+            st.sched_minute = Some(minute);
+        }
+        let rules = self.settings.read().schedule.clone();
+        for r in crate::schedule::due(&rules, now) {
+            match r.action.as_str() {
+                "pause" => {
+                    linfo!("{}", t!("log.schedPause"));
+                    self.set_paused(true);
+                }
+                "resume" => {
+                    linfo!("{}", t!("log.schedResume"));
+                    self.set_paused(false);
+                }
+                _ => {
+                    linfo!("{}", t!("log.schedSpeed", speed = if r.value == 0 { "∞".to_string() } else { format!("{}/s", util::fmt_bytes(r.value * 1024)) }));
+                    let _ = self.set_speed_limit(r.value);
+                }
+            }
         }
     }
 
@@ -1617,6 +1981,19 @@ impl Engine {
         }
     }
 
+    /// Nombre de una descarga igual en la cola o ya completada, si la hay.
+    pub fn find_duplicate(&self, name: &str, fingerprint: &str) -> Option<String> {
+        let key = util::dup_key(name);
+        let same = |n: &str, fp: &str| (!key.is_empty() && util::dup_key(n) == key) || (!fingerprint.is_empty() && fp == fingerprint);
+        let st = self.st.lock();
+        st.jobs
+            .iter()
+            .filter(|j| !j.pp_only)
+            .find(|j| same(&j.name, &j.x.fingerprint))
+            .map(|j| j.name.clone())
+            .or_else(|| st.history.iter().filter(|h| h.status == "completed").find(|h| same(&h.name, &h.fingerprint)).map(|h| h.name.clone()))
+    }
+
     pub fn add_job(self: &Arc<Self>, req: AddRequest) -> Result<String, String> {
         let pending = self
             .st
@@ -1633,12 +2010,44 @@ impl Engine {
             priority: Some(crate::categories::clamp_priority(req.priority.unwrap_or(cat.priority))),
             ..req
         };
+        let name = if req.name.trim().is_empty() { pending.name.clone() } else { util::sanitize_filename(req.name.trim()) };
+        let fingerprint = nzb::fingerprint(&pending.nzb);
+        let (dup_action, unwanted_action, unwanted, precheck) = {
+            let s = self.settings.read();
+            (s.duplicate_action.clone(), s.unwanted_action.clone(), s.unwanted_extensions.clone(), s.precheck)
+        };
+        let mut notes: Vec<String> = Vec::new();
+        let mut force_pause = false;
+        if !req.force && dup_action != "off" {
+            if let Some(other) = self.find_duplicate(&name, &fingerprint) {
+                lwarn!("{}", t!("log.duplicate", name = name, other = other));
+                match dup_action.as_str() {
+                    "skip" => return Err(t!("err.duplicate", name = other)),
+                    "pause" => force_pause = true,
+                    _ => {}
+                }
+                notes.push(t!("warn.duplicate", name = other));
+            }
+        }
+        let bad: Vec<String> = if unwanted_action == "off" {
+            Vec::new()
+        } else {
+            pending.nzb.files.iter().map(|f| f.filename.clone()).filter(|n| util::has_extension(n, &unwanted)).collect()
+        };
+        if !bad.is_empty() {
+            let list = bad.iter().take(3).cloned().collect::<Vec<_>>().join(", ");
+            lwarn!("{}", t!("log.unwanted", name = name, files = list));
+            match unwanted_action.as_str() {
+                "fail" => return Err(t!("err.unwanted", files = list)),
+                "skip" => notes.push(t!("warn.unwantedSkipped", files = list)),
+                _ => notes.push(t!("warn.unwanted", files = list)),
+            }
+        }
         std::fs::create_dir_all(&dest)
             .map_err(|e| t!("err.createDest", path = dest.display(), error = e))?;
         let id = util::new_id();
         let nzb_path = self.paths.nzb.join(format!("{}.nzb", id));
         std::fs::write(&nzb_path, &pending.raw).map_err(|e| t!("err.saveNzb", error = e))?;
-        let name = if req.name.trim().is_empty() { pending.name.clone() } else { util::sanitize_filename(req.name.trim()) };
         let work_dir = self.work_dir_for(&dest, &name, &id);
         let password = req.password.filter(|p| !p.trim().is_empty());
         let options = req.options.clone().unwrap_or_default();
@@ -1660,8 +2069,23 @@ impl Engine {
             job.server = Some(sid);
             job.server_name = Some(sname);
         }
-        if req.paused {
+        if req.paused || force_pause {
             job.status = JobStatus::Paused;
+        }
+        job.x.fingerprint = fingerprint;
+        if !notes.is_empty() {
+            job.warning = Some(notes.join(" "));
+        }
+        if job.debrid.is_none() {
+            if unwanted_action == "skip" && !bad.is_empty() {
+                for f in job.files.iter_mut().filter(|f| bad.contains(&f.name)) {
+                    f.held = true;
+                }
+                job.recount();
+            }
+            if precheck {
+                job.start_check();
+            }
         }
         job.indexer = pending.indexer.clone();
         job.category = cat.category.clone();
@@ -1902,11 +2326,15 @@ impl Engine {
     }
 
     pub fn pp_context(&self, id: &str) -> Option<crate::postproc::PpCtx> {
-        let (par2, sevenzip) = {
+        let (par2, sevenzip, deobfuscate, extra_passwords, unwanted, unwanted_action) = {
             let s = self.settings.read();
             (
                 crate::tools::resolve(&s, &self.paths.tools, crate::tools::Tool::Par2),
                 crate::tools::resolve(&s, &self.paths.tools, crate::tools::Tool::SevenZip),
+                s.deobfuscate,
+                s.extra_passwords.clone(),
+                s.unwanted_extensions.clone(),
+                s.unwanted_action.clone(),
             )
         };
         let st = self.st.lock();
@@ -1924,7 +2352,56 @@ impl Engine {
             cancel: j.cancel.clone(),
             par2,
             sevenzip,
+            deobfuscate,
+            extra_passwords,
+            unwanted,
+            unwanted_action,
         })
+    }
+
+    /// Siguiente archivo comprimido listo para extraer durante la descarga. Si no hay ninguno,
+    /// la extracción directa de este trabajo termina.
+    pub fn next_unpack(&self, id: &str) -> Option<(crate::postproc::ArchiveSet, crate::postproc::PpCtx)> {
+        let set = {
+            let mut st = self.st.lock();
+            let job = st.jobs.iter_mut().find(|j| j.id == id)?;
+            let set = if job.status.is_download() && !job.cancel.is() && job.options.extract { job.ready_archive() } else { None };
+            match &set {
+                Some(s) => job.x.unpack_tried.push(util::file_name(&s.first)),
+                None => job.x.unpacking = false,
+            }
+            set
+        }?;
+        match self.pp_context(id) {
+            Some(ctx) => Some((set, ctx)),
+            None => {
+                self.unpack_stop(id);
+                None
+            }
+        }
+    }
+
+    fn unpack_stop(&self, id: &str) {
+        if let Some(job) = self.st.lock().jobs.iter_mut().find(|j| j.id == id) {
+            job.x.unpacking = false;
+        }
+    }
+
+    pub fn unpack_done(&self, id: &str, first: String, out: Vec<PathBuf>) {
+        if let Some(job) = self.st.lock().jobs.iter_mut().find(|j| j.id == id) {
+            job.x.unpacked.push(first);
+            job.x.unpack_out.extend(out);
+        }
+        self.dirty.store(true, Ordering::Relaxed);
+    }
+
+    pub fn is_unpacking(&self, id: &str) -> bool {
+        self.st.lock().jobs.iter().any(|j| j.id == id && j.x.unpacking)
+    }
+
+    /// Lo extraído durante la descarga: primeros volúmenes y archivos que salieron.
+    pub fn unpacked(&self, id: &str) -> (Vec<String>, Vec<PathBuf>) {
+        self.st.lock().jobs.iter().find(|j| j.id == id).map(|j| (j.x.unpacked.clone(), j.x.unpack_out.clone())).unwrap_or_default()
     }
 
     pub fn set_stage(&self, id: &str, status: JobStatus, stage: &str, percent: f64, speed: u64, detail: &str) {
@@ -1971,6 +2448,7 @@ impl Engine {
             stats_id: Some(job.stats_id.clone()),
             indexer: job.indexer.clone(),
             category: job.category.clone(),
+            fingerprint: job.x.fingerprint.clone(),
         }
     }
 
@@ -2000,7 +2478,10 @@ impl Engine {
             st.jobs.remove(pos)
         };
         let mut entry = Self::history_from(&job, "completed");
-        entry.warning = warning.clone().or(entry.warning);
+        entry.warning = match (entry.warning.take(), warning.clone()) {
+            (Some(a), Some(b)) => Some(format!("{} {}", a, b)),
+            (a, b) => b.or(a),
+        };
         linfo!("{}{}", t!("log.completed", name = job.name), warning.as_ref().map(|w| format!(" ({})", t!("log.warning", detail = w))).unwrap_or_default());
         if self.settings.read().notify_complete {
             self.notify_os(&t!("notify.completed"), &job.name);
@@ -2212,6 +2693,8 @@ impl Engine {
                 let active = r.counters.active.load(Ordering::Relaxed);
                 let state = if r.auth_failed {
                     "auth"
+                } else if r.quota_hit {
+                    "quota"
                 } else if !r.available(now) {
                     "down"
                 } else if r.last_error.is_some() {
@@ -2235,6 +2718,8 @@ impl Engine {
                     articles_ok: r.articles_ok,
                     articles_missing: r.articles_missing,
                     bytes: r.bytes,
+                    quota: r.quota,
+                    quota_used: if r.quota > 0 { st.quota.get(&r.id).map_or(0, |u| u.used) } else { 0 },
                 }
             })
             .collect();
@@ -2259,6 +2744,7 @@ impl Engine {
     /// Falla segmentos que ya han probado todos los servidores disponibles.
     fn sweep(self: &Arc<Self>) {
         let mut to_pp = Vec::new();
+        let mut verdicts = Vec::new();
         {
             let mut guard = self.st.lock();
             let st = &mut *guard;
@@ -2286,6 +2772,28 @@ impl Engine {
                         i += 1;
                     }
                 }
+                if job.x.checking {
+                    let mut i = 0;
+                    while i < job.x.check_retry.len() {
+                        let (fi, si) = job.x.check_retry[i];
+                        let (state, tried, bytes) = {
+                            let s = &job.files[fi as usize].segments[si as usize];
+                            (s.state, s.tried, s.bytes)
+                        };
+                        if state == SegState::Pending && tried & avail == avail {
+                            job.x.check_retry.swap_remove(i);
+                            job.files[fi as usize].segments[si as usize].state = SegState::Failed;
+                            job.seg_failed(fi as usize, bytes);
+                            job.x.check_done += 1;
+                        } else {
+                            i += 1;
+                        }
+                    }
+                    if let Some(v) = self.check_verdict(job) {
+                        verdicts.push(v);
+                    }
+                    continue;
+                }
                 if job.remaining == 0 && job.status.is_download() {
                     job.status = JobStatus::Verifying;
                     to_pp.push(job.id.clone());
@@ -2296,6 +2804,9 @@ impl Engine {
         }
         for id in to_pp {
             self.start_pp(id);
+        }
+        for v in verdicts {
+            self.after_check(v);
         }
     }
 
@@ -2337,6 +2848,11 @@ impl Engine {
             }
             if tick % 20 == 0 {
                 self.save_indexer_stats();
+                self.save_quotas();
+            }
+            if tick % 20 == 1 {
+                self.roll_quotas();
+                self.run_schedule();
             }
         }
     }
@@ -2372,6 +2888,9 @@ impl Engine {
                         server_name: j.server_name.clone(),
                         category: j.category.clone(),
                         priority: j.priority,
+                        checking: j.x.checking,
+                        fingerprint: j.x.fingerprint.clone(),
+                        unpacked: j.x.unpacked.clone(),
                         files: j
                             .files
                             .iter()
@@ -2518,6 +3037,11 @@ impl Engine {
                 }
                 job.recount();
             }
+            job.x.fingerprint = sj.fingerprint.clone();
+            job.x.unpacked = sj.unpacked.clone();
+            if sj.checking && !sj.status.is_pp() {
+                job.start_check();
+            }
             if sj.status.is_pp() || (job.download_done() && sj.status != JobStatus::Paused) {
                 job.status = JobStatus::Verifying;
                 pp.push(job.id.clone());
@@ -2567,6 +3091,7 @@ impl Engine {
         self.save_queue();
         self.save_history();
         self.save_indexer_stats();
+        self.save_quotas();
         linfo!("{}", t!("log.closed"));
     }
 
@@ -2664,7 +3189,7 @@ async fn worker(e: Arc<Engine>, cfg: ServerConfig, sidx: usize, gen: u64, counte
                     e.server_ok(sidx);
                 }
                 Err(err) => {
-                    e.complete(&task, sidx, gen, Outcome::Returned);
+                    e.give_back(&task, sidx, gen);
                     let wait = e.server_error(sidx, gen, &err);
                     // Límite de conexiones del servidor: si otras conexiones funcionan, esta se retira.
                     if matches!(err, NntpError::TooMany(_)) && counters.connected.load(Ordering::Relaxed) > 0 {
@@ -2676,6 +3201,28 @@ async fn worker(e: Arc<Engine>, cfg: ServerConfig, sidx: usize, gen: u64, counte
             }
         }
         let Some(c) = conn.as_mut() else { continue };
+        if task.stat {
+            counters.active.fetch_add(1, Ordering::Relaxed);
+            let res = c.stat(&task.message_id).await;
+            counters.active.fetch_sub(1, Ordering::Relaxed);
+            match res {
+                Ok(found) => e.complete_check(&task, sidx, gen, Some(found)),
+                Err(err) => {
+                    conn = None;
+                    counters.connected.fetch_sub(1, Ordering::Relaxed);
+                    e.complete_check(&task, sidx, gen, None);
+                    let wait = match &err {
+                        NntpError::Timeout | NntpError::Io(_) => Duration::from_millis(500),
+                        _ => e.server_error(sidx, gen, &err),
+                    };
+                    if matches!(err, NntpError::TooMany(_)) && counters.connected.load(Ordering::Relaxed) > 0 {
+                        break;
+                    }
+                    tokio::time::sleep(wait).await;
+                }
+            }
+            continue;
+        }
         dec.reset();
         counters.active.fetch_add(1, Ordering::Relaxed);
         let res = c.body(&task.message_id, &mut dec).await;

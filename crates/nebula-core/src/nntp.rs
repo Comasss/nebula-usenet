@@ -259,6 +259,23 @@ impl NntpConn {
         Ok(raw)
     }
 
+    /// ¿Existe el artículo? (STAT, sin descargarlo).
+    pub async fn stat(&mut self, msgid: &str) -> Result<bool, NntpError> {
+        let cmd = format!("STAT <{}>\r\n", msgid);
+        let (mut code, mut msg) = self.command(&cmd).await?;
+        if code == 480 && !self.user.is_empty() {
+            self.auth().await?;
+            (code, msg) = self.command(&cmd).await?;
+        }
+        match code {
+            223 => Ok(true),
+            430 | 423 | 420 => Ok(false),
+            480 | 481 | 482 => Err(classify_auth(code, msg)),
+            400 | 502 | 503 => Err(if is_too_many(&msg) { NntpError::TooMany(msg) } else { NntpError::Unavailable(msg) }),
+            _ => Err(NntpError::Protocol(format!("{} {}", code, msg))),
+        }
+    }
+
     pub async fn date(&mut self) -> Result<String, NntpError> {
         let (code, msg) = self.command("DATE\r\n").await?;
         if code == 111 {

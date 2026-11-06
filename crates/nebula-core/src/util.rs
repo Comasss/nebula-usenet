@@ -176,6 +176,18 @@ pub fn looks_obfuscated(name: &str) -> bool {
     stem.len() >= 24 && stem.chars().all(|c| c.is_ascii_alphanumeric())
 }
 
+/// Clave para comparar nombres de descargas: minúsculas, solo letras y números.
+pub fn dup_key(name: &str) -> String {
+    name.chars().filter(|c| c.is_alphanumeric()).flat_map(|c| c.to_lowercase()).collect()
+}
+
+/// ¿Termina `name` en alguna de las extensiones (sin punto, da igual mayúsculas)?
+pub fn has_extension(name: &str, exts: &[String]) -> bool {
+    let Some((_, ext)) = name.rsplit_once('.') else { return false };
+    let ext = ext.trim().to_ascii_lowercase();
+    exts.iter().any(|e| e.trim().trim_start_matches('.').eq_ignore_ascii_case(&ext))
+}
+
 /// Borra un directorio con reintentos (Windows puede tardar en liberar handles).
 pub fn remove_dir_retry(dir: &Path) {
     for i in 0..5 {
@@ -258,6 +270,16 @@ mod tests {
         assert!(!looks_obfuscated("movie.part01.rar"));
         assert!(!looks_obfuscated("movie.7z.001"));
         assert!(!looks_obfuscated("x.vol07+08.par2"));
+    }
+
+    #[test]
+    fn dup_and_ext() {
+        assert_eq!(dup_key("Show.S01E01.1080p-GRP"), dup_key("show s01e01 1080p GRP"));
+        let ex = vec!["exe".to_string(), ".LNK".to_string()];
+        assert!(has_extension("setup.EXE", &ex));
+        assert!(has_extension("a.lnk", &ex));
+        assert!(!has_extension("movie.mkv", &ex));
+        assert!(!has_extension("exe", &ex));
     }
 
     #[test]

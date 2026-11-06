@@ -285,6 +285,7 @@ pub fn sab_status(j: &JobView) -> &'static str {
     match j.status {
         JobStatus::Queued => "Queued",
         JobStatus::Paused => "Paused",
+        JobStatus::Downloading if j.checking.is_some() => "Checking",
         JobStatus::Downloading => match j.debrid.as_ref().map(|d| d.phase) {
             Some(DebridPhase::Submit) => "Grabbing",
             _ => "Downloading",
@@ -745,6 +746,7 @@ pub(crate) mod tests {
             server: None,
             category: cat.into(),
             priority: prio,
+            checking: None,
         }
     }
 

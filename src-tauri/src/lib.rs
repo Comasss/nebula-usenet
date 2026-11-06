@@ -326,6 +326,7 @@ pub fn run() {
             commands::set_job_category,
             commands::set_paused,
             commands::set_speed_limit,
+            commands::reset_quota,
             commands::get_history,
             commands::get_stats,
             commands::get_indexer_stats,

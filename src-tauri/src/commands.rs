@@ -114,6 +114,11 @@ pub fn set_speed_limit(e: Eng, kbps: u64) -> Result<(), String> {
 }
 
 #[tauri::command]
+pub fn reset_quota(e: Eng, id: String) {
+    e.reset_quota(&id)
+}
+
+#[tauri::command]
 pub fn get_history(e: Eng) -> Vec<HistoryEntry> {
     e.history()
 }

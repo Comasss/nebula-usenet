@@ -72,6 +72,7 @@ pub async fn call(e: &Arc<Engine>, cmd: &str, a: &Value) -> Result<Value, String
         "set_job_category" => ok(e.set_job_category(&arg::<String>(a, "id")?, &arg::<String>(a, "category")?)),
         "set_paused" => ok(e.set_paused(arg::<bool>(a, "paused")?)),
         "set_speed_limit" => ok(e.set_speed_limit(arg::<u64>(a, "kbps")?)?),
+        "reset_quota" => ok(e.reset_quota(&arg::<String>(a, "id")?)),
 
         // ---- Historial y estadísticas ----
         "get_history" => ok(e.history()),

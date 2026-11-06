@@ -66,6 +66,12 @@ pub struct ServerConfig {
     pub enabled: bool,
     /// Días de retención del servidor (0 = desconocido/ilimitado).
     pub retention_days: u32,
+    /// Cuota de descarga en GB (0 = sin cuota).
+    pub quota_gb: f64,
+    /// Cuándo se reinicia la cuota: "day", "week", "month" o "never".
+    pub quota_period: String,
+    /// Día del reinicio: del mes (1-28) o de la semana (1 = lunes … 7 = domingo).
+    pub quota_reset_day: u32,
 }
 
 impl Default for ServerConfig {
@@ -84,6 +90,9 @@ impl Default for ServerConfig {
             priority: 0,
             enabled: true,
             retention_days: 0,
+            quota_gb: 0.0,
+            quota_period: "month".into(),
+            quota_reset_day: 1,
         }
     }
 }
@@ -95,6 +104,37 @@ impl ServerConfig {
         } else {
             self.name.clone()
         }
+    }
+
+    /// Cuota en bytes (0 = sin cuota).
+    pub fn quota_bytes(&self) -> u64 {
+        if self.quota_gb > 0.0 && self.quota_gb.is_finite() {
+            (self.quota_gb * 1024.0 * 1024.0 * 1024.0) as u64
+        } else {
+            0
+        }
+    }
+}
+
+/// Tarea del programador: a una hora de ciertos días, pausar, reanudar o cambiar el límite de velocidad.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(default, rename_all = "camelCase")]
+pub struct ScheduleRule {
+    pub id: String,
+    pub enabled: bool,
+    /// Días de la semana (1 = lunes … 7 = domingo). Vacío = todos.
+    pub days: Vec<u8>,
+    /// "HH:MM", hora local.
+    pub time: String,
+    /// "pause", "resume" o "speed".
+    pub action: String,
+    /// KB/s para "speed" (0 = sin límite).
+    pub value: u64,
+}
+
+impl Default for ScheduleRule {
+    fn default() -> Self {
+        Self { id: crate::util::new_id(), enabled: true, days: Vec::new(), time: "00:00".into(), action: "pause".into(), value: 0 }
     }
 }
 
@@ -413,6 +453,21 @@ pub struct Settings {
     pub finish_actions: Vec<FinishAction>,
     /// Categorías propias (tv, movies…). La Default no está aquí: son los ajustes globales.
     pub categories: Vec<crate::categories::Category>,
+    /// Comprobar con STAT que los artículos existen antes de descargar.
+    pub precheck: bool,
+    /// Poner nombres legibles a los archivos ofuscados (con el PAR2 y con el nombre del trabajo).
+    pub deobfuscate: bool,
+    /// Extraer cada archivo comprimido en cuanto está completo, sin esperar al resto.
+    pub direct_unpack: bool,
+    /// Contraseñas que se prueban si la del trabajo no abre el archivo.
+    pub extra_passwords: Vec<String>,
+    /// Extensiones no deseadas (sin punto) y qué hacer con ellas: "off", "warn", "skip" o "fail".
+    pub unwanted_extensions: Vec<String>,
+    pub unwanted_action: String,
+    /// Descargas repetidas (en la cola o ya completadas): "off", "warn", "pause" o "skip".
+    pub duplicate_action: String,
+    /// Programador: pausar, reanudar o limitar la velocidad a ciertas horas.
+    pub schedule: Vec<ScheduleRule>,
 }
 
 impl Default for Settings {
@@ -487,8 +542,20 @@ impl Default for Settings {
             rss_rules: Vec::new(),
             finish_actions: Vec::new(),
             categories: Vec::new(),
+            precheck: false,
+            deobfuscate: true,
+            direct_unpack: false,
+            extra_passwords: Vec::new(),
+            unwanted_extensions: default_unwanted(),
+            unwanted_action: "warn".into(),
+            duplicate_action: "warn".into(),
+            schedule: Vec::new(),
         }
     }
+}
+
+pub fn default_unwanted() -> Vec<String> {
+    ["exe", "scr", "com", "bat", "cmd", "lnk", "vbs", "msi", "ps1", "jar"].iter().map(|s| s.to_string()).collect()
 }
 
 pub fn default_patterns() -> Vec<String> {
