@@ -1,9 +1,10 @@
 # Workspace de Nebula:
 # - crates/nebula-core: el motor (cola, NNTP, post-procesado, API, RSS…), sin Tauri.
+# - crates/nebula-server: el motor con interfaz web, sin ventana (servidores, NAS, Docker).
 # - src-tauri: la app de escritorio y Android (Tauri) sobre nebula-core.
 [workspace]
 resolver = "2"
-members = ["crates/nebula-core", "src-tauri"]
+members = ["crates/nebula-core", "crates/nebula-server", "src-tauri"]
 
 [workspace.package]
 version = "1.10.1"

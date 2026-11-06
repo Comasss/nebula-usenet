@@ -19,6 +19,12 @@ struct Logger {
 }
 
 static LOGGER: OnceLock<Logger> = OnceLock::new();
+/// Copiar cada línea a la salida estándar (servidor: `docker logs`, journalctl).
+static ECHO: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+pub fn echo(on: bool) {
+    ECHO.store(on, std::sync::atomic::Ordering::Relaxed);
+}
 const MAX_ENTRIES: usize = 2000;
 
 pub fn init(dir: &Path) {
@@ -37,8 +43,11 @@ pub fn init(dir: &Path) {
 
 pub fn log(level: &'static str, msg: String) {
     let entry = LogEntry { ts: crate::util::now_ms(), level, msg };
-    #[cfg(debug_assertions)]
-    eprintln!("[{}] {}", level, entry.msg);
+    if ECHO.load(std::sync::atomic::Ordering::Relaxed) {
+        println!("[{}] {}", level.to_uppercase(), entry.msg);
+    } else if cfg!(debug_assertions) {
+        eprintln!("[{}] {}", level, entry.msg);
+    }
     let Some(l) = LOGGER.get() else { return };
     if let Some(f) = l.file.lock().as_mut() {
         let _ = writeln!(f, "{} [{}] {}", entry.ts, level.to_uppercase(), entry.msg);
