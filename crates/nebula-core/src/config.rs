@@ -417,9 +417,14 @@ pub struct Settings {
 
 impl Default for Settings {
     fn default() -> Self {
-        let downloads = default_download_root();
-        let dl = downloads.join("Nebula");
-        let nzb_dir = downloads;
+        // nebula-server (Docker, systemd) puede fijar la carpeta de descargas por defecto.
+        let (dl, nzb_dir) = match std::env::var_os("NEBULA_DOWNLOAD_DIR").filter(|v| !v.is_empty()) {
+            Some(d) => (PathBuf::from(&d), PathBuf::from(d)),
+            None => {
+                let downloads = default_download_root();
+                (downloads.join("Nebula"), downloads)
+            }
+        };
         Self {
             feature_nntp: true,
             feature_indexers: false,

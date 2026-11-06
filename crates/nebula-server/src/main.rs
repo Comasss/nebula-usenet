@@ -22,14 +22,44 @@ struct Args {
     #[arg(long, env = "NEBULA_DATA_DIR")]
     data_dir: Option<PathBuf>,
     /// Port for the web interface and the APIs.
-    #[arg(long, env = "NEBULA_PORT", default_value_t = 5080)]
+    #[arg(long, env = "NEBULA_PORT", default_value_t = 5080, global = true)]
     port: u16,
     /// Address to listen on (0.0.0.0 = every network interface, 127.0.0.1 = this machine only).
-    #[arg(long, env = "NEBULA_BIND", default_value = "0.0.0.0")]
+    #[arg(long, env = "NEBULA_BIND", default_value = "0.0.0.0", global = true)]
     bind: String,
-    /// Download folder for a new installation (ignored once the settings exist).
+    /// Default download folder (used until another one is chosen in Settings → Folders).
     #[arg(long, env = "NEBULA_DOWNLOAD_DIR")]
     download_dir: Option<PathBuf>,
+    #[command(subcommand)]
+    command: Option<Command>,
+}
+
+#[derive(clap::Subcommand, Debug)]
+enum Command {
+    /// Exit with 0 if the server on --port/--bind answers /health (Docker HEALTHCHECK, monitors).
+    Healthcheck,
+}
+
+/// Pregunta a /health del servidor que ya está en marcha. Sin curl ni wget en la imagen.
+fn healthcheck(bind: &str, port: u16) -> bool {
+    use std::io::{Read, Write};
+    use std::net::{IpAddr, Ipv4Addr, TcpStream};
+    use std::time::Duration;
+    let ip = match bind.parse::<IpAddr>() {
+        Ok(ip) if !ip.is_unspecified() => ip,
+        Ok(IpAddr::V6(_)) => IpAddr::V6(std::net::Ipv6Addr::LOCALHOST),
+        _ => IpAddr::V4(Ipv4Addr::LOCALHOST),
+    };
+    let timeout = Duration::from_secs(4);
+    let Ok(mut s) = TcpStream::connect_timeout(&SocketAddr::new(ip, port), timeout) else { return false };
+    let _ = s.set_read_timeout(Some(timeout));
+    if s.write_all(b"GET /health HTTP/1.0\r\nHost: localhost\r\n\r\n").is_err() {
+        return false;
+    }
+    let mut buf = Vec::new();
+    let _ = s.take(4096).read_to_end(&mut buf);
+    let text = String::from_utf8_lossy(&buf);
+    text.starts_with("HTTP/1.") && text.split_whitespace().nth(1) == Some("200") && text.contains("\"ok\"")
 }
 
 /// /config dentro de Docker; si no, la carpeta de configuración del usuario.
@@ -70,6 +100,9 @@ async fn shutdown_signal() {
 #[tokio::main]
 async fn main() {
     let args = Args::parse();
+    if let Some(Command::Healthcheck) = args.command {
+        std::process::exit(if healthcheck(&args.bind, args.port) { 0 } else { 1 });
+    }
     nebula_core::rt::set_handle(tokio::runtime::Handle::current());
     let data = args.data_dir.clone().unwrap_or_else(default_data_dir);
     // Las herramientas propias (si se ponen ahí) van en <datos>/tools; si no, las del sistema.
@@ -77,15 +110,16 @@ async fn main() {
     logger::init(&paths.logs);
     logger::echo(true);
 
+    // La carpeta de descargas por defecto (la que se usa si config.json no dice otra).
+    if let Some(d) = &args.download_dir {
+        std::env::set_var("NEBULA_DOWNLOAD_DIR", d);
+    }
     let first_run = !paths.config_file().exists();
-    let mut settings = Settings::load(&paths);
+    let settings = Settings::load(&paths);
     if settings.language.is_empty() || !i18n::set(&settings.language) {
         i18n::set(i18n::system_language());
     }
     if first_run {
-        if let Some(d) = &args.download_dir {
-            settings.download_dir = d.to_string_lossy().to_string();
-        }
         if let Err(e) = settings.save(&paths) {
             lerror!("{}", e);
         }

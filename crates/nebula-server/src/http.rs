@@ -147,7 +147,7 @@ struct PasswordChange {
 // ---- Comandos ----
 
 async fn invoke(State(st): State<S>, Path(cmd): Path<String>, headers: HeaderMap, body: Bytes) -> Response {
-    if st.auth.needs_setup() || !authorized(&st, &headers) {
+    if !authorized(&st, &headers) {
         return error(StatusCode::UNAUTHORIZED, t!("server.auth.required"));
     }
     let e = &st.engine;
@@ -182,7 +182,7 @@ async fn invoke(State(st): State<S>, Path(cmd): Path<String>, headers: HeaderMap
 // ---- Eventos ----
 
 async fn events_ws(State(st): State<S>, headers: HeaderMap, ws: WebSocketUpgrade) -> Response {
-    if st.auth.needs_setup() || !authorized(&st, &headers) {
+    if !authorized(&st, &headers) {
         return error(StatusCode::UNAUTHORIZED, t!("server.auth.required"));
     }
     ws.on_upgrade(forward_ws)
@@ -211,7 +211,7 @@ async fn forward_ws(mut socket: WebSocket) {
 }
 
 async fn events_sse(State(st): State<S>, headers: HeaderMap) -> Response {
-    if st.auth.needs_setup() || !authorized(&st, &headers) {
+    if !authorized(&st, &headers) {
         return error(StatusCode::UNAUTHORIZED, t!("server.auth.required"));
     }
     let rx = nebula_core::bus::subscribe();

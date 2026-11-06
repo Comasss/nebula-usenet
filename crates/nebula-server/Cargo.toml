@@ -30,6 +30,10 @@ hmac = "0.12"
 dirs = "6"
 uuid = { version = "1", features = ["v4"] }
 
+# Los binarios para Linux (Release y Docker) se compilan estáticos con musl: OpenSSL va dentro.
+[target.'cfg(target_env = "musl")'.dependencies]
+openssl = { version = "0.10", features = ["vendored"] }
+
 [dev-dependencies]
 tower = { version = "0.5", features = ["util"] }
 http-body-util = "0.1"
