@@ -837,12 +837,12 @@
     "unskip": "Notify me again"
   },
   "api": {
-    "title": "Newznab API",
+    "title": "Newznab and SABnzbd API",
     "enable": "Enable API",
-    "enableDesc": "Newznab and NZBHydra2 compatible: Sonarr, Radarr, Prowlarr and other apps can search all your indexers through Nebula.",
+    "enableDesc": "Sonarr, Radarr, Prowlarr and other programs can search all your indexers through Nebula (like NZBHydra2) and use Nebula as a SABnzbd download client.",
     "stopped": "Stopped",
     "address": "Address",
-    "addressDesc": "Add it to Sonarr, Radarr or Prowlarr as a Newznab indexer, together with the API key.",
+    "addressDesc": "As a Newznab indexer in Sonarr, Radarr or Prowlarr, together with the API key.",
     "key": "API key",
     "keyDesc": "Apps send it with every request. If you change it, update it there too.",
     "regenerate": "Generate new",
@@ -853,10 +853,21 @@
     "portDesc": "Port the API listens on (5077 by default).",
     "lan": "Allow connections from the local network",
     "lanDesc": "Other devices (a NAS, another PC…) can use it with the API key. When off, only this computer can.",
-    "noIndexers": "Enable at least one indexer: the API searches them.",
+    "noIndexers": "With no active indexers the Newznab search returns nothing; the SABnzbd API works anyway.",
     "docs": "Documentation",
     "docsDesc": "How to connect it to Sonarr, Radarr or Prowlarr and what it supports.",
-    "androidNote": "On Android the API only answers while Nebula is open or downloading."
+    "androidNote": "On Android the API only answers while Nebula is open or downloading.",
+    "sab": {
+      "title": "SABnzbd download client",
+      "desc": "Sonarr, Radarr, Lidarr, Readarr and Prowlarr send NZBs to Nebula, follow the download and import it when it finishes.",
+      "step1": "In Sonarr or Radarr: Settings → Download Clients → + → SABnzbd.",
+      "step2": "Fill in these values (the category must exist in Nebula):",
+      "step3": "Press Test and save. What Sonarr sends shows up in Downloads with its category.",
+      "empty": "(empty)",
+      "noCategories": "You don't have categories yet: create tv and movies so Sonarr and Radarr can use them.",
+      "lanHint": "If Sonarr or Radarr run on another computer or in Docker, turn on \"Allow connections from the local network\".",
+      "docs": "Supported modes and differences from SABnzbd"
+    }
   },
   "transfer": {
     "scanLabel": "Scan QR code",

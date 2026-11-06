@@ -816,12 +816,12 @@
     "unskip": "重新提醒"
   },
   "api": {
-    "title": "Newznab API",
+    "title": "Newznab 与 SABnzbd API",
     "enable": "启用 API",
-    "enableDesc": "兼容 Newznab 和 NZBHydra2：Sonarr、Radarr、Prowlarr 等程序可以通过 Nebula 搜索你的所有索引器。",
+    "enableDesc": "Sonarr、Radarr、Prowlarr 等程序可以通过 Nebula 搜索你的所有索引器（类似 NZBHydra2），并把 Nebula 当作 SABnzbd 下载客户端使用。",
     "stopped": "已停止",
     "address": "地址",
-    "addressDesc": "在 Sonarr、Radarr 或 Prowlarr 中将其添加为 Newznab 索引器，并填写 API 密钥。",
+    "addressDesc": "在 Sonarr、Radarr 或 Prowlarr 中作为 Newznab 索引器添加，并填入 API key。",
     "key": "API 密钥",
     "keyDesc": "程序在每次请求时发送它。如果更改，请在这些程序中同步更新。",
     "regenerate": "生成新密钥",
@@ -832,10 +832,21 @@
     "portDesc": "API 监听的端口（默认 5077）。",
     "lan": "允许来自局域网的连接",
     "lanDesc": "其他设备（NAS、另一台电脑…）可使用 API 密钥访问。关闭时仅限本机。",
-    "noIndexers": "请至少启用一个索引器：API 会在其中搜索。",
+    "noIndexers": "没有启用的索引器时，Newznab 搜索不会返回结果；SABnzbd API 仍可正常使用。",
     "docs": "文档",
     "docsDesc": "如何连接 Sonarr、Radarr 或 Prowlarr，以及支持哪些功能。",
-    "androidNote": "在 Android 上，API 仅在 Nebula 打开或正在下载时响应。"
+    "androidNote": "在 Android 上，API 仅在 Nebula 打开或正在下载时响应。",
+    "sab": {
+      "title": "SABnzbd 下载客户端",
+      "desc": "Sonarr、Radarr、Lidarr、Readarr 和 Prowlarr 会把 NZB 发给 Nebula，跟踪下载进度，并在完成后导入。",
+      "step1": "在 Sonarr 或 Radarr 中：Settings → Download Clients → + → SABnzbd。",
+      "step2": "填写以下信息（分类必须已在 Nebula 中存在）：",
+      "step3": "点击 Test 并保存。Sonarr 发送的内容会带着分类出现在“下载”中。",
+      "empty": "（留空）",
+      "noCategories": "你还没有分类：请创建 tv 和 movies，以便 Sonarr 和 Radarr 使用。",
+      "lanHint": "如果 Sonarr 或 Radarr 在另一台电脑或 Docker 中运行，请开启“允许来自局域网的连接”。",
+      "docs": "支持的模式及与 SABnzbd 的差异"
+    }
   },
   "transfer": {
     "scanLabel": "扫描二维码",

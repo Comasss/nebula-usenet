@@ -837,12 +837,12 @@
     "unskip": "Torna a avisar-me"
   },
   "api": {
-    "title": "API Newznab",
+    "title": "API Newznab i SABnzbd",
     "enable": "Activa l'API",
-    "enableDesc": "Compatible amb Newznab i NZBHydra2: Sonarr, Radarr, Prowlarr i altres programes poden cercar a tots els teus indexadors a través de Nebula.",
+    "enableDesc": "Sonarr, Radarr, Prowlarr i altres programes poden cercar a tots els teus indexadors a través de Nebula (com NZBHydra2) i fer servir Nebula com a client de baixades SABnzbd.",
     "stopped": "Aturada",
     "address": "Adreça",
-    "addressDesc": "Afegeix-la a Sonarr, Radarr o Prowlarr com a indexador Newznab, juntament amb l'API key.",
+    "addressDesc": "Com a indexador Newznab a Sonarr, Radarr o Prowlarr, juntament amb la API key.",
     "key": "API key",
     "keyDesc": "Els programes l'envien a cada petició. Si la canvies, actualitza-la en ells.",
     "regenerate": "Genera'n una de nova",
@@ -853,10 +853,21 @@
     "portDesc": "Port on escolta l'API (5077 per defecte).",
     "lan": "Permet connexions des de la xarxa local",
     "lanDesc": "Altres dispositius (un NAS, un altre PC…) la podran fer servir amb l'API key. Si està desactivat, només aquest equip.",
-    "noIndexers": "Activa almenys un indexador: l'API hi cerca.",
+    "noIndexers": "Sense indexadors actius la cerca Newznab no retorna res; l'API de SABnzbd funciona igualment.",
     "docs": "Documentació",
     "docsDesc": "Com connectar-la a Sonarr, Radarr o Prowlarr i què admet.",
-    "androidNote": "A Android l'API només respon mentre Nebula és oberta o descarregant."
+    "androidNote": "A Android l'API només respon mentre Nebula és oberta o descarregant.",
+    "sab": {
+      "title": "Client de baixades SABnzbd",
+      "desc": "Sonarr, Radarr, Lidarr, Readarr i Prowlarr envien els NZB a Nebula, en segueixen la baixada i la importen quan acaba.",
+      "step1": "A Sonarr o Radarr: Settings → Download Clients → + → SABnzbd.",
+      "step2": "Omple aquestes dades (la categoria ha d'existir a Nebula):",
+      "step3": "Prem Test i desa. El que enviï Sonarr sortirà a Baixades amb la seva categoria.",
+      "empty": "(buit)",
+      "noCategories": "Encara no tens categories: crea tv i movies perquè Sonarr i Radarr les puguin fer servir.",
+      "lanHint": "Si Sonarr o Radarr funcionen en un altre equip o a Docker, activa «Permet connexions des de la xarxa local».",
+      "docs": "Modes admesos i diferències amb SABnzbd"
+    }
   },
   "transfer": {
     "scanLabel": "Escanejar QR",

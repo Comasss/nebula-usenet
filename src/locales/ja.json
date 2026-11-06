@@ -816,9 +816,9 @@
     "unskip": "再度通知する"
   },
   "api": {
-    "title": "Newznab API",
+    "title": "Newznab と SABnzbd の API",
     "enable": "API を有効にする",
-    "enableDesc": "Newznab・NZBHydra2 互換：Sonarr、Radarr、Prowlarr などが Nebula 経由ですべてのインデクサーを検索できます。",
+    "enableDesc": "Sonarr、Radarr、Prowlarr などから Nebula を通じてすべてのインデクサーを検索でき（NZBHydra2 と同様）、Nebula を SABnzbd ダウンロードクライアントとしても使えます。",
     "stopped": "停止中",
     "address": "アドレス",
     "addressDesc": "Sonarr、Radarr、Prowlarr に Newznab インデクサーとして API キーと一緒に追加します。",
@@ -832,10 +832,21 @@
     "portDesc": "API が待ち受けるポート（既定は 5077）。",
     "lan": "ローカルネットワークからの接続を許可",
     "lanDesc": "他のデバイス（NAS、別の PC など）も API キーで利用できます。オフならこの PC のみ。",
-    "noIndexers": "インデクサーを少なくとも 1 つ有効にしてください：API はそこを検索します。",
+    "noIndexers": "有効なインデクサーがないと Newznab 検索は何も返しません。SABnzbd API はそのまま使えます。",
     "docs": "ドキュメント",
     "docsDesc": "Sonarr、Radarr、Prowlarr との接続方法と対応機能。",
-    "androidNote": "Android では Nebula が開いているかダウンロード中のときだけ API が応答します。"
+    "androidNote": "Android では Nebula が開いているかダウンロード中のときだけ API が応答します。",
+    "sab": {
+      "title": "SABnzbd ダウンロードクライアント",
+      "desc": "Sonarr、Radarr、Lidarr、Readarr、Prowlarr が NZB を Nebula に送り、ダウンロードを追跡して、完了後にインポートします。",
+      "step1": "Sonarr または Radarr で：Settings → Download Clients → + → SABnzbd。",
+      "step2": "次の値を入力します（カテゴリは Nebula に存在している必要があります）：",
+      "step3": "Test を押して保存します。Sonarr が送ったものはカテゴリ付きでダウンロードに表示されます。",
+      "empty": "（空欄）",
+      "noCategories": "カテゴリがまだありません。Sonarr と Radarr が使えるよう tv と movies を作成してください。",
+      "lanHint": "Sonarr や Radarr が別のコンピューターや Docker で動いている場合は、「ローカルネットワークからの接続を許可」をオンにしてください。",
+      "docs": "対応モードと SABnzbd との違い"
+    }
   },
   "transfer": {
     "scanLabel": "QR コードをスキャン",

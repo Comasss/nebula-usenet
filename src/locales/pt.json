@@ -837,12 +837,12 @@
     "unskip": "Avisar de novo"
   },
   "api": {
-    "title": "API Newznab",
+    "title": "API Newznab e SABnzbd",
     "enable": "Ativar API",
-    "enableDesc": "Compatível com Newznab e NZBHydra2: Sonarr, Radarr, Prowlarr e outros programas podem pesquisar em todos os seus indexadores através do Nebula.",
+    "enableDesc": "Sonarr, Radarr, Prowlarr e outros programas podem buscar em todos os seus indexadores através do Nebula (como o NZBHydra2) e usar o Nebula como cliente de download SABnzbd.",
     "stopped": "Parada",
     "address": "Endereço",
-    "addressDesc": "Adicione-o no Sonarr, Radarr ou Prowlarr como indexador Newznab, junto com a API key.",
+    "addressDesc": "Como indexador Newznab no Sonarr, Radarr ou Prowlarr, junto com a API key.",
     "key": "API key",
     "keyDesc": "Os programas enviam-na em cada pedido. Se a alterar, atualize-a neles.",
     "regenerate": "Gerar nova",
@@ -853,10 +853,21 @@
     "portDesc": "Porta em que a API escuta (5077 por padrão).",
     "lan": "Permitir ligações da rede local",
     "lanDesc": "Outros dispositivos (um NAS, outro PC…) poderão usá-la com a API key. Desligado, só este computador.",
-    "noIndexers": "Ative pelo menos um indexador: a API pesquisa neles.",
+    "noIndexers": "Sem indexadores ativos, a busca Newznab não retorna nada; a API do SABnzbd funciona igual.",
     "docs": "Documentação",
     "docsDesc": "Como ligá-la ao Sonarr, Radarr ou Prowlarr e o que suporta.",
-    "androidNote": "No Android a API só responde enquanto o Nebula está aberto ou a descarregar."
+    "androidNote": "No Android a API só responde enquanto o Nebula está aberto ou a descarregar.",
+    "sab": {
+      "title": "Cliente de download SABnzbd",
+      "desc": "Sonarr, Radarr, Lidarr, Readarr e Prowlarr enviam os NZB para o Nebula, acompanham o download e o importam ao terminar.",
+      "step1": "No Sonarr ou Radarr: Settings → Download Clients → + → SABnzbd.",
+      "step2": "Preencha estes dados (a categoria precisa existir no Nebula):",
+      "step3": "Clique em Test e salve. O que o Sonarr enviar aparecerá em Downloads com sua categoria.",
+      "empty": "(vazio)",
+      "noCategories": "Você ainda não tem categorias: crie tv e movies para o Sonarr e o Radarr poderem usá-las.",
+      "lanHint": "Se o Sonarr ou o Radarr estiverem em outro computador ou no Docker, ative \"Permitir ligações da rede local\".",
+      "docs": "Modos suportados e diferenças com o SABnzbd"
+    }
   },
   "transfer": {
     "scanLabel": "Ler código QR",

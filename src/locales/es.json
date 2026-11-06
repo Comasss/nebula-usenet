@@ -837,12 +837,12 @@
     "unskip": "Volver a avisar"
   },
   "api": {
-    "title": "API Newznab",
+    "title": "API Newznab y SABnzbd",
     "enable": "Activar API",
-    "enableDesc": "Compatible con Newznab y NZBHydra2: Sonarr, Radarr, Prowlarr y otros programas pueden buscar en todos tus indexadores a través de Nebula.",
+    "enableDesc": "Sonarr, Radarr, Prowlarr y otros programas pueden buscar en todos tus indexadores a través de Nebula (como NZBHydra2) y usar Nebula como cliente de descargas SABnzbd.",
     "stopped": "Detenida",
     "address": "Dirección",
-    "addressDesc": "Añádela en Sonarr, Radarr o Prowlarr como indexador Newznab, junto con la API key.",
+    "addressDesc": "Como indexador Newznab en Sonarr, Radarr o Prowlarr, junto con la API key.",
     "key": "API key",
     "keyDesc": "Los programas la envían en cada petición. Si la cambias, actualízala en ellos.",
     "regenerate": "Generar nueva",
@@ -853,10 +853,21 @@
     "portDesc": "Puerto en el que escucha la API (por defecto 5077).",
     "lan": "Permitir conexiones desde la red local",
     "lanDesc": "Otros dispositivos (un NAS, otro PC…) podrán usarla con la API key. Si está apagado, solo este equipo.",
-    "noIndexers": "Activa al menos un indexador: la API busca en ellos.",
+    "noIndexers": "Sin indexadores activos la búsqueda Newznab no devuelve nada; la API de SABnzbd funciona igual.",
     "docs": "Documentación",
     "docsDesc": "Cómo conectarla a Sonarr, Radarr o Prowlarr y qué funciones admite.",
-    "androidNote": "En Android la API solo responde mientras Nebula está abierta o descargando."
+    "androidNote": "En Android la API solo responde mientras Nebula está abierta o descargando.",
+    "sab": {
+      "title": "Cliente de descargas SABnzbd",
+      "desc": "Sonarr, Radarr, Lidarr, Readarr y Prowlarr mandan los NZB a Nebula, siguen la descarga y la importan al terminar.",
+      "step1": "En Sonarr o Radarr: Settings → Download Clients → + → SABnzbd.",
+      "step2": "Rellena estos datos (la categoría tiene que existir en Nebula):",
+      "step3": "Pulsa Test y guarda. Lo que Sonarr mande saldrá en Descargas con su categoría.",
+      "empty": "(vacío)",
+      "noCategories": "Aún no tienes categorías: crea tv y movies para que Sonarr y Radarr puedan usarlas.",
+      "lanHint": "Si Sonarr o Radarr están en otro equipo o en Docker, activa «Permitir conexiones desde la red local».",
+      "docs": "Modos admitidos y diferencias con SABnzbd"
+    }
   },
   "transfer": {
     "scanLabel": "Escanear QR",

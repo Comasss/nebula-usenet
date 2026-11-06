@@ -921,12 +921,12 @@
     "unskip": "نبّهني مجددًا"
   },
   "api": {
-    "title": "واجهة Newznab البرمجية",
+    "title": "واجهة Newznab و SABnzbd",
     "enable": "تفعيل الواجهة البرمجية",
-    "enableDesc": "متوافقة مع Newznab و NZBHydra2: يمكن لـ Sonarr و Radarr و Prowlarr وغيرها البحث في جميع مفهرساتك عبر Nebula.",
+    "enableDesc": "يمكن لـ Sonarr و Radarr و Prowlarr وغيرها البحث في كل مفهرساتك عبر Nebula (مثل NZBHydra2) واستخدام Nebula كعميل تنزيل SABnzbd.",
     "stopped": "متوقفة",
     "address": "العنوان",
-    "addressDesc": "أضفه في Sonarr أو Radarr أو Prowlarr كمفهرس Newznab مع مفتاح API.",
+    "addressDesc": "كمفهرس Newznab في Sonarr أو Radarr أو Prowlarr مع مفتاح API.",
     "key": "مفتاح API",
     "keyDesc": "ترسله البرامج مع كل طلب. إذا غيّرته فحدّثه فيها أيضًا.",
     "regenerate": "إنشاء مفتاح جديد",
@@ -937,10 +937,21 @@
     "portDesc": "المنفذ الذي تستمع عليه الواجهة (5077 افتراضيًا).",
     "lan": "السماح بالاتصالات من الشبكة المحلية",
     "lanDesc": "ستتمكن أجهزة أخرى (NAS، حاسوب آخر…) من استخدامها بمفتاح API. عند الإيقاف: هذا الجهاز فقط.",
-    "noIndexers": "فعّل مفهرسًا واحدًا على الأقل: الواجهة تبحث فيها.",
+    "noIndexers": "بدون مفهرسات مفعّلة لا يُرجع بحث Newznab شيئًا؛ أما واجهة SABnzbd فتعمل على أي حال.",
     "docs": "التوثيق",
     "docsDesc": "كيفية ربطها بـ Sonarr أو Radarr أو Prowlarr وما تدعمه.",
-    "androidNote": "على Android لا تستجيب الواجهة إلا عندما يكون Nebula مفتوحًا أو يُنزّل."
+    "androidNote": "على Android لا تستجيب الواجهة إلا عندما يكون Nebula مفتوحًا أو يُنزّل.",
+    "sab": {
+      "title": "عميل التنزيل SABnzbd",
+      "desc": "يرسل Sonarr و Radarr و Lidarr و Readarr و Prowlarr ملفات NZB إلى Nebula ويتابعون التنزيل ثم يستوردونه عند انتهائه.",
+      "step1": "في Sonarr أو Radarr: Settings ← Download Clients ← + ← SABnzbd.",
+      "step2": "املأ هذه القيم (يجب أن تكون الفئة موجودة في Nebula):",
+      "step3": "اضغط Test ثم احفظ. ما يرسله Sonarr سيظهر في التنزيلات مع فئته.",
+      "empty": "(فارغ)",
+      "noCategories": "ليست لديك فئات بعد: أنشئ tv و movies ليتمكن Sonarr و Radarr من استخدامهما.",
+      "lanHint": "إذا كان Sonarr أو Radarr يعمل على جهاز آخر أو في Docker ففعّل «السماح بالاتصالات من الشبكة المحلية».",
+      "docs": "الأوضاع المدعومة والاختلافات عن SABnzbd"
+    }
   },
   "transfer": {
     "scanLabel": "مسح رمز QR",

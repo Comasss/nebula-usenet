@@ -34,7 +34,7 @@
     if (id === 'debrid') return t('settings.downloadMethod');
     if (id === 'search') return t('settings.searchTitle');
     if (id === 'windows') return isAndroid ? t('mobile.appTitle') : t('settings.windowsTitle');
-    if (id === 'api') return `${t('api.title')} NZBHydra2`;
+    if (id === 'api') return t('api.title');
     if (id === 'remote') return isAndroid ? t('remote.mobileTitle') : t('settings.section.remote');
     return t(`settings.section.${id}`);
   }
@@ -136,6 +136,16 @@
 
   // ---- API Newznab ----
   const DOCS_URL = 'https://github.com/Comasss/nebula-usenet/blob/main/docs/API.md';
+  const SAB_DOCS_URL = 'https://github.com/Comasss/nebula-usenet/blob/main/docs/SABNZBD.md';
+  // Host y puerto para Sonarr/Radarr: la IP de la red local si está permitida, si no localhost.
+  const sabHost = $derived.by(() => {
+    const url = apiStatus?.urls?.[apiStatus.urls.length - 1] ?? `http://localhost:${s?.apiPort ?? 5077}/api`;
+    try {
+      return new URL(url).hostname;
+    } catch {
+      return 'localhost';
+    }
+  });
   let apiStatus = $state(null);
   let showKey = $state(false);
   const apiIndexers = $derived((s?.indexers ?? []).filter((i) => i.enabled).length);
@@ -484,6 +494,31 @@
               <input class="input small" type="number" min="1024" max="65535" value={s.apiPort} onchange={num('apiPort', 1024, 65535)} />
             </SettingRow>
             <SettingRow icon="wifi" label={t('api.lan')} description={t('api.lanDesc')} checked={!!s.apiLan} onchange={set('apiLan')} />
+            <div class="sab">
+              <div class="sab-title"><Icon name="download" size={15} /> {t('api.sab.title')}</div>
+              <p>{t('api.sab.desc')}</p>
+              <ol>
+                <li>{t('api.sab.step1')}</li>
+                <li>
+                  {t('api.sab.step2')}
+                  <div class="sab-grid">
+                    <span>Host</span><code>{sabHost}</code>
+                    <span>Port</span><code>{s.apiPort}</code>
+                    <span>URL Base</span><code class="muted">{t('api.sab.empty')}</code>
+                    <span>API Key</span><span class="url"><code>{showKey ? s.apiKey : '•'.repeat(12)}</code><button class="btn ghost sm icon" onclick={() => copy(s.apiKey)} aria-label={t('api.copy')} title={t('api.copy')}><Icon name="copy" size={13} /></button></span>
+                    <span>Category</span><code>{(s.categories ?? []).map((c) => c.name).join(' / ') || 'tv / movies'}</code>
+                  </div>
+                </li>
+                <li>{t('api.sab.step3')}</li>
+              </ol>
+              {#if !(s.categories ?? []).length}
+                <div class="sab-warn"><Icon name="alert-triangle" size={14} /> <span>{t('api.sab.noCategories')}</span> <button class="btn sm" onclick={() => scrollTo('categories')}>{t('settings.section.categories')}</button></div>
+              {/if}
+              {#if !s.apiLan}
+                <div class="sab-hint"><Icon name="info" size={13} /> {t('api.sab.lanHint')}</div>
+              {/if}
+              <button class="btn sm" onclick={() => invoke('open_url', { url: SAB_DOCS_URL })}><Icon name="external" size={13} /> {t('api.sab.docs')}</button>
+            </div>
             {#if isAndroid}
               <div class="note"><Icon name="smartphone" size={14} /> {t('api.androidNote')}</div>
             {/if}
@@ -638,6 +673,15 @@
   .seg button:disabled { opacity: 0.4; cursor: not-allowed; }
   .note { display: flex; align-items: center; gap: 8px; padding: 0 18px 12px 64px; margin-top: -4px; font-size: 12.5px; color: var(--muted); }
   .note.err { color: var(--err); }
+  .sab { margin: 4px 18px 14px 64px; padding: 12px 14px; border-radius: 12px; background: var(--panel-2); border: 1px solid var(--border); font-size: 12.5px; color: var(--text-2); display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+  .sab-title { display: flex; align-items: center; gap: 8px; font-weight: 650; color: var(--text); font-size: 13px; }
+  .sab p { margin: 0; color: var(--muted); line-height: 1.5; }
+  .sab ol { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; line-height: 1.5; }
+  .sab-grid { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; align-items: center; margin-top: 6px; }
+  .sab-grid > span:nth-child(odd) { color: var(--muted); font-size: 12px; }
+  .sab-grid code { font-family: var(--mono); font-size: 12px; padding: 2px 7px; border-radius: 6px; background: var(--panel-3); justify-self: start; overflow-wrap: anywhere; }
+  .sab-warn { display: flex; align-items: center; gap: 8px; color: var(--warn); flex-wrap: wrap; }
+  .sab-hint { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12px; }
   .urls { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; min-width: 0; }
   .url { display: inline-flex; align-items: center; gap: 4px; max-width: 100%; }
   .url code { padding: 4px 8px; border-radius: 7px; background: var(--panel-3); border: 1px solid var(--border-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; user-select: all; }
@@ -700,6 +744,7 @@
     :global(.select.lang) { min-width: 0; width: 100%; }
     .path { width: 100%; }
     .note { padding: 0 14px 12px; }
+    .sab { margin: 4px 14px 14px; }
     .urls { align-items: stretch; width: 100%; }
     .url code { flex: 1; }
     .key { flex: 1; width: auto; min-width: 0; }
