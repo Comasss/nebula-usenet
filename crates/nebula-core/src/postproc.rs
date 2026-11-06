@@ -25,6 +25,8 @@ pub struct PpCtx {
     pub pp_only: bool,
     pub failed_segs: u32,
     pub total: u64,
+    /// Volver de bajar bloques PAR2: reparar sin verificar antes.
+    pub repair_next: bool,
     pub cancel: Arc<Cancel>,
     /// par2 y 7-Zip que se van a usar.
     pub par2: PathBuf,
@@ -114,8 +116,12 @@ async fn pipeline(engine: &Arc<Engine>, c: &PpCtx) -> Result<Flow, PpError> {
             }
             Some(par2) => {
                 let par2 = with_par2_extension(par2);
-                engine.set_stage(&c.id, JobStatus::Verifying, "verifying", 0.0, 0, "");
-                let result = run_par2(engine, c, "v", &par2).await?;
+                let result = if c.repair_next {
+                    Par2Result::RepairPossible
+                } else {
+                    engine.set_stage(&c.id, JobStatus::Verifying, "verifying", 0.0, 0, "");
+                    run_par2(engine, c, "v", &par2).await?
+                };
                 let mut need_repair = false;
                 match result {
                     Par2Result::AllCorrect => linfo!("{}", t!("log.pp.verified", name = c.name)),

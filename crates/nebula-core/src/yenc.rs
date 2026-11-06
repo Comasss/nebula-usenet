@@ -84,29 +84,24 @@ impl YencDecoder {
         }
     }
 
+    /// Decodifica una línea de datos. Entre escapes (`=`, un 1-2 % de los bytes) resta 42 a
+    /// tramos enteros, que el compilador vectoriza: es el bucle más caliente de la descarga.
     #[inline]
     fn decode_line(&mut self, line: &[u8]) {
-        let start = self.data.len();
-        self.data.resize(start + line.len(), 0);
-        let out = &mut self.data[start..];
-        let mut o = 0;
-        let mut i = 0;
-        let n = line.len();
-        while i < n {
-            let c = line[i];
-            if c == b'=' {
-                i += 1;
-                if i < n {
-                    out[o] = line[i].wrapping_sub(106);
-                    o += 1;
+        self.data.reserve(line.len());
+        let mut rest = line;
+        while let Some(p) = memchr::memchr(b'=', rest) {
+            self.data.extend(rest[..p].iter().map(|b| b.wrapping_sub(42)));
+            match rest.get(p + 1) {
+                Some(&c) => {
+                    self.data.push(c.wrapping_sub(106));
+                    rest = &rest[p + 2..];
                 }
-            } else {
-                out[o] = c.wrapping_sub(42);
-                o += 1;
+                // `=` suelto al final de la línea: se ignora, como antes.
+                None => return,
             }
-            i += 1;
         }
-        self.data.truncate(start + o);
+        self.data.extend(rest.iter().map(|b| b.wrapping_sub(42)));
     }
 
     /// Devuelve Ok(crc_valido).
@@ -166,5 +161,31 @@ mod tests {
         assert_eq!(d.data, data);
         assert_eq!(d.offset(), 5000);
         assert_eq!(d.name.as_deref(), Some("my file.bin"));
+    }
+
+    #[test]
+    fn escapes_at_edges() {
+        let mut d = YencDecoder::new();
+        d.feed_line(b"=ybegin line=128 size=4 name=x");
+        // Escape al principio, seguidos, y un `=` suelto al final que se ignora.
+        d.feed_line(&[b'=', b'@' + 42, b'=', b'J', b'k', b'=']);
+        assert_eq!(d.data, vec![b'@'.wrapping_add(42).wrapping_sub(106), b'J'.wrapping_sub(106), b'k' - 42]);
+    }
+
+    /// `cargo test -p nebula-core --release yenc_speed -- --ignored --nocapture`
+    #[test]
+    #[ignore]
+    fn yenc_speed() {
+        let data: Vec<u8> = (0..50_000_000u64).map(|i| (i.wrapping_mul(2654435761) >> 13) as u8).collect();
+        let enc = encode(&data);
+        let lines: Vec<&[u8]> = enc.chunks(128).collect();
+        let t = std::time::Instant::now();
+        let mut d = YencDecoder::new();
+        d.feed_line(b"=ybegin line=128 size=1 name=x");
+        for l in &lines {
+            d.feed_line(l);
+        }
+        let secs = t.elapsed().as_secs_f64();
+        println!("yEnc: {:.0} MB/s", data.len() as f64 / secs / 1e6);
     }
 }

@@ -13,6 +13,7 @@ pub mod categories;
 pub mod config;
 pub mod debrid;
 pub mod debrid_job;
+pub mod disk;
 pub mod engine;
 pub mod facade;
 pub mod fetch;

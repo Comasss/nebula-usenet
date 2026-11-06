@@ -195,6 +195,9 @@ pub struct JobExt {
     /// Archivos comprimidos ya intentados (bien o mal) y lo que dejaron los que salieron bien.
     pub unpack_tried: Vec<String>,
     pub unpack_out: Vec<PathBuf>,
+    /// Ya se verificó y se han bajado los bloques PAR2 que faltaban: al volver, se repara directamente
+    /// (`par2 r` verifica de todas formas) en vez de leerlo todo una vez más con `par2 v`.
+    pub repair_next: bool,
 }
 
 impl Job {
@@ -1096,6 +1099,8 @@ pub struct Engine {
     pub indexer_dirty: AtomicBool,
     /// Acciones al terminar: recuento de la cola y cuenta atrás de apagado.
     pub finish: crate::finish::Runtime,
+    /// Hilo que escribe los artículos en disco.
+    pub disk: crate::disk::DiskWriter,
 }
 
 #[derive(Serialize, Clone, Debug)]
@@ -1216,6 +1221,7 @@ impl Engine {
             indexer_stats: Mutex::new(Vec::new()),
             indexer_dirty: AtomicBool::new(false),
             finish: Default::default(),
+            disk: Default::default(),
         })
     }
 
@@ -2285,6 +2291,7 @@ impl Engine {
                 v
             }
         };
+        job.x.repair_next = true;
         let mut blocks = 0u32;
         for i in chosen {
             blocks = blocks.saturating_add(blocks_of(&job.files[i]).unwrap_or(0));
@@ -2349,6 +2356,7 @@ impl Engine {
             pp_only: j.pp_only,
             failed_segs: j.failed_segs,
             total: j.total_bytes,
+            repair_next: j.x.repair_next,
             cancel: j.cancel.clone(),
             par2,
             sevenzip,
@@ -3241,17 +3249,10 @@ async fn worker(e: Arc<Engine>, cfg: ServerConfig, sidx: usize, gen: u64, counte
                                 continue;
                             }
                         };
-                        let data = std::mem::take(&mut dec.data);
+                        // Lo escribe el hilo de disco; esta conexión sigue con otro búfer.
+                        let data = std::mem::replace(&mut dec.data, e.disk.buffer());
                         let offset = dec.offset();
-                        let r = tokio::task::spawn_blocking(move || write_all_at(&handle, &data, offset).map(|_| data)).await;
-                        match r {
-                            Ok(Ok(buf)) => {
-                                dec.data = buf;
-                                e.complete(&task, sidx, gen, Outcome::Ok { crc_ok });
-                            }
-                            Ok(Err(err)) => e.write_error(&task, sidx, gen, err),
-                            Err(_) => e.complete(&task, sidx, gen, Outcome::Returned),
-                        }
+                        e.disk.submit(&e, crate::disk::Write { handle, data, offset, task, sidx, gen, crc_ok }).await;
                     }
                     Err(_) => {
                         lwarn!("{}", t!("log.badYenc", id = task.message_id));
