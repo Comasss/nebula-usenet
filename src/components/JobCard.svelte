@@ -9,6 +9,8 @@
   import * as f from '../lib/format.js';
   import { isAndroid } from '../lib/platform.js';
   import { haptic, longpress, actionSheet } from '../lib/feedback.js';
+  import Select from './Select.svelte';
+  import { catLabel, isDefault, categoryOptions, priorityOptions, priorityLabel, PRIORITIES } from '../lib/categories.js';
 
   let { job, index, count } = $props();
   let expanded = $state(false);
@@ -76,6 +78,7 @@
             { id: 'top', label: t('job.moveTop'), icon: 'arrow-up-to-line', disabled: index === 0 },
             { id: 'up', label: t('job.moveUp'), icon: 'chevron-up', disabled: index === 0 },
             { id: 'down', label: t('job.moveDown'), icon: 'chevron-down', disabled: index >= count - 1 },
+            { id: 'priority', label: `${t('cats.priority')}: ${priorityLabel(job.priority ?? 0)}`, icon: 'zap' },
           ]
         : []),
       { id: 'details', label: expanded ? t('job.hideDetails') : t('common.details'), icon: 'info' },
@@ -87,6 +90,14 @@
     else if (a === 'top') move(0);
     else if (a === 'up') move(index - 1);
     else if (a === 'down') move(index + 1);
+    else if (a === 'priority') {
+      const p = await actionSheet({
+        title: t('cats.priority'),
+        subtitle: job.name,
+        actions: PRIORITIES.map((v) => ({ id: String(v), label: priorityLabel(v), icon: v === (job.priority ?? 0) ? 'check' : 'zap' })),
+      });
+      if (p !== null && p !== undefined) setPriority(Number(p));
+    }
     else if (a === 'details') expanded = !expanded;
     else if (a === 'open') invoke('open_path', { path: job.dest });
     else if (a === 'remove') remove();
@@ -114,6 +125,13 @@
   function move(to) {
     call('move_job', { id: job.id, to });
   }
+
+  function setPriority(priority) {
+    if (priority !== (job.priority ?? 0)) call('set_job_priority', { id: job.id, priority });
+  }
+
+  // Las categorías de un PC controlado no se conocen aquí: allí solo se cambia la prioridad.
+  const catOptions = $derived(rc.active ? [] : categoryOptions(ui.settings));
 
   // Fase del post-procesado (clave de traducción; las colas antiguas pueden traer el texto ya escrito).
   function stageText(stage) {
@@ -152,6 +170,12 @@
         {/if}
         {#if job.server}
           <span class="chip accent" title={t('job.serverTitle')}><Icon name="server" size={11} stroke={2.4} /> {job.server}</span>
+        {/if}
+        {#if !isDefault(job.category)}
+          <span class="chip cat" title={t('cats.category')}><Icon name="tag" size={11} stroke={2.4} /> {job.category}</span>
+        {/if}
+        {#if job.priority && job.priority !== 0}
+          <span class="chip {job.priority > 0 ? 'warn' : 'muted'}" title={t('cats.priority')}><Icon name="zap" size={11} stroke={2.4} /> {priorityLabel(job.priority)}</span>
         {/if}
         <span class="sub truncate">{subline()}</span>
         {#if job.heldPar2 > 0 && ['queued', 'downloading', 'paused'].includes(job.status)}
@@ -256,6 +280,14 @@
         {/if}
         {#if job.heldPar2 > 0}
           <div><span class="k">{t('job.heldPar2')}</span><span class="v">{tn('job.heldVolumes', job.heldPar2)}</span></div>
+        {/if}
+        {#if !pp}
+          {#if catOptions.length > 1}
+            <div><span class="k">{t('cats.category')}</span><Select value={catOptions.some((o) => o.value === job.category) ? job.category : '*'} options={catOptions} label={t('cats.category')} onchange={(v) => call('set_job_category', { id: job.id, category: v })} /></div>
+          {:else if !isDefault(job.category)}
+            <div><span class="k">{t('cats.category')}</span><span class="v">{catLabel(job.category)}</span></div>
+          {/if}
+          <div><span class="k">{t('cats.priority')}</span><Select value={job.priority ?? 0} options={priorityOptions()} label={t('cats.priority')} onchange={setPriority} /></div>
         {/if}
       </div>
       {#if files.length}

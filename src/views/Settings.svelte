@@ -16,6 +16,7 @@
   import { setContext, tick } from 'svelte';
   import { showSend, showReceive, showPaste, scanCode } from '../lib/transfer.svelte.js';
   import FinishActions from '../components/FinishActions.svelte';
+  import Categories from '../components/Categories.svelte';
 
   // `only`: muestra solo esa sección (el móvil abre cada sección como una página).
   // `query`: búsqueda que llega de fuera (la portada de Ajustes del móvil); sin ella se usa el buscador propio.
@@ -65,6 +66,7 @@
     { id: 'debrid', icon: 'cloud' },
     { id: 'search', icon: 'search' },
     { id: 'folders', icon: 'folder' },
+    { id: 'categories', icon: 'tag' },
     { id: 'post', icon: 'package' },
     { id: 'links', icon: 'clipboard' },
     { id: 'windows', icon: isAndroid ? 'smartphone' : 'monitor' },
@@ -307,6 +309,13 @@
           <SettingRow label={t('settings.jobFolder')} description={t('settings.jobFolderDesc')} checked={s.createJobFolder} onchange={set('createJobFolder')} />
           <SettingRow label={t('add.paused')} description={t('settings.addPausedDesc')} checked={s.addPaused} onchange={set('addPaused')} />
         </div>
+      </section>
+      {/if}
+
+      {#if show('categories')}
+      <section id="sec-categories" class:hit={secHit('categories')}>
+        <h2><Icon name="tag" size={18} /> {t('settings.section.categories')}</h2>
+        <Categories />
       </section>
       {/if}
 

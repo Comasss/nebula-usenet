@@ -543,7 +543,8 @@
       "api": "API",
       "transfer": "Passar a un altre dispositiu",
       "remote": "Control remot",
-      "finish": "En acabar"
+      "finish": "En acabar",
+      "categories": "Categories"
     },
     "speedLimitDesc": "En MB/s. 0 = sense límit.",
     "startMinimized": "Inicia minimitzat a la safata",
@@ -798,7 +799,8 @@
       "transfer": "Envia o rep els teus ajustos amb un QR",
       "remote": "Veure i gestionar les baixades d'un PC",
       "rss": "Baixada automàtica amb regles",
-      "finish": "Avisos, scripts i apagada"
+      "finish": "Avisos, scripts i apagada",
+      "categories": "tv, movies… amb la seva carpeta i opcions"
     }
   },
   "update": {
@@ -1012,7 +1014,7 @@
     "via": "Mètode de baixada",
     "viaDefault": "Predeterminat",
     "dest": "Carpeta de destinació",
-    "destHelp": "Buida = la carpeta de baixades. La carpeta no es passa a altres dispositius.",
+    "destHelp": "Buida = la de la categoria. La carpeta no passa a altres dispositius.",
     "onlyNew": "Només el nou",
     "onlyNewDesc": "Agafa només el publicat després de crear la regla ({date}).",
     "preview": "Previsualització",
@@ -1131,5 +1133,41 @@
       "sub": "La cua de baixades és buida. Passarà d'aquí a {secs} s.",
       "test": "Això és una prova: en acabar no passarà res."
     }
+  },
+  "cats": {
+    "category": "Categoria",
+    "default": "Per defecte",
+    "defaultDesc": "Fixa: fa servir la carpeta de baixades i les opcions globals",
+    "desc": "Cada baixada va a una categoria, que en decideix la carpeta, com es baixa, la prioritat i el postprocessament. Sonarr, Radarr i les regles RSS la poden triar, i els resultats dels indexadors van sols a la que encaixa amb la seva categoria Newznab.",
+    "dir": "Carpeta",
+    "dirPlaceholder": "Buida = la de baixades; relativa = dins seu",
+    "via": "Baixa amb",
+    "viaDefault": "Mètode per defecte",
+    "priority": "Prioritat",
+    "prio": {
+      "force": "Força",
+      "high": "Alta",
+      "normal": "Normal",
+      "low": "Baixa"
+    },
+    "ppLabel": "Postprocessament",
+    "pp": {
+      "global": "Com als ajustos globals",
+      "0": "Res",
+      "1": "Reparar",
+      "2": "Reparar i extreure",
+      "3": "Reparar, extreure i esborrar"
+    },
+    "newznab": "Categories Newznab",
+    "newznabHelp": "Categories Newznab: números o intervals separats per comes (5000-5999 és TV, 2000-2999 pel·lícules). Si n'hi encaixen diverses, guanya l'interval més estret.",
+    "newPlaceholder": "Nom de la categoria nova (tv, movies…)",
+    "add": "Afegeix",
+    "presets": "Crea tv, movies, audio i books",
+    "remove": "Elimina la categoria",
+    "removeConfirm": "Vols eliminar la categoria «{name}»? El que ja és a la cua o a l'historial en conserva el nom.",
+    "all": "Totes les categories",
+    "chooseTitle": "A quina categoria?",
+    "byNewznab": "Segons la seva categoria Newznab",
+    "ruleHelp": "Posa la carpeta, la prioritat i el postprocessament del que agafa aquesta regla (la carpeta i el mètode de la regla manen si els indiques)."
   }
 }

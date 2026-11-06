@@ -543,7 +543,8 @@
       "api": "API",
       "transfer": "Passa a un altro dispositivo",
       "remote": "Controllo remoto",
-      "finish": "Al termine"
+      "finish": "Al termine",
+      "categories": "Categorie"
     },
     "speedLimitDesc": "In MB/s. 0 = nessun limite.",
     "startMinimized": "Avvia ridotto nell'area di notifica",
@@ -798,7 +799,8 @@
       "transfer": "Invia o ricevi le impostazioni con un QR",
       "remote": "Vedi e gestisci i download di un PC",
       "rss": "Download automatico con regole",
-      "finish": "Avvisi, script e spegnimento"
+      "finish": "Avvisi, script e spegnimento",
+      "categories": "tv, movies… con la loro cartella e opzioni"
     }
   },
   "update": {
@@ -1012,7 +1014,7 @@
     "via": "Metodo di download",
     "viaDefault": "Predefinito",
     "dest": "Cartella di destinazione",
-    "destHelp": "Vuota = la cartella dei download. La cartella non viene trasferita ad altri dispositivi.",
+    "destHelp": "Vuota = la cartella della categoria. La cartella non passa agli altri dispositivi.",
     "onlyNew": "Solo le novità",
     "onlyNewDesc": "Prende solo ciò che è pubblicato dopo la creazione della regola ({date}).",
     "preview": "Anteprima",
@@ -1131,5 +1133,41 @@
       "sub": "La coda dei download è vuota. Tra {secs} s.",
       "test": "Questa è una prova: alla fine non succederà nulla."
     }
+  },
+  "cats": {
+    "category": "Categoria",
+    "default": "Predefinita",
+    "defaultDesc": "Fissa: usa la cartella dei download e le opzioni globali",
+    "desc": "Ogni download appartiene a una categoria che ne decide la cartella, il modo di scaricarlo, la priorità e la post-elaborazione. Sonarr, Radarr e le regole RSS possono sceglierla, e i risultati degli indexer finiscono da soli in quella che corrisponde alla loro categoria Newznab.",
+    "dir": "Cartella",
+    "dirPlaceholder": "Vuota = cartella dei download; relativa = al suo interno",
+    "via": "Scarica con",
+    "viaDefault": "Metodo predefinito",
+    "priority": "Priorità",
+    "prio": {
+      "force": "Forza",
+      "high": "Alta",
+      "normal": "Normale",
+      "low": "Bassa"
+    },
+    "ppLabel": "Post-elaborazione",
+    "pp": {
+      "global": "Come nelle impostazioni globali",
+      "0": "Nessuna",
+      "1": "Ripara",
+      "2": "Ripara ed estrai",
+      "3": "Ripara, estrai ed elimina"
+    },
+    "newznab": "Categorie Newznab",
+    "newznabHelp": "Categorie Newznab: numeri o intervalli separati da virgole (5000-5999 è TV, 2000-2999 film). Se ne corrispondono diverse, vince l'intervallo più stretto.",
+    "newPlaceholder": "Nome della nuova categoria (tv, movies…)",
+    "add": "Aggiungi",
+    "presets": "Crea tv, movies, audio e books",
+    "remove": "Rimuovi categoria",
+    "removeConfirm": "Rimuovere la categoria \"{name}\"? Ciò che è già in coda o nella cronologia ne conserva il nome.",
+    "all": "Tutte le categorie",
+    "chooseTitle": "In quale categoria?",
+    "byNewznab": "In base alla sua categoria Newznab",
+    "ruleHelp": "Imposta cartella, priorità e post-elaborazione di ciò che questa regola prende (cartella e metodo della regola prevalgono se li indichi)."
   }
 }

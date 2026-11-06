@@ -10,6 +10,8 @@
   import * as f from '../lib/format.js';
   import { isAndroid } from '../lib/platform.js';
   import { longpress, actionSheet } from '../lib/feedback.js';
+  import Select from '../components/Select.svelte';
+  import { catLabel, isDefault, DEFAULT_CAT } from '../lib/categories.js';
 
   // Móvil: mantener pulsada una entrada abre sus acciones.
   async function menu(h) {
@@ -33,6 +35,15 @@
 
   let filter = $state('all');
   let search = $state('');
+  // Filtro por categoría: '' = todas. Las categorías salen del propio historial (así también
+  // funciona con un PC controlado y con categorías ya borradas).
+  let catFilter = $state('');
+  const catKey = (h) => (isDefault(h.category) ? DEFAULT_CAT : h.category);
+  const historyCats = $derived([...new Set(ui.history.map(catKey))].sort((a, b) => (a === DEFAULT_CAT ? -1 : b === DEFAULT_CAT ? 1 : a.localeCompare(b))));
+  const catOptions = $derived([{ value: '', label: t('cats.all') }, ...historyCats.map((c) => ({ value: c, label: catLabel(c) }))]);
+  $effect(() => {
+    if (catFilter && !historyCats.includes(catFilter)) catFilter = '';
+  });
   let open = $state(null);
 
   const counts = $derived({
@@ -42,7 +53,10 @@
   });
   const items = $derived(
     ui.history.filter(
-      (h) => (filter === 'all' || h.status === filter) && (!search || h.name.toLowerCase().includes(search.toLowerCase()))
+      (h) =>
+        (filter === 'all' || h.status === filter) &&
+        (!catFilter || catKey(h) === catFilter) &&
+        (!search || h.name.toLowerCase().includes(search.toLowerCase()))
     )
   );
   const totalSize = $derived(ui.history.filter((h) => h.status === 'completed').reduce((a, h) => a + h.size, 0));
@@ -131,9 +145,14 @@
         </button>
       {/each}
     </div>
+    <div class="right">
+    {#if historyCats.length > 1}
+      <div class="cat-filter"><Select bind:value={catFilter} options={catOptions} label={t('cats.category')} title={t('cats.category')} /></div>
+    {/if}
     <div class="search">
       <Icon name="search" size={15} />
       <input class="input" placeholder={t('common.searchPlaceholder')} bind:value={search} />
+    </div>
     </div>
   </div>
 
@@ -150,6 +169,7 @@
               <span>·</span>
               <span title={f.dateTime(h.completedAt)}>{f.ago(h.completedAt)}</span>
               {#if ok && h.avgSpeed}<span>·</span><span>{t('history.avg', { speed: f.speed(h.avgSpeed) })}</span>{/if}
+              {#if !isDefault(h.category)}<span class="chip cat"><Icon name="tag" size={10} stroke={2.6} /> {h.category}</span>{/if}
               {#if h.viaName}<span class="chip info" title={t('history.via', { provider: h.viaName })}><Icon name={h.via?.startsWith('nntp') ? 'server' : 'cloud'} size={10} stroke={2.6} /> {h.viaName}</span>{/if}
               {#if h.warning}<span class="chip warn"><Icon name="alert-triangle" size={10} stroke={2.6} /> {t('history.warning')}</span>{/if}
               {#if !ok}<span class="chip err">{t('history.failedAt', { stage: f.stageLabel(h.failedStage) })}</span>{/if}
@@ -205,6 +225,8 @@
   .count { font-size: 11px; background: var(--panel-3); padding: 1px 7px; border-radius: 99px; color: var(--text-2); }
   .underline { position: absolute; left: 10px; right: 10px; bottom: -1px; height: 2px; border-radius: 2px; background: var(--grad); animation: grow 0.3s var(--ease); }
   @keyframes grow { from { transform: scaleX(0.3); opacity: 0; } }
+  .right { display: flex; align-items: center; gap: 8px; }
+  .cat-filter { width: 200px; margin-bottom: 8px; }
   .search { position: relative; width: 240px; margin-bottom: 8px; }
   .search :global(svg) { position: absolute; left: 11px; top: 11px; color: var(--muted); }
   .search .input { height: 36px; padding-left: 34px; }
@@ -235,6 +257,8 @@
     .tabs { overflow-x: auto; }
     .tab { padding: 0 10px; flex-shrink: 0; }
     .search { width: 100%; margin-bottom: 0; }
+    .right { flex-direction: column; align-items: stretch; }
+    .cat-filter { width: 100%; margin-bottom: 0; }
     .search .input { height: 42px; }
     .search :global(svg) { top: 13px; }
     .list { margin-top: 12px; }

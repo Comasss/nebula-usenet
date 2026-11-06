@@ -543,7 +543,8 @@
       "api": "API",
       "transfer": "Passar para outro dispositivo",
       "remote": "Controle remoto",
-      "finish": "Ao terminar"
+      "finish": "Ao terminar",
+      "categories": "Categorias"
     },
     "speedLimitDesc": "Em MB/s. 0 = sem limite.",
     "startMinimized": "Iniciar minimizado na bandeja",
@@ -798,7 +799,8 @@
       "transfer": "Envie ou receba as suas configurações com um QR",
       "remote": "Ver e gerenciar os downloads de um PC",
       "rss": "Transferência automática com regras",
-      "finish": "Alertas, scripts e desligar"
+      "finish": "Alertas, scripts e desligar",
+      "categories": "tv, movies… com sua pasta e opções"
     }
   },
   "update": {
@@ -1012,7 +1014,7 @@
     "via": "Método de transferência",
     "viaDefault": "Predefinido",
     "dest": "Pasta de destino",
-    "destHelp": "Vazia = a pasta de transferências. A pasta não passa para outros dispositivos.",
+    "destHelp": "Vazia = a da categoria. A pasta não passa para outros dispositivos.",
     "onlyNew": "Só o novo",
     "onlyNewDesc": "Obtém só o que for publicado depois de criar a regra ({date}).",
     "preview": "Pré-visualização",
@@ -1131,5 +1133,41 @@
       "sub": "A fila de downloads está vazia. Acontece em {secs} s.",
       "test": "Isto é um teste: no fim não acontecerá nada."
     }
+  },
+  "cats": {
+    "category": "Categoria",
+    "default": "Padrão",
+    "defaultDesc": "Fixa: usa a pasta de downloads e as opções globais",
+    "desc": "Cada download entra numa categoria, que define a pasta, como é baixado, a prioridade e o pós-processamento. Sonarr, Radarr e as regras RSS podem escolhê-la, e os resultados dos indexadores vão sozinhos para a que corresponde à sua categoria Newznab.",
+    "dir": "Pasta",
+    "dirPlaceholder": "Vazia = a de downloads; relativa = dentro dela",
+    "via": "Baixar com",
+    "viaDefault": "Método padrão",
+    "priority": "Prioridade",
+    "prio": {
+      "force": "Forçar",
+      "high": "Alta",
+      "normal": "Normal",
+      "low": "Baixa"
+    },
+    "ppLabel": "Pós-processamento",
+    "pp": {
+      "global": "Como nas configurações globais",
+      "0": "Nada",
+      "1": "Reparar",
+      "2": "Reparar e extrair",
+      "3": "Reparar, extrair e apagar"
+    },
+    "newznab": "Categorias Newznab",
+    "newznabHelp": "Categorias Newznab: números ou intervalos separados por vírgulas (5000-5999 é TV, 2000-2999 filmes). Se várias corresponderem, vence o intervalo mais estreito.",
+    "newPlaceholder": "Nome da nova categoria (tv, movies…)",
+    "add": "Adicionar",
+    "presets": "Criar tv, movies, audio e books",
+    "remove": "Remover categoria",
+    "removeConfirm": "Remover a categoria \"{name}\"? O que já está na fila ou no histórico mantém o nome.",
+    "all": "Todas as categorias",
+    "chooseTitle": "Em qual categoria?",
+    "byNewznab": "Pela sua categoria Newznab",
+    "ruleHelp": "Define a pasta, a prioridade e o pós-processamento do que esta regra pega (a pasta e o método da regra prevalecem se você os indicar)."
   }
 }

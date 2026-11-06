@@ -543,7 +543,8 @@
       "api": "API",
       "transfer": "Transférer vers un autre appareil",
       "remote": "Contrôle à distance",
-      "finish": "À la fin"
+      "finish": "À la fin",
+      "categories": "Catégories"
     },
     "speedLimitDesc": "En MB/s. 0 = illimitée.",
     "startMinimized": "Démarrer réduit dans la zone de notification",
@@ -798,7 +799,8 @@
       "transfer": "Envoyez ou recevez vos réglages avec un QR code",
       "remote": "Voir et gérer les téléchargements d'un PC",
       "rss": "Téléchargement automatique par règles",
-      "finish": "Alertes, scripts et extinction"
+      "finish": "Alertes, scripts et extinction",
+      "categories": "tv, movies… avec leur dossier et leurs options"
     }
   },
   "update": {
@@ -1012,7 +1014,7 @@
     "via": "Méthode de téléchargement",
     "viaDefault": "Par défaut",
     "dest": "Dossier de destination",
-    "destHelp": "Vide = le dossier de téléchargements. Le dossier n'est pas transféré vers d'autres appareils.",
+    "destHelp": "Vide = le dossier de la catégorie. Le dossier n'est pas transféré aux autres appareils.",
     "onlyNew": "Seulement les nouveautés",
     "onlyNewDesc": "Ne récupère que ce qui est publié après la création de la règle ({date}).",
     "preview": "Aperçu",
@@ -1131,5 +1133,41 @@
       "sub": "La file de téléchargement est vide. Dans {secs} s.",
       "test": "Ceci est un test : rien ne se passera à la fin."
     }
+  },
+  "cats": {
+    "category": "Catégorie",
+    "default": "Par défaut",
+    "defaultDesc": "Fixe : utilise le dossier de téléchargement et les options globales",
+    "desc": "Chaque téléchargement appartient à une catégorie qui fixe son dossier, sa méthode de téléchargement, sa priorité et son post-traitement. Sonarr, Radarr et les règles RSS peuvent la choisir, et les résultats des indexeurs vont d'eux-mêmes dans celle qui correspond à leur catégorie Newznab.",
+    "dir": "Dossier",
+    "dirPlaceholder": "Vide = dossier de téléchargement ; relatif = à l'intérieur",
+    "via": "Télécharger avec",
+    "viaDefault": "Méthode par défaut",
+    "priority": "Priorité",
+    "prio": {
+      "force": "Forcer",
+      "high": "Haute",
+      "normal": "Normale",
+      "low": "Basse"
+    },
+    "ppLabel": "Post-traitement",
+    "pp": {
+      "global": "Comme dans les réglages globaux",
+      "0": "Aucun",
+      "1": "Réparer",
+      "2": "Réparer et extraire",
+      "3": "Réparer, extraire et supprimer"
+    },
+    "newznab": "Catégories Newznab",
+    "newznabHelp": "Catégories Newznab : nombres ou plages séparés par des virgules (5000-5999 = TV, 2000-2999 = films). Si plusieurs correspondent, la plage la plus étroite l'emporte.",
+    "newPlaceholder": "Nom de la nouvelle catégorie (tv, movies…)",
+    "add": "Ajouter",
+    "presets": "Créer tv, movies, audio et books",
+    "remove": "Supprimer la catégorie",
+    "removeConfirm": "Supprimer la catégorie « {name} » ? Ce qui est déjà dans la file ou l'historique garde son nom.",
+    "all": "Toutes les catégories",
+    "chooseTitle": "Dans quelle catégorie ?",
+    "byNewznab": "Selon sa catégorie Newznab",
+    "ruleHelp": "Fixe le dossier, la priorité et le post-traitement de ce que cette règle récupère (le dossier et la méthode de la règle priment si vous les indiquez)."
   }
 }

@@ -525,7 +525,8 @@
       "api": "API",
       "transfer": "迁移到其他设备",
       "remote": "远程控制",
-      "finish": "完成后"
+      "finish": "完成后",
+      "categories": "分类"
     },
     "speedLimitDesc": "单位为 MB/s。0 = 不限速。",
     "startMinimized": "启动时最小化到托盘",
@@ -777,7 +778,8 @@
       "transfer": "用二维码发送或接收设置",
       "remote": "查看和管理电脑上的下载",
       "rss": "按规则自动下载",
-      "finish": "通知、脚本和关机"
+      "finish": "通知、脚本和关机",
+      "categories": "tv、movies…及其文件夹和选项"
     }
   },
   "update": {
@@ -991,7 +993,7 @@
     "via": "下载方式",
     "viaDefault": "默认",
     "dest": "目标文件夹",
-    "destHelp": "留空 = 下载文件夹。文件夹不会同步到其他设备。",
+    "destHelp": "留空 = 分类的文件夹。文件夹不会转移到其他设备。",
     "onlyNew": "仅新内容",
     "onlyNewDesc": "只抓取规则创建（{date}）之后发布的内容。",
     "preview": "预览",
@@ -1110,5 +1112,41 @@
       "sub": "下载队列已空。将在 {secs} 秒后执行。",
       "test": "这是测试：结束时不会发生任何事情。"
     }
+  },
+  "cats": {
+    "category": "分类",
+    "default": "默认",
+    "defaultDesc": "固定：使用下载文件夹和全局选项",
+    "desc": "每个下载都属于一个分类，分类决定其文件夹、下载方式、优先级和后处理。Sonarr、Radarr 和 RSS 规则可以指定分类，索引器结果会按其 Newznab 分类自动归入匹配的分类。",
+    "dir": "文件夹",
+    "dirPlaceholder": "留空 = 下载文件夹；相对路径 = 位于其中",
+    "via": "下载方式",
+    "viaDefault": "默认方式",
+    "priority": "优先级",
+    "prio": {
+      "force": "强制",
+      "high": "高",
+      "normal": "普通",
+      "low": "低"
+    },
+    "ppLabel": "后处理",
+    "pp": {
+      "global": "与全局设置相同",
+      "0": "无",
+      "1": "修复",
+      "2": "修复并解压",
+      "3": "修复、解压并删除"
+    },
+    "newznab": "Newznab 分类",
+    "newznabHelp": "Newznab 分类：用逗号分隔的数字或范围（5000-5999 为电视，2000-2999 为电影）。若有多个匹配，范围最窄的优先。",
+    "newPlaceholder": "新分类名称（tv、movies…）",
+    "add": "添加",
+    "presets": "创建 tv、movies、audio 和 books",
+    "remove": "删除分类",
+    "removeConfirm": "删除分类“{name}”？队列和历史中已有的项目会保留该名称。",
+    "all": "所有分类",
+    "chooseTitle": "放入哪个分类？",
+    "byNewznab": "按其 Newznab 分类",
+    "ruleHelp": "决定此规则抓取内容的文件夹、优先级和后处理（如果规则自己设置了文件夹和方式，则以规则为准）。"
   }
 }

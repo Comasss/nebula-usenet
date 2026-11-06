@@ -21,6 +21,8 @@ const OPS = new Set([
   'pause_job',
   'resume_job',
   'move_job',
+  'set_job_priority',
+  'set_job_category',
   'remove_job',
   'set_paused',
   'set_speed_limit',
@@ -142,9 +144,11 @@ export async function stopControl() {
 
 /** Manda .nzb o enlaces al PC que se controla (o a `pcId`). */
 export async function sendToPc(items, pcId = remote.active?.id) {
+  const category = await chooseCategory(pcId, items.length > 1 ? t('remote.whereMany', { n: items.length }) : items[0]?.value.split(/[\\/]/).pop());
+  if (category === null) return;
   for (const it of items) {
     try {
-      const r = await invoke('remote_send', { id: pcId, kind: it.kind, value: it.value });
+      const r = await invoke('remote_send', { id: pcId, kind: it.kind, value: it.value, category });
       const pc = remote.pcs.find((p) => p.id === pcId);
       haptic('success');
       toast('success', t('remote.sent', { name: r?.name ?? it.value, pc: pc?.name ?? remote.active?.name ?? '' }), 3500);
@@ -173,9 +177,34 @@ export async function pcViaOptions() {
   }
 }
 
-/** Manda un resultado de búsqueda (su enlace) al PC controlado, con `via` o el método por defecto del PC. */
-export async function sendLinkToPc(url, name, via = null) {
-  return invoke('remote_send', { id: remote.active?.id, kind: 'url', value: url, via, name });
+/**
+ * Manda un resultado de búsqueda (su enlace) al PC controlado, con `via` o el método por defecto del PC.
+ * El PC elige la categoría con sus propias reglas a partir de las categorías Newznab del resultado.
+ */
+export async function sendLinkToPc(url, name, via = null, newznab = []) {
+  return invoke('remote_send', { id: remote.active?.id, kind: 'url', value: url, via, name, newznab });
+}
+
+/** Categorías del PC controlado (vacío si no tiene o si es de una versión anterior). */
+export async function pcCategories(pcId = remote.active?.id) {
+  try {
+    const v = remote.active?.id === pcId ? await invoke('remote_call', { op: 'get_vias', args: {} }) : null;
+    return v?.categories ?? [];
+  } catch {
+    return [];
+  }
+}
+
+/** Si el PC tiene categorías, pregunta en cuál meter lo que se le manda. null = cancelado. */
+async function chooseCategory(pcId, title) {
+  const cats = await pcCategories(pcId);
+  if (!cats.length) return '*';
+  const r = await actionSheet({
+    title: t('cats.chooseTitle'),
+    subtitle: title,
+    actions: [{ id: '*', label: t('cats.default'), icon: 'inbox' }, ...cats.map((c) => ({ id: c, label: c, icon: 'tag' }))],
+  });
+  return r ?? null;
 }
 
 /** Añadir desde Descargas: al PC si se le está controlando, si no a este móvil. */

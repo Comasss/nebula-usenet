@@ -42,6 +42,7 @@
     { id: 'debrid', icon: 'download', hue: 230, nntp: true },
     { id: 'search', icon: 'search', hue: 265, indexers: true },
     { id: 'folders', icon: 'folder', hue: 40 },
+    { id: 'categories', icon: 'tag', hue: 70 },
     { id: 'post', icon: 'package', hue: 20 },
     { id: 'links', icon: 'clipboard', hue: 330 },
     { id: 'windows', icon: 'smartphone', hue: 200 },

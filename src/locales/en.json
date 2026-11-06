@@ -543,7 +543,8 @@
       "api": "API",
       "transfer": "Move to another device",
       "remote": "Remote control",
-      "finish": "On finish"
+      "finish": "On finish",
+      "categories": "Categories"
     },
     "speedLimitDesc": "In MB/s. 0 = no limit.",
     "startMinimized": "Start minimized to tray",
@@ -798,7 +799,8 @@
       "transfer": "Send or receive your settings with a QR code",
       "remote": "See and manage a PC's downloads",
       "rss": "Automatic downloads with rules",
-      "finish": "Alerts, scripts and shutdown"
+      "finish": "Alerts, scripts and shutdown",
+      "categories": "tv, movies… with their folder and options"
     }
   },
   "update": {
@@ -1012,7 +1014,7 @@
     "via": "Download method",
     "viaDefault": "Default",
     "dest": "Destination folder",
-    "destHelp": "Empty = the downloads folder. The folder isn't moved to other devices.",
+    "destHelp": "Empty = the category's folder. The folder isn't moved to other devices.",
     "onlyNew": "Only new releases",
     "onlyNewDesc": "Only grab what's published after the rule was created ({date}).",
     "preview": "Preview",
@@ -1131,5 +1133,41 @@
       "sub": "The download queue is empty. Happening in {secs} s.",
       "test": "This is a test: nothing will happen at the end."
     }
+  },
+  "cats": {
+    "category": "Category",
+    "default": "Default",
+    "defaultDesc": "Fixed: uses the download folder and the global options",
+    "desc": "Every download goes into a category that sets its folder, how it's downloaded, its priority and its post-processing. Sonarr, Radarr and RSS rules can pick one, and indexer results go on their own to the one that matches their Newznab category.",
+    "dir": "Folder",
+    "dirPlaceholder": "Empty = download folder; relative = inside it",
+    "via": "Download with",
+    "viaDefault": "Default method",
+    "priority": "Priority",
+    "prio": {
+      "force": "Force",
+      "high": "High",
+      "normal": "Normal",
+      "low": "Low"
+    },
+    "ppLabel": "Post-processing",
+    "pp": {
+      "global": "As in the global settings",
+      "0": "None",
+      "1": "Repair",
+      "2": "Repair and extract",
+      "3": "Repair, extract and delete"
+    },
+    "newznab": "Newznab categories",
+    "newznabHelp": "Newznab categories: numbers or ranges separated by commas (5000-5999 is TV, 2000-2999 movies). If several match, the narrowest range wins.",
+    "newPlaceholder": "New category name (tv, movies…)",
+    "add": "Add",
+    "presets": "Create tv, movies, audio and books",
+    "remove": "Remove category",
+    "removeConfirm": "Remove the \"{name}\" category? What's already in the queue or history keeps its name.",
+    "all": "All categories",
+    "chooseTitle": "Which category?",
+    "byNewznab": "By its Newznab category",
+    "ruleHelp": "Sets the folder, priority and post-processing of what this rule grabs (the rule's own folder and method win if you set them)."
   }
 }

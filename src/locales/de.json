@@ -543,7 +543,8 @@
       "api": "API",
       "transfer": "Auf anderes Gerät übertragen",
       "remote": "Fernsteuerung",
-      "finish": "Nach Abschluss"
+      "finish": "Nach Abschluss",
+      "categories": "Kategorien"
     },
     "speedLimitDesc": "In MB/s. 0 = kein Limit.",
     "startMinimized": "Minimiert im Infobereich starten",
@@ -798,7 +799,8 @@
       "transfer": "Einstellungen per QR-Code senden oder empfangen",
       "remote": "Downloads eines PCs ansehen und steuern",
       "rss": "Automatische Downloads mit Regeln",
-      "finish": "Benachrichtigungen, Skripte, Herunterfahren"
+      "finish": "Benachrichtigungen, Skripte, Herunterfahren",
+      "categories": "tv, movies… mit Ordner und Optionen"
     }
   },
   "update": {
@@ -1012,7 +1014,7 @@
     "via": "Download-Methode",
     "viaDefault": "Standard",
     "dest": "Zielordner",
-    "destHelp": "Leer = der Download-Ordner. Der Ordner wird nicht auf andere Geräte übertragen.",
+    "destHelp": "Leer = Ordner der Kategorie. Der Ordner wird nicht auf andere Geräte übertragen.",
     "onlyNew": "Nur Neues",
     "onlyNewDesc": "Holt nur, was nach dem Erstellen der Regel veröffentlicht wurde ({date}).",
     "preview": "Vorschau",
@@ -1131,5 +1133,41 @@
       "sub": "Die Download-Warteschlange ist leer. In {secs} s.",
       "test": "Das ist ein Test: Am Ende passiert nichts."
     }
+  },
+  "cats": {
+    "category": "Kategorie",
+    "default": "Standard",
+    "defaultDesc": "Fest: nutzt den Download-Ordner und die globalen Optionen",
+    "desc": "Jeder Download gehört zu einer Kategorie, die Ordner, Download-Methode, Priorität und Nachbearbeitung festlegt. Sonarr, Radarr und RSS-Regeln können sie wählen, und Indexer-Ergebnisse landen automatisch in der Kategorie, die zu ihrer Newznab-Kategorie passt.",
+    "dir": "Ordner",
+    "dirPlaceholder": "Leer = Download-Ordner; relativ = darin",
+    "via": "Herunterladen mit",
+    "viaDefault": "Standardmethode",
+    "priority": "Priorität",
+    "prio": {
+      "force": "Erzwingen",
+      "high": "Hoch",
+      "normal": "Normal",
+      "low": "Niedrig"
+    },
+    "ppLabel": "Nachbearbeitung",
+    "pp": {
+      "global": "Wie in den globalen Einstellungen",
+      "0": "Keine",
+      "1": "Reparieren",
+      "2": "Reparieren und entpacken",
+      "3": "Reparieren, entpacken und löschen"
+    },
+    "newznab": "Newznab-Kategorien",
+    "newznabHelp": "Newznab-Kategorien: Zahlen oder Bereiche, durch Kommas getrennt (5000-5999 ist TV, 2000-2999 Filme). Passen mehrere, gewinnt der engste Bereich.",
+    "newPlaceholder": "Name der neuen Kategorie (tv, movies…)",
+    "add": "Hinzufügen",
+    "presets": "tv, movies, audio und books anlegen",
+    "remove": "Kategorie entfernen",
+    "removeConfirm": "Kategorie „{name}“ entfernen? Was schon in der Warteschlange oder im Verlauf ist, behält den Namen.",
+    "all": "Alle Kategorien",
+    "chooseTitle": "In welche Kategorie?",
+    "byNewznab": "Nach ihrer Newznab-Kategorie",
+    "ruleHelp": "Legt Ordner, Priorität und Nachbearbeitung für das fest, was diese Regel holt (Ordner und Methode der Regel haben Vorrang, wenn du sie angibst)."
   }
 }
