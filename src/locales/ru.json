@@ -599,7 +599,8 @@
       "remote": "Удалённое управление",
       "finish": "По завершении",
       "categories": "Категории",
-      "schedule": "Планировщик"
+      "schedule": "Планировщик",
+      "import": "Импорт"
     },
     "speedLimitDesc": "В МБ/с. 0 = без ограничений.",
     "startMinimized": "Запускать свёрнутым в трей",
@@ -1309,5 +1310,53 @@
     "empty": "Задач нет. Например: пауза в 8:00 по будням и возобновление в 18:00.",
     "add": "Добавить задачу",
     "hint": "Местное время устройства, где работает Nebula. Если дни не выбраны — каждый день."
+  },
+  "import": {
+    "fileLabel": "Из SABnzbd или NZBGet",
+    "fileDesc": "Выберите sabnzbd.ini или nzbget.conf: серверы, категории, папки, параметры и планировщик. Перед добавлением вы увидите содержимое.",
+    "choose": "Выбрать файл",
+    "indexersLabel": "Индексаторы из Prowlarr или NZBHydra2",
+    "indexersDesc": "По URL и API-ключу Nebula добавит каждый индексатор Usenet из Prowlarr или NZBHydra2 как один.",
+    "title": "Импорт из {source}",
+    "subtitle": "Отметьте, что добавить. Существующее не изменится.",
+    "servers": "Серверы",
+    "categories": "Категории",
+    "settings": "Настройки",
+    "schedule": "Планировщик",
+    "exists": "Уже есть",
+    "disabled": "Отключено",
+    "conns": "соединений: {n}",
+    "yes": "Да",
+    "no": "Нет",
+    "noLimit": "Без ограничений",
+    "everyDay": "Каждый день",
+    "apply": "Импортировать ({n})",
+    "done": "Импортировано: серверов {servers}, категорий {categories}, настроек {settings}, задач {schedule}",
+    "key": {
+      "downloadDir": "Папка загрузок",
+      "incompleteDir": "Временная папка",
+      "speedLimitKbps": "Ограничение скорости",
+      "precheck": "Проверять перед загрузкой",
+      "duplicateAction": "Дубликаты загрузок",
+      "par2Enabled": "Проверка и восстановление PAR2",
+      "extractEnabled": "Распаковывать архивы",
+      "directUnpack": "Распаковывать во время загрузки",
+      "deleteArchives": "Удалять архивы после распаковки",
+      "deletePar2": "Удалять PAR2 по завершении",
+      "deobfuscate": "Восстанавливать имена файлов",
+      "abortHopeless": "Отменять безнадёжные загрузки",
+      "unwantedExtensions": "Нежелательные расширения",
+      "unwantedAction": "Нежелательные файлы"
+    }
+  },
+  "discover": {
+    "button": "Из Prowlarr / NZBHydra2",
+    "title": "Индексаторы из Prowlarr или NZBHydra2",
+    "subtitle": "Каждый индексатор Usenet из Prowlarr добавляется отдельно; NZBHydra2 — как один, который ищет во всех своих.",
+    "hint": "В Prowlarr: Settings → General. В NZBHydra2: Config → Main.",
+    "find": "Найти индексаторы",
+    "searching": "Поиск…",
+    "add": "Добавить ({n})",
+    "added": "Добавлено индексаторов: {n}"
   }
 }

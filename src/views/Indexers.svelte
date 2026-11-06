@@ -12,6 +12,7 @@
   import { blankIndexer } from '../lib/search.js';
   import { isAndroid } from '../lib/platform.js';
   import Rss from './Rss.svelte';
+  import DiscoverIndexers from '../components/DiscoverIndexers.svelte';
 
   // En el escritorio, RSS es una pestaña de Indexadores (en Android está en Ajustes).
   let tab = $state('indexers');
@@ -102,7 +103,10 @@
       <h1>{t('nav.indexers')}</h1>
       <p class="subtitle">{t('indexers.subtitle')}</p>
     </div>
-    <button class="btn primary" onclick={add}><Icon name="plus" size={16} /> {t('indexers.add')}</button>
+    <div class="head-btns">
+      <button class="btn" onclick={() => (ui.discoverOpen = true)}><Icon name="download" size={16} /> {t('discover.button')}</button>
+      <button class="btn primary" onclick={add}><Icon name="plus" size={16} /> {t('indexers.add')}</button>
+    </div>
   </header>
 
   <div class="list">
@@ -167,7 +171,12 @@
   </Modal>
 {/if}
 
+{#if ui.discoverOpen}
+  <DiscoverIndexers onclose={() => (ui.discoverOpen = false)} />
+{/if}
+
 <style>
+  .head-btns { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
   .tabs { display: flex; gap: 4px; max-width: 1100px; margin: 0 auto; padding: 18px 30px 0; }
   .tabs button { display: inline-flex; align-items: center; gap: 7px; padding: 7px 14px; border-radius: 10px; border: 1px solid transparent; background: none; color: var(--text-2); font-weight: 600; font-size: 13.5px; cursor: pointer; }
   .tabs button:hover { color: var(--text); background: var(--panel-2); }

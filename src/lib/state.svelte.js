@@ -27,6 +27,8 @@ export const ui = $state({
   addItems: [],
   clipboard: [],
   setupOpen: false,
+  // Indexadores › Desde Prowlarr / NZBHydra2 (se puede abrir desde Ajustes › Importar).
+  discoverOpen: false,
   dragging: false,
   dialog: null,
   // Menú "Descargar con" (pulsación larga en Descargar).

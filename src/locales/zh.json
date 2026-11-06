@@ -545,7 +545,8 @@
       "remote": "远程控制",
       "finish": "完成后",
       "categories": "分类",
-      "schedule": "计划任务"
+      "schedule": "计划任务",
+      "import": "导入"
     },
     "speedLimitDesc": "单位为 MB/s。0 = 不限速。",
     "startMinimized": "启动时最小化到托盘",
@@ -1246,5 +1247,53 @@
     "empty": "暂无任务。例如：工作日 8:00 暂停，18:00 恢复。",
     "add": "添加任务",
     "hint": "按运行 Nebula 的设备本地时间。未选日期即每天。"
+  },
+  "import": {
+    "fileLabel": "从 SABnzbd 或 NZBGet",
+    "fileDesc": "选择 sabnzbd.ini 或 nzbget.conf：服务器、分类、文件夹、选项和计划任务。添加前会先显示内容。",
+    "choose": "选择文件",
+    "indexersLabel": "来自 Prowlarr 或 NZBHydra2 的索引器",
+    "indexersDesc": "提供 URL 和 API key 后，Nebula 会添加 Prowlarr 中的每个 Usenet 索引器，或将 NZBHydra2 作为一个索引器添加。",
+    "title": "从 {source} 导入",
+    "subtitle": "勾选要添加的内容。已有的不会改动。",
+    "servers": "服务器",
+    "categories": "分类",
+    "settings": "设置",
+    "schedule": "计划任务",
+    "exists": "已存在",
+    "disabled": "已停用",
+    "conns": "{n} 个连接",
+    "yes": "是",
+    "no": "否",
+    "noLimit": "不限速",
+    "everyDay": "每天",
+    "apply": "导入（{n}）",
+    "done": "已导入：{servers} 台服务器、{categories} 个分类、{settings} 项设置和 {schedule} 个任务",
+    "key": {
+      "downloadDir": "下载文件夹",
+      "incompleteDir": "临时文件夹",
+      "speedLimitKbps": "速度限制",
+      "precheck": "下载前检查",
+      "duplicateAction": "重复下载",
+      "par2Enabled": "使用 PAR2 校验和修复",
+      "extractEnabled": "解压压缩包",
+      "directUnpack": "边下载边解压",
+      "deleteArchives": "解压后删除压缩包",
+      "deletePar2": "完成后删除 PAR2",
+      "deobfuscate": "还原混淆的文件名",
+      "abortHopeless": "取消无法修复的下载",
+      "unwantedExtensions": "不需要的扩展名",
+      "unwantedAction": "不需要的文件"
+    }
+  },
+  "discover": {
+    "button": "从 Prowlarr / NZBHydra2",
+    "title": "来自 Prowlarr 或 NZBHydra2 的索引器",
+    "subtitle": "Prowlarr 中的每个 Usenet 索引器会分别添加；NZBHydra2 作为一个索引器添加，搜索其全部索引器。",
+    "hint": "Prowlarr：Settings → General。NZBHydra2：Config → Main。",
+    "find": "查找索引器",
+    "searching": "正在查找…",
+    "add": "添加（{n}）",
+    "added": "已添加索引器：{n}"
   }
 }

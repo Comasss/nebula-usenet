@@ -563,7 +563,8 @@
       "remote": "Control remot",
       "finish": "En acabar",
       "categories": "Categories",
-      "schedule": "Programador"
+      "schedule": "Programador",
+      "import": "Importar"
     },
     "speedLimitDesc": "En MB/s. 0 = sense límit.",
     "startMinimized": "Inicia minimitzat a la safata",
@@ -1267,5 +1268,53 @@
     "empty": "Sense tasques. Per exemple: pausar a les 8:00 de dilluns a divendres i reprendre a les 18:00.",
     "add": "Afegeix tasca",
     "hint": "Hora local de l'equip on s'executa Nebula. Sense dies marcats, cada dia."
+  },
+  "import": {
+    "fileLabel": "Des de SABnzbd o NZBGet",
+    "fileDesc": "Tria el seu sabnzbd.ini o nzbget.conf: servidors, categories, carpetes, opcions i programador. Veuràs què hi ha abans d'afegir res.",
+    "choose": "Tria un fitxer",
+    "indexersLabel": "Indexadors de Prowlarr o NZBHydra2",
+    "indexersDesc": "Amb la URL i l'API key, Nebula afegeix cada indexador d'Usenet de Prowlarr, o NZBHydra2 com un de sol.",
+    "title": "Importa de {source}",
+    "subtitle": "Marca el que vols afegir. El que ja tens no es toca.",
+    "servers": "Servidors",
+    "categories": "Categories",
+    "settings": "Opcions",
+    "schedule": "Programador",
+    "exists": "Ja existeix",
+    "disabled": "Desactivat",
+    "conns": "{n} connexions",
+    "yes": "Sí",
+    "no": "No",
+    "noLimit": "Sense límit",
+    "everyDay": "Cada dia",
+    "apply": "Importa ({n})",
+    "done": "Importat: {servers} servidors, {categories} categories, {settings} opcions i {schedule} tasques",
+    "key": {
+      "downloadDir": "Carpeta de baixades",
+      "incompleteDir": "Carpeta temporal",
+      "speedLimitKbps": "Límit de velocitat",
+      "precheck": "Comprovar abans de baixar",
+      "duplicateAction": "Baixades duplicades",
+      "par2Enabled": "Verificar i reparar amb PAR2",
+      "extractEnabled": "Extreure arxius comprimits",
+      "directUnpack": "Extreure mentre es baixa",
+      "deleteArchives": "Esborrar els comprimits després d'extreure",
+      "deletePar2": "Esborrar els PAR2 en acabar",
+      "deobfuscate": "Desofuscar noms",
+      "abortHopeless": "Cancel·lar baixades sense remei",
+      "unwantedExtensions": "Extensions no desitjades",
+      "unwantedAction": "Fitxers no desitjats"
+    }
+  },
+  "discover": {
+    "button": "Des de Prowlarr / NZBHydra2",
+    "title": "Indexadors de Prowlarr o NZBHydra2",
+    "subtitle": "Cada indexador d'Usenet de Prowlarr s'afegeix a part; NZBHydra2 s'afegeix com un de sol que cerca a tots els seus.",
+    "hint": "A Prowlarr: Settings → General. A NZBHydra2: Config → Main.",
+    "find": "Cerca indexadors",
+    "searching": "Cercant…",
+    "add": "Afegeix ({n})",
+    "added": "Indexadors afegits: {n}"
   }
 }

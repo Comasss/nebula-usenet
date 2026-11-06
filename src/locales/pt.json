@@ -563,7 +563,8 @@
       "remote": "Controle remoto",
       "finish": "Ao terminar",
       "categories": "Categorias",
-      "schedule": "Agendador"
+      "schedule": "Agendador",
+      "import": "Importar"
     },
     "speedLimitDesc": "Em MB/s. 0 = sem limite.",
     "startMinimized": "Iniciar minimizado na bandeja",
@@ -1267,5 +1268,53 @@
     "empty": "Sem tarefas. Por exemplo: pausar às 8:00 de segunda a sexta e retomar às 18:00.",
     "add": "Adicionar tarefa",
     "hint": "Hora local do equipamento onde o Nebula roda. Sem dias marcados, todos os dias."
+  },
+  "import": {
+    "fileLabel": "Do SABnzbd ou NZBGet",
+    "fileDesc": "Escolha o sabnzbd.ini ou nzbget.conf: servidores, categorias, pastas, opções e agendador. Você verá o conteúdo antes de adicionar algo.",
+    "choose": "Escolher arquivo",
+    "indexersLabel": "Indexadores do Prowlarr ou NZBHydra2",
+    "indexersDesc": "Com a URL e a API key, o Nebula adiciona cada indexador de Usenet do Prowlarr, ou o NZBHydra2 como um só.",
+    "title": "Importar do {source}",
+    "subtitle": "Marque o que quer adicionar. O que você já tem não é alterado.",
+    "servers": "Servidores",
+    "categories": "Categorias",
+    "settings": "Ajustes",
+    "schedule": "Agendador",
+    "exists": "Já existe",
+    "disabled": "Desativado",
+    "conns": "{n} conexões",
+    "yes": "Sim",
+    "no": "Não",
+    "noLimit": "Sem limite",
+    "everyDay": "Todos os dias",
+    "apply": "Importar ({n})",
+    "done": "Importado: {servers} servidores, {categories} categorias, {settings} ajustes e {schedule} tarefas",
+    "key": {
+      "downloadDir": "Pasta de downloads",
+      "incompleteDir": "Pasta temporária",
+      "speedLimitKbps": "Limite de velocidade",
+      "precheck": "Verificar antes de baixar",
+      "duplicateAction": "Downloads duplicados",
+      "par2Enabled": "Verificar e reparar com PAR2",
+      "extractEnabled": "Extrair arquivos compactados",
+      "directUnpack": "Extrair durante o download",
+      "deleteArchives": "Apagar compactados após extrair",
+      "deletePar2": "Apagar PAR2 ao terminar",
+      "deobfuscate": "Desofuscar nomes",
+      "abortHopeless": "Cancelar downloads sem solução",
+      "unwantedExtensions": "Extensões indesejadas",
+      "unwantedAction": "Arquivos indesejados"
+    }
+  },
+  "discover": {
+    "button": "Do Prowlarr / NZBHydra2",
+    "title": "Indexadores do Prowlarr ou NZBHydra2",
+    "subtitle": "Cada indexador de Usenet do Prowlarr é adicionado à parte; o NZBHydra2 é adicionado como um só que busca em todos os seus.",
+    "hint": "No Prowlarr: Settings → General. No NZBHydra2: Config → Main.",
+    "find": "Buscar indexadores",
+    "searching": "Buscando…",
+    "add": "Adicionar ({n})",
+    "added": "Indexadores adicionados: {n}"
   }
 }

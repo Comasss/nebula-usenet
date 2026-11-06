@@ -545,7 +545,8 @@
       "remote": "リモート操作",
       "finish": "完了時",
       "categories": "カテゴリ",
-      "schedule": "スケジューラ"
+      "schedule": "スケジューラ",
+      "import": "インポート"
     },
     "speedLimitDesc": "MB/s 単位。0 = 制限なし。",
     "startMinimized": "トレイに最小化した状態で起動",
@@ -1246,5 +1247,53 @@
     "empty": "タスクはありません。例: 平日 8:00 に一時停止し、18:00 に再開。",
     "add": "タスクを追加",
     "hint": "Nebula を実行している機器の現地時刻。曜日を選ばなければ毎日。"
+  },
+  "import": {
+    "fileLabel": "SABnzbd または NZBGet から",
+    "fileDesc": "sabnzbd.ini または nzbget.conf を選択: サーバー、カテゴリ、フォルダー、オプション、スケジューラー。追加前に内容を確認できます。",
+    "choose": "ファイルを選択",
+    "indexersLabel": "Prowlarr または NZBHydra2 のインデクサー",
+    "indexersDesc": "URL と API キーで、Prowlarr の各 Usenet インデクサー、または NZBHydra2 を1つとして追加します。",
+    "title": "{source} からインポート",
+    "subtitle": "追加するものを選んでください。既存の設定は変更されません。",
+    "servers": "サーバー",
+    "categories": "カテゴリ",
+    "settings": "設定",
+    "schedule": "スケジューラー",
+    "exists": "既に存在",
+    "disabled": "無効",
+    "conns": "{n} 接続",
+    "yes": "はい",
+    "no": "いいえ",
+    "noLimit": "制限なし",
+    "everyDay": "毎日",
+    "apply": "インポート（{n}）",
+    "done": "インポート完了: サーバー {servers}、カテゴリ {categories}、設定 {settings}、タスク {schedule}",
+    "key": {
+      "downloadDir": "ダウンロードフォルダー",
+      "incompleteDir": "一時フォルダー",
+      "speedLimitKbps": "速度制限",
+      "precheck": "ダウンロード前に確認",
+      "duplicateAction": "重複ダウンロード",
+      "par2Enabled": "PAR2 で検証・修復",
+      "extractEnabled": "アーカイブを展開",
+      "directUnpack": "ダウンロード中に展開",
+      "deleteArchives": "展開後にアーカイブを削除",
+      "deletePar2": "完了後に PAR2 を削除",
+      "deobfuscate": "ファイル名の難読化を解除",
+      "abortHopeless": "修復不能なダウンロードを中止",
+      "unwantedExtensions": "不要な拡張子",
+      "unwantedAction": "不要なファイル"
+    }
+  },
+  "discover": {
+    "button": "Prowlarr / NZBHydra2 から",
+    "title": "Prowlarr または NZBHydra2 のインデクサー",
+    "subtitle": "Prowlarr の Usenet インデクサーは個別に追加され、NZBHydra2 は全インデクサーを検索する1つとして追加されます。",
+    "hint": "Prowlarr: Settings → General。NZBHydra2: Config → Main。",
+    "find": "インデクサーを検索",
+    "searching": "検索中…",
+    "add": "追加（{n}）",
+    "added": "追加したインデクサー: {n}"
   }
 }

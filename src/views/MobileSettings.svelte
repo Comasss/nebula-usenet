@@ -55,6 +55,7 @@
     { id: 'remote', icon: 'monitor', hue: 250 },
     { id: 'api', icon: 'plug', hue: 100 },
     { id: 'transfer', icon: 'qr', hue: 50 },
+    { id: 'import', icon: 'download', hue: 120 },
   ];
   // En el navegador (nebula-server) no hay portapapeles, ventana ni actualizador; sí la cuenta.
   const NOT_HERE = isServer ? ['links', 'windows', 'updates'] : ['server'];

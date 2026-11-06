@@ -635,7 +635,8 @@
       "remote": "التحكم عن بُعد",
       "finish": "عند الانتهاء",
       "categories": "الفئات",
-      "schedule": "المجدول"
+      "schedule": "المجدول",
+      "import": "استيراد"
     },
     "speedLimitDesc": "بوحدة MB/s. ‏0 = بلا حدّ.",
     "startMinimized": "البدء مصغّرًا في علبة النظام",
@@ -1351,5 +1352,53 @@
     "empty": "لا توجد مهام. مثال: إيقاف مؤقت الساعة 8:00 من الاثنين إلى الجمعة واستئناف الساعة 18:00.",
     "add": "إضافة مهمة",
     "hint": "التوقيت المحلي للجهاز الذي يعمل عليه Nebula. بدون تحديد أيام: كل يوم."
+  },
+  "import": {
+    "fileLabel": "من SABnzbd أو NZBGet",
+    "fileDesc": "اختر ملف sabnzbd.ini أو nzbget.conf: الخوادم والفئات والمجلدات والخيارات والمجدول. سترى المحتوى قبل إضافة أي شيء.",
+    "choose": "اختر ملفًا",
+    "indexersLabel": "مفهرسات من Prowlarr أو NZBHydra2",
+    "indexersDesc": "باستخدام عنوان URL ومفتاح API، يضيف Nebula كل مفهرس Usenet من Prowlarr، أو NZBHydra2 كمفهرس واحد.",
+    "title": "استيراد من {source}",
+    "subtitle": "حدد ما تريد إضافته. لن يتغير ما لديك بالفعل.",
+    "servers": "الخوادم",
+    "categories": "الفئات",
+    "settings": "الإعدادات",
+    "schedule": "المجدول",
+    "exists": "موجود مسبقًا",
+    "disabled": "معطّل",
+    "conns": "{n} اتصالات",
+    "yes": "نعم",
+    "no": "لا",
+    "noLimit": "بلا حد",
+    "everyDay": "كل يوم",
+    "apply": "استيراد ({n})",
+    "done": "تم الاستيراد: {servers} خوادم و{categories} فئات و{settings} إعدادات و{schedule} مهام",
+    "key": {
+      "downloadDir": "مجلد التنزيلات",
+      "incompleteDir": "المجلد المؤقت",
+      "speedLimitKbps": "حد السرعة",
+      "precheck": "التحقق قبل التنزيل",
+      "duplicateAction": "التنزيلات المكررة",
+      "par2Enabled": "التحقق والإصلاح باستخدام PAR2",
+      "extractEnabled": "استخراج الأرشيفات",
+      "directUnpack": "الاستخراج أثناء التنزيل",
+      "deleteArchives": "حذف الأرشيفات بعد الاستخراج",
+      "deletePar2": "حذف ملفات PAR2 عند الانتهاء",
+      "deobfuscate": "إلغاء تشويش أسماء الملفات",
+      "abortHopeless": "إلغاء التنزيلات الميؤوس منها",
+      "unwantedExtensions": "الامتدادات غير المرغوبة",
+      "unwantedAction": "الملفات غير المرغوبة"
+    }
+  },
+  "discover": {
+    "button": "من Prowlarr / NZBHydra2",
+    "title": "مفهرسات من Prowlarr أو NZBHydra2",
+    "subtitle": "يُضاف كل مفهرس Usenet في Prowlarr على حدة؛ ويُضاف NZBHydra2 كمفهرس واحد يبحث في جميع مفهرساته.",
+    "hint": "في Prowlarr: Settings → General. في NZBHydra2: Config → Main.",
+    "find": "البحث عن المفهرسات",
+    "searching": "جارٍ البحث…",
+    "add": "إضافة ({n})",
+    "added": "المفهرسات المضافة: {n}"
   }
 }

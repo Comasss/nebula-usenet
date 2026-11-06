@@ -18,6 +18,7 @@
   import Categories from '../components/Categories.svelte';
   import ChipList from '../components/ChipList.svelte';
   import Schedule from '../components/Schedule.svelte';
+  import ImportDialog from '../components/ImportDialog.svelte';
 
   // `only`: muestra solo esa sección (el móvil abre cada sección como una página).
   // `query`: búsqueda que llega de fuera (la portada de Ajustes del móvil); sin ella se usa el buscador propio.
@@ -83,6 +84,7 @@
     { id: 'api', icon: 'plug' },
     { id: 'remote', icon: isAndroid ? 'monitor' : 'smartphone' },
     { id: 'transfer', icon: 'qr' },
+    { id: 'import', icon: 'download' },
     { id: 'updates', icon: 'refresh' },
     { id: 'about', icon: 'info' },
   ].filter((sec) => !NOT_HERE.includes(sec.id));
@@ -135,6 +137,20 @@
     if (!p || s.clipboardPatterns.includes(p)) return;
     saveSettings({ clipboardPatterns: [...s.clipboardPatterns, p] });
     newPattern = '';
+  }
+
+  // ---- Importar de SABnzbd o NZBGet ----
+  let importInput = $state(null);
+  let imported = $state(null);
+  async function importFile(e) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    try {
+      imported = await invoke('import_preview', { text: await file.text() });
+    } catch (err) {
+      toast('error', String(err));
+    }
   }
 
   const DEFAULT_UNWANTED = ['exe', 'scr', 'com', 'bat', 'cmd', 'lnk', 'vbs', 'msi', 'ps1', 'jar'];
@@ -260,6 +276,10 @@
     section = cur;
   }
 </script>
+
+{#if imported}
+  <ImportDialog {imported} onclose={() => (imported = null)} />
+{/if}
 
 {#if s}
   <div class="wrap" class:single={!!only} class:embedded={query !== null} class:searching={!!q}>
@@ -676,6 +696,21 @@
           </SettingRow>
           <SettingRow icon="clipboard" label={t('transfer.pasteLabel')} description={t('transfer.pasteDescShort')}>
             <button class="btn sm" onclick={showPaste}>{t('transfer.paste')}</button>
+          </SettingRow>
+        </div>
+      </section>
+      {/if}
+
+      {#if show('import')}
+      <section id="sec-import" class:hit={secHit('import')}>
+        <h2><Icon name="download" size={18} /> {t('settings.section.import')}</h2>
+        <div class="card group">
+          <SettingRow icon="upload" label={t('import.fileLabel')} description={t('import.fileDesc')} keywords="SABnzbd NZBGet sabnzbd.ini nzbget.conf">
+            <button class="btn sm primary" onclick={() => importInput?.click()}><Icon name="folder" size={14} /> {t('import.choose')}</button>
+            <input bind:this={importInput} type="file" accept=".ini,.conf,text/plain" hidden onchange={importFile} />
+          </SettingRow>
+          <SettingRow icon="layers" label={t('import.indexersLabel')} description={t('import.indexersDesc')} keywords="Prowlarr NZBHydra2">
+            <button class="btn sm" onclick={() => { ui.view = 'indexers'; ui.discoverOpen = true; }}>{t('settings.manage')} <Icon name="chevron-right" size={14} /></button>
           </SettingRow>
         </div>
       </section>

@@ -563,7 +563,8 @@
       "remote": "रिमोट कंट्रोल",
       "finish": "समाप्ति पर",
       "categories": "श्रेणियाँ",
-      "schedule": "शेड्यूलर"
+      "schedule": "शेड्यूलर",
+      "import": "आयात"
     },
     "speedLimitDesc": "MB/s में। 0 = कोई सीमा नहीं।",
     "startMinimized": "ट्रे में छोटा करके शुरू करें",
@@ -1267,5 +1268,53 @@
     "empty": "अभी कोई कार्य नहीं। उदाहरण: सोमवार से शुक्रवार 8:00 पर रोकें और 18:00 पर फिर शुरू करें।",
     "add": "कार्य जोड़ें",
     "hint": "Nebula चलाने वाले डिवाइस का स्थानीय समय। कोई दिन न चुनें तो हर दिन।"
+  },
+  "import": {
+    "fileLabel": "SABnzbd या NZBGet से",
+    "fileDesc": "sabnzbd.ini या nzbget.conf चुनें: सर्वर, श्रेणियाँ, फ़ोल्डर, विकल्प और शेड्यूलर। कुछ भी जोड़ने से पहले आप देखेंगे कि उसमें क्या है।",
+    "choose": "फ़ाइल चुनें",
+    "indexersLabel": "Prowlarr या NZBHydra2 से इंडेक्सर",
+    "indexersDesc": "URL और API key से, Nebula Prowlarr के हर Usenet इंडेक्सर को, या NZBHydra2 को एक के रूप में जोड़ता है।",
+    "title": "{source} से आयात",
+    "subtitle": "जो जोड़ना है उसे चुनें। जो पहले से है उसे छुआ नहीं जाता।",
+    "servers": "सर्वर",
+    "categories": "श्रेणियाँ",
+    "settings": "सेटिंग्स",
+    "schedule": "शेड्यूलर",
+    "exists": "पहले से है",
+    "disabled": "अक्षम",
+    "conns": "{n} कनेक्शन",
+    "yes": "हाँ",
+    "no": "नहीं",
+    "noLimit": "कोई सीमा नहीं",
+    "everyDay": "हर दिन",
+    "apply": "आयात करें ({n})",
+    "done": "आयात किया गया: {servers} सर्वर, {categories} श्रेणियाँ, {settings} सेटिंग्स और {schedule} कार्य",
+    "key": {
+      "downloadDir": "डाउनलोड फ़ोल्डर",
+      "incompleteDir": "अस्थायी फ़ोल्डर",
+      "speedLimitKbps": "गति सीमा",
+      "precheck": "डाउनलोड से पहले जाँचें",
+      "duplicateAction": "डुप्लिकेट डाउनलोड",
+      "par2Enabled": "PAR2 से सत्यापित और ठीक करें",
+      "extractEnabled": "आर्काइव निकालें",
+      "directUnpack": "डाउनलोड के दौरान निकालें",
+      "deleteArchives": "निकालने के बाद आर्काइव हटाएँ",
+      "deletePar2": "पूरा होने पर PAR2 हटाएँ",
+      "deobfuscate": "फ़ाइल नाम सुधारें",
+      "abortHopeless": "निराशाजनक डाउनलोड रद्द करें",
+      "unwantedExtensions": "अवांछित एक्सटेंशन",
+      "unwantedAction": "अवांछित फ़ाइलें"
+    }
+  },
+  "discover": {
+    "button": "Prowlarr / NZBHydra2 से",
+    "title": "Prowlarr या NZBHydra2 से इंडेक्सर",
+    "subtitle": "Prowlarr का हर Usenet इंडेक्सर अलग जोड़ा जाता है; NZBHydra2 एक के रूप में जुड़ता है जो अपने सभी में खोजता है।",
+    "hint": "Prowlarr में: Settings → General। NZBHydra2 में: Config → Main।",
+    "find": "इंडेक्सर खोजें",
+    "searching": "खोज रहे हैं…",
+    "add": "जोड़ें ({n})",
+    "added": "जोड़े गए इंडेक्सर: {n}"
   }
 }
