@@ -342,6 +342,24 @@ async fn handle(e: Arc<Engine>, mut sock: TcpStream, peer: IpAddr) {
     let _ = write(&mut sock, req.method == "HEAD", resp).await;
 }
 
+/// Respuesta de las APIs Newznab y SABnzbd para quien las sirva con su propio servidor HTTP
+/// (nebula-server las monta en su puerto).
+pub struct HttpReply {
+    pub status: u16,
+    pub content_type: &'static str,
+    pub body: Vec<u8>,
+    pub headers: Vec<(&'static str, String)>,
+}
+
+/// Atiende una petición a `/api`, `/sabnzbd/api`, `/newznab/api`… igual que el servidor propio
+/// de la API: `query` es lo que va tras `?` y `body` el cuerpo (formulario o multipart).
+pub async fn handle_http(e: &Arc<Engine>, method: &str, path: &str, query: &str, headers: Vec<(String, String)>, body: &[u8], peer: IpAddr) -> HttpReply {
+    let mut req = Request { method: method.to_ascii_uppercase(), path: decode(path), query: parse_query(query), headers, files: Vec::new() };
+    parse_body(&mut req, body);
+    let r = route(e, &req, peer).await;
+    HttpReply { status: r.status, content_type: r.content_type, body: r.body, headers: r.headers }
+}
+
 fn plain(status: u16, text: &str) -> Response {
     Response { status, content_type: "text/plain; charset=utf-8", body: text.as_bytes().to_vec(), headers: Vec::new() }
 }

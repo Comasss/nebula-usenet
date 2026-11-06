@@ -47,6 +47,8 @@ const LOCAL_KEYS: &[&str] = &[
     "apiKeyEnc",
     "remoteEnabled",
     "remotePort",
+    "par2Path",
+    "sevenZipPath",
 ];
 /// Campos que solo existen en disco (claves cifradas).
 const DISK_KEYS: &[&str] = &["passwordEnc", "apiKeyEnc", "urlEnc", "tokenEnc"];

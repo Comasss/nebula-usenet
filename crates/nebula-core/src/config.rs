@@ -33,6 +33,7 @@ impl AppPaths {
         for d in [&p.data, &p.nzb, &p.logs, &p.tools] {
             let _ = std::fs::create_dir_all(d);
         }
+        crate::secrets::init(&p.data);
         p
     }
     pub fn config_file(&self) -> PathBuf {
@@ -373,6 +374,9 @@ pub struct Settings {
     pub start_minimized: bool,
     pub start_with_windows: bool,
     pub associate_nzb: bool,
+    /// Ruta de par2 y de 7-Zip. Vacía = automática (la que trae Nebula o la del sistema).
+    pub par2_path: String,
+    pub seven_zip_path: String,
     /// KB/s, 0 = sin límite.
     pub speed_limit_kbps: u64,
     pub max_retries: u32,
@@ -452,6 +456,8 @@ impl Default for Settings {
             start_minimized: false,
             start_with_windows: false,
             associate_nzb: false,
+            par2_path: String::new(),
+            seven_zip_path: String::new(),
             speed_limit_kbps: 0,
             max_retries: 3,
             timeout_secs: 30,

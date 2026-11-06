@@ -256,6 +256,11 @@ impl Engine {
         Ok(())
     }
 
+    /// par2 y 7-Zip que se usarán y si existen.
+    pub fn tools_status(&self) -> Vec<crate::tools::ToolStatus> {
+        crate::tools::status(&self.settings.read(), &self.paths.tools)
+    }
+
     /// Cambia el idioma del motor. Devuelve si se cambió.
     pub fn set_language(&self, lang: &str) -> bool {
         crate::i18n::set(lang)

@@ -1902,6 +1902,13 @@ impl Engine {
     }
 
     pub fn pp_context(&self, id: &str) -> Option<crate::postproc::PpCtx> {
+        let (par2, sevenzip) = {
+            let s = self.settings.read();
+            (
+                crate::tools::resolve(&s, &self.paths.tools, crate::tools::Tool::Par2),
+                crate::tools::resolve(&s, &self.paths.tools, crate::tools::Tool::SevenZip),
+            )
+        };
         let st = self.st.lock();
         let j = st.jobs.iter().find(|j| j.id == id)?;
         Some(crate::postproc::PpCtx {
@@ -1915,7 +1922,8 @@ impl Engine {
             failed_segs: j.failed_segs,
             total: j.total_bytes,
             cancel: j.cancel.clone(),
-            tools: self.paths.tools.clone(),
+            par2,
+            sevenzip,
         })
     }
 

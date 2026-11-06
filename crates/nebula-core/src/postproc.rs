@@ -26,7 +26,9 @@ pub struct PpCtx {
     pub failed_segs: u32,
     pub total: u64,
     pub cancel: Arc<Cancel>,
-    pub tools: PathBuf,
+    /// par2 y 7-Zip que se van a usar.
+    pub par2: PathBuf,
+    pub sevenzip: PathBuf,
 }
 
 struct PpError {
@@ -397,7 +399,7 @@ fn cleanup_par2_backups(dir: &Path, before: &HashSet<PathBuf>) {
 }
 
 async fn run_par2(engine: &Arc<Engine>, c: &PpCtx, mode: &str, par2: &Path) -> Result<Par2Result, PpError> {
-    let exe = crate::tools::path(&c.tools, crate::tools::Tool::Par2);
+    let exe = c.par2.clone();
     let mut cmd = command(&exe);
     cmd.current_dir(&c.work_dir).arg(mode).arg(util::file_name(par2));
     // Archivos extra para detectar archivos con nombre cambiado (ofuscados).
@@ -583,7 +585,7 @@ static RE_PCT: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^(\d{1,3})%").unw
 async fn extract_set(engine: &Arc<Engine>, c: &PpCtx, set: &ArchiveSet, before: u64, total: u64, detail: &str) -> Result<(), PpError> {
     std::fs::create_dir_all(&c.final_dir)
         .map_err(|e| PpError::new("extract", t!("pp.createDest", error = e)))?;
-    let exe = crate::tools::path(&c.tools, crate::tools::Tool::SevenZip);
+    let exe = c.sevenzip.clone();
     let pw = c.password.clone().filter(|p| !p.is_empty()).unwrap_or_else(|| "nebula-no-password".into());
     let mut cmd = command(&exe);
     cmd.current_dir(&c.work_dir)

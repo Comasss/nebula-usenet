@@ -52,6 +52,39 @@ pub fn path(dir: &Path, tool: Tool) -> PathBuf {
     PathBuf::from(list[0])
 }
 
+/// La herramienta que se va a usar: la de los ajustes si se eligió una, si no la automática.
+pub fn resolve(s: &crate::config::Settings, dir: &Path, tool: Tool) -> PathBuf {
+    let custom = match tool {
+        Tool::Par2 => s.par2_path.trim(),
+        Tool::SevenZip => s.seven_zip_path.trim(),
+    };
+    if custom.is_empty() {
+        path(dir, tool)
+    } else {
+        PathBuf::from(custom)
+    }
+}
+
+#[derive(serde::Serialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolStatus {
+    /// "par2" o "7z".
+    pub tool: &'static str,
+    pub path: String,
+    pub found: bool,
+}
+
+/// Qué par2 y 7-Zip se usarán y si existen (para avisar en Ajustes → Post-procesado).
+pub fn status(s: &crate::config::Settings, dir: &Path) -> Vec<ToolStatus> {
+    [(Tool::Par2, "par2"), (Tool::SevenZip, "7z")]
+        .into_iter()
+        .map(|(t, name)| {
+            let p = resolve(s, dir, t);
+            ToolStatus { tool: name, found: p.is_file(), path: p.to_string_lossy().to_string() }
+        })
+        .collect()
+}
+
 /// Busca un ejecutable en el PATH.
 pub fn in_path(name: &str) -> Option<PathBuf> {
     let paths = std::env::var_os("PATH")?;
