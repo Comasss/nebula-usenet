@@ -208,6 +208,7 @@
   "log.restoreFailed": "“{name}” पुनर्स्थापित नहीं हो सका: {error}",
   "log.retryExtract": "फिर से निकाला जा रहा है: {name}",
   "log.retrying": "फिर से कोशिश: {name}",
+  "log.sab.added": "SABnzbd API: {name} प्राप्त हुआ",
   "log.serversUpdated": "सर्वर कॉन्फ़िगरेशन अपडेट किया गया",
   "log.started": "Nebula {version} शुरू हुआ",
   "log.transferImported": "दूसरे डिवाइस से सेटिंग्स आयात की गईं",

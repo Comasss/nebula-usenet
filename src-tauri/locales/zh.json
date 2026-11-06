@@ -208,6 +208,7 @@
   "log.restoreFailed": "无法恢复“{name}”：{error}",
   "log.retryExtract": "正在重试解压：{name}",
   "log.retrying": "正在重试：{name}",
+  "log.sab.added": "SABnzbd API：已接收 {name}",
   "log.serversUpdated": "服务器配置已更新",
   "log.started": "Nebula {version} 已启动",
   "log.transferImported": "已从另一台设备导入设置",

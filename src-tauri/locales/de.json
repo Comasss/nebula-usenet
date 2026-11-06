@@ -208,6 +208,7 @@
   "log.restoreFailed": "„{name}“ konnte nicht wiederhergestellt werden: {error}",
   "log.retryExtract": "Entpacken wird wiederholt: {name}",
   "log.retrying": "Neuer Versuch: {name}",
+  "log.sab.added": "SABnzbd-API: {name} empfangen",
   "log.serversUpdated": "Serverkonfiguration aktualisiert",
   "log.started": "Nebula {version} gestartet",
   "log.transferImported": "Einstellungen von einem anderen Gerät importiert",

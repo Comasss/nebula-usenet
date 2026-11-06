@@ -208,6 +208,7 @@
   "log.restoreFailed": "تعذّرت استعادة «{name}»: {error}",
   "log.retryExtract": "إعادة محاولة الاستخراج: {name}",
   "log.retrying": "إعادة المحاولة: {name}",
+  "log.sab.added": "واجهة SABnzbd: تم استلام {name}",
   "log.serversUpdated": "حُدّثت إعدادات الخوادم",
   "log.started": "بدأ تشغيل Nebula {version}",
   "log.transferImported": "تم استيراد الإعدادات من جهاز آخر",

@@ -1,7 +1,10 @@
 //! API compatible con Newznab (como la de NZBHydra2): Sonarr, Radarr, Lidarr, Readarr, Prowlarr…
 //! pueden usar Nebula como un único indexador que busca a la vez en todos los indexadores
 //! configurados. Los enlaces de descarga apuntan a Nebula, que pide el .nzb al indexador
-//! sin enseñar su API key. Un servidor HTTP mínimo: solo GET/HEAD y una petición por conexión.
+//! sin enseñar su API key. Un servidor HTTP mínimo: una petición por conexión.
+//!
+//! El mismo servidor atiende la API compatible con SABnzbd (sab.rs): las peticiones con `mode=`
+//! van allí y las que llevan `t=`, a la de Newznab.
 use crate::config::IndexerConfig;
 use crate::engine::Engine;
 use crate::indexer::{self, SearchItem};
@@ -22,6 +25,8 @@ pub const DEFAULT_PORT: u16 = 5077;
 /// Enlaces de descarga que se recuerdan (los más antiguos se olvidan).
 const MAX_LINKS: usize = 20_000;
 const MAX_HEAD: usize = 16 * 1024;
+/// Tamaño máximo del cuerpo de un POST (un NZB subido con addfile).
+const MAX_BODY: usize = 100 * 1024 * 1024;
 
 #[derive(Serialize, Clone, Default, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -132,8 +137,10 @@ async fn serve(e: Arc<Engine>, listener: TcpListener, mut stop: tokio::sync::one
 struct Request {
     method: String,
     path: String,
+    /// Parámetros de la URL y, detrás, los del formulario del cuerpo (urlencoded o multipart).
     query: Vec<(String, String)>,
     headers: Vec<(String, String)>,
+    files: Vec<crate::sab::Upload>,
 }
 
 impl Request {
@@ -168,7 +175,96 @@ fn parse_request(head: &str) -> Option<Request> {
         .filter_map(|l| l.split_once(':'))
         .map(|(k, v)| (k.trim().to_string(), v.trim().to_string()))
         .collect();
-    Some(Request { method, path: decode(path), query: parse_query(qs), headers })
+    Some(Request { method, path: decode(path), query: parse_query(qs), headers, files: Vec::new() })
+}
+
+/// Añade a la petición el formulario de su cuerpo: `application/x-www-form-urlencoded` o
+/// `multipart/form-data` (los campos van a los parámetros y los archivos, a `files`).
+fn parse_body(req: &mut Request, body: &[u8]) {
+    if body.is_empty() {
+        return;
+    }
+    let ctype = req.header("Content-Type").unwrap_or("").to_string();
+    let lower = ctype.to_ascii_lowercase();
+    if lower.starts_with("multipart/form-data") {
+        let Some(boundary) = ctype.split(';').map(str::trim).find_map(|p| {
+            let (k, v) = p.split_once('=')?;
+            k.trim().eq_ignore_ascii_case("boundary").then(|| v.trim().trim_matches('"').to_string())
+        }) else {
+            return;
+        };
+        for (name, filename, data) in multipart(body, &boundary) {
+            match filename {
+                Some(f) => req.files.push(crate::sab::Upload { field: name, filename: f, data }),
+                None => req.query.push((name, String::from_utf8_lossy(&data).to_string())),
+            }
+        }
+    } else if lower.starts_with("application/x-www-form-urlencoded") || lower.is_empty() {
+        if let Ok(text) = std::str::from_utf8(body) {
+            req.query.extend(parse_query(text.trim()));
+        }
+    }
+}
+
+fn find(hay: &[u8], needle: &[u8], from: usize) -> Option<usize> {
+    if needle.is_empty() || from >= hay.len() {
+        return None;
+    }
+    hay[from..].windows(needle.len()).position(|w| w == needle).map(|i| i + from)
+}
+
+/// Partes de un cuerpo multipart: (campo, nombre de archivo si es un archivo, datos).
+fn multipart(body: &[u8], boundary: &str) -> Vec<(String, Option<String>, Vec<u8>)> {
+    let delim = format!("--{}", boundary).into_bytes();
+    let mut out = Vec::new();
+    let Some(mut pos) = find(body, &delim, 0) else { return out };
+    loop {
+        let start = pos + delim.len();
+        if body[start..].starts_with(b"--") {
+            break;
+        }
+        let Some(head_end) = find(body, b"\r\n\r\n", start) else { break };
+        let Some(next) = find(body, &delim, head_end + 4) else { break };
+        let head = String::from_utf8_lossy(&body[start..head_end]).to_string();
+        let mut data_end = next;
+        if data_end >= 2 && &body[data_end - 2..data_end] == b"\r\n" {
+            data_end -= 2;
+        }
+        let data = body[head_end + 4..data_end.max(head_end + 4)].to_vec();
+        let disp = head.lines().find(|l| l.to_ascii_lowercase().starts_with("content-disposition")).unwrap_or("");
+        let attr = |key: &str| -> Option<String> {
+            disp.split(';').map(str::trim).find_map(|p| {
+                let (k, v) = p.split_once('=')?;
+                k.trim().eq_ignore_ascii_case(key).then(|| v.trim().trim_matches('"').to_string())
+            })
+        };
+        if let Some(name) = attr("name") {
+            let filename = attr("filename*").map(|f| crate::util::percent_decode(f.rsplit("''").next().unwrap_or(&f))).or_else(|| attr("filename"));
+            out.push((name, filename, data));
+        }
+        pos = next;
+    }
+    out
+}
+
+/// Decodifica un cuerpo `Transfer-Encoding: chunked` completo; None si aún está incompleto.
+fn dechunk(raw: &[u8]) -> Option<Vec<u8>> {
+    let mut out = Vec::new();
+    let mut pos = 0;
+    loop {
+        let line_end = find(raw, b"\r\n", pos)?;
+        let size_txt = std::str::from_utf8(&raw[pos..line_end]).ok()?;
+        let size = usize::from_str_radix(size_txt.split(';').next()?.trim(), 16).ok()?;
+        pos = line_end + 2;
+        if size == 0 {
+            return Some(out);
+        }
+        if raw.len() < pos + size + 2 {
+            return None;
+        }
+        out.extend_from_slice(&raw[pos..pos + size]);
+        pos += size + 2;
+    }
 }
 
 fn parse_query(qs: &str) -> Vec<(String, String)> {
@@ -187,7 +283,7 @@ fn decode(s: &str) -> String {
 
 async fn handle(e: Arc<Engine>, mut sock: TcpStream, peer: IpAddr) {
     let mut buf = Vec::with_capacity(2048);
-    let mut chunk = [0u8; 2048];
+    let mut chunk = vec![0u8; 64 * 1024];
     let head_end = loop {
         if let Some(i) = buf.windows(4).position(|w| w == b"\r\n\r\n") {
             break i;
@@ -201,10 +297,44 @@ async fn handle(e: Arc<Engine>, mut sock: TcpStream, peer: IpAddr) {
         }
     };
     let head = String::from_utf8_lossy(&buf[..head_end]).to_string();
-    let Some(req) = parse_request(&head) else {
+    let Some(mut req) = parse_request(&head) else {
         let _ = write(&mut sock, false, plain(400, "Bad Request")).await;
         return;
     };
+    // Cuerpo de los POST (addfile sube el NZB en un formulario multipart).
+    let mut body = buf[head_end + 4..].to_vec();
+    let chunked = req.header("Transfer-Encoding").is_some_and(|v| v.to_ascii_lowercase().contains("chunked"));
+    let length = req.header("Content-Length").and_then(|v| v.trim().parse::<usize>().ok());
+    if length.is_some_and(|l| l > MAX_BODY) {
+        let _ = write(&mut sock, false, plain(413, "Payload Too Large")).await;
+        return;
+    }
+    if chunked || length.is_some_and(|l| l > 0) {
+        if req.header("Expect").is_some_and(|v| v.eq_ignore_ascii_case("100-continue")) {
+            let _ = sock.write_all(b"HTTP/1.1 100 Continue\r\n\r\n").await;
+        }
+        loop {
+            if !chunked && body.len() >= length.unwrap_or(0) {
+                body.truncate(length.unwrap_or(0));
+                break;
+            }
+            if chunked {
+                if let Some(b) = dechunk(&body) {
+                    body = b;
+                    break;
+                }
+            }
+            if body.len() > MAX_BODY + 64 * 1024 {
+                let _ = write(&mut sock, false, plain(413, "Payload Too Large")).await;
+                return;
+            }
+            match tokio::time::timeout(Duration::from_secs(30), sock.read(&mut chunk)).await {
+                Ok(Ok(n)) if n > 0 => body.extend_from_slice(&chunk[..n]),
+                _ => return,
+            }
+        }
+        parse_body(&mut req, &body);
+    }
     let resp = match req.method.as_str() {
         "GET" | "HEAD" | "POST" => route(&e, &req, peer).await,
         "OPTIONS" => Response { status: 204, content_type: "text/plain", body: Vec::new(), headers: Vec::new() },
@@ -224,6 +354,7 @@ async fn write(sock: &mut TcpStream, head_only: bool, r: Response) -> std::io::R
         400 => "Bad Request",
         404 => "Not Found",
         405 => "Method Not Allowed",
+        413 => "Payload Too Large",
         _ => "Error",
     };
     let mut out = format!(
@@ -264,7 +395,13 @@ fn error(code: u16, description: &str) -> Response {
 async fn route(e: &Arc<Engine>, req: &Request, peer: IpAddr) -> Response {
     let path = req.path.trim_end_matches('/').to_ascii_lowercase();
     if path.is_empty() {
-        return plain(200, "Nebula · Newznab API: /api?t=caps");
+        return plain(200, "Nebula · Newznab API: /api?t=caps · SABnzbd API: /api?mode=version");
+    }
+    // API de SABnzbd: /api o /sabnzbd/api con mode=…
+    if (path == "/api" || path == "/sabnzbd/api" || path == "/sabnzbd") && req.param("mode").is_some() && req.param("t").is_none() {
+        let call = crate::sab::Call { params: &req.query, files: &req.files };
+        let (status, v) = crate::sab::handle(e, &call).await;
+        return json_response(status, &v);
     }
     if path != "/api" && path != "/newznab/api" && path != "/newznab" {
         return Response { status: 404, ..error(404, "Not found") };
@@ -290,6 +427,15 @@ async fn route(e: &Arc<Engine>, req: &Request, peer: IpAddr) -> Response {
             error(203, "Function not available")
         }
         _ => error(202, "No such function"),
+    }
+}
+
+fn json_response(status: u16, v: &serde_json::Value) -> Response {
+    Response {
+        status,
+        content_type: "application/json; charset=utf-8",
+        body: serde_json::to_vec(v).unwrap_or_default(),
+        headers: Vec::new(),
     }
 }
 
@@ -718,5 +864,134 @@ mod tests {
         assert_eq!(pick_indexers(&all, None).len(), 2);
         assert_eq!(pick_indexers(&all, Some("nzbgeek")).len(), 1);
         assert_eq!(pick_indexers(&all, Some("b1, off")).len(), 1);
+    }
+
+    /// Lo que hace el servidor con una petición HTTP completa (cabecera + cuerpo), con un motor simulado.
+    fn sab_raw(b: &crate::sab::tests::Fake, raw: &[u8]) -> serde_json::Value {
+        let end = raw.windows(4).position(|w| w == b"\r\n\r\n").unwrap();
+        let mut req = parse_request(&String::from_utf8_lossy(&raw[..end])).unwrap();
+        let body = &raw[end + 4..];
+        let body = if req.header("Transfer-Encoding").is_some() { dechunk(body).unwrap() } else { body.to_vec() };
+        parse_body(&mut req, &body);
+        let path = req.path.trim_end_matches('/').to_ascii_lowercase();
+        assert!(path == "/api" || path == "/sabnzbd/api");
+        assert!(req.param("mode").is_some());
+        let call = crate::sab::Call { params: &req.query, files: &req.files };
+        tauri::async_runtime::block_on(crate::sab::handle(b, &call)).1
+    }
+
+    fn get(b: &crate::sab::tests::Fake, q: &str) -> serde_json::Value {
+        sab_raw(b, format!("GET /api?{} HTTP/1.1\r\nHost: localhost:5077\r\n\r\n", q).as_bytes())
+    }
+
+    /// Como lo sube Sonarr: POST multipart con el NZB en el campo `name` y el resto en la URL.
+    fn sonarr_addfile(b: &crate::sab::tests::Fake, cat: &str, nzb_name: &str) -> serde_json::Value {
+        let boundary = "----NzbDroneBoundary1234";
+        let mut body = Vec::new();
+        body.extend_from_slice(format!("--{boundary}\r\nContent-Disposition: form-data; name=\"name\"; filename=\"{nzb_name}\"\r\nContent-Type: application/x-nzb\r\n\r\n").as_bytes());
+        body.extend_from_slice(crate::sab::tests::NZB.as_bytes());
+        body.extend_from_slice(format!("\r\n--{boundary}--\r\n").as_bytes());
+        let head = format!(
+            "POST /sabnzbd/api?mode=addfile&cat={cat}&priority=-100&apikey=secretkey&output=json HTTP/1.1\r\nHost: localhost:5077\r\nContent-Type: multipart/form-data; boundary=\"{boundary}\"\r\nContent-Length: {}\r\n\r\n",
+            body.len()
+        );
+        let mut raw = head.into_bytes();
+        raw.extend_from_slice(&body);
+        sab_raw(b, &raw)
+    }
+
+    /// La secuencia de Sonarr/Radarr: probar la conexión, mandar un NZB, seguirlo en la cola y
+    /// encontrarlo terminado en el historial para importarlo.
+    #[test]
+    fn sonarr_sequence() {
+        use crate::engine::{HistoryEntry, JobStatus};
+        let b = crate::sab::tests::Fake::new();
+        // 1. Test: versión, configuración (carpetas y categorías) y categorías.
+        let v = get(&b, "mode=version&apikey=secretkey&output=json");
+        assert_eq!(v["version"], crate::sab::SAB_VERSION);
+        let c = get(&b, "mode=get_config&apikey=secretkey&output=json");
+        assert_eq!(c["config"]["misc"]["complete_dir"], "/dl");
+        assert!(c["config"]["categories"].as_array().unwrap().iter().any(|x| x["name"] == "tv"));
+        // 2. Grab: addfile multipart.
+        let a = sonarr_addfile(&b, "tv", "Some.Show.S01E01.1080p.nzb");
+        assert_eq!(a["status"], true);
+        let nzo = a["nzo_ids"][0].as_str().unwrap().to_string();
+        assert!(nzo.starts_with("SABnzbd_nzo_"));
+        let (_, opts) = b.added.lock()[0].clone();
+        assert_eq!(opts.category.as_deref(), Some("tv"));
+        assert_eq!(opts.priority, None, "-100 = la prioridad de la categoría");
+        // 3. Cola: lo ve descargando con su categoría.
+        b.jobs.lock()[0].status = JobStatus::Downloading;
+        let q = get(&b, "mode=queue&start=0&limit=0&apikey=secretkey&output=json");
+        let slot = &q["queue"]["slots"][0];
+        assert_eq!(slot["nzo_id"], nzo.as_str());
+        assert_eq!(slot["filename"], "Some.Show.S01E01.1080p");
+        assert_eq!(slot["cat"], "tv");
+        assert_eq!(slot["status"], "Downloading");
+        // 4. Post-procesado: sale de la cola y aparece en el historial como Extracting.
+        b.jobs.lock()[0].status = JobStatus::Extracting;
+        assert_eq!(get(&b, "mode=queue&apikey=secretkey")["queue"]["slots"].as_array().unwrap().len(), 0);
+        let h = get(&b, "mode=history&start=0&limit=60&category=tv&apikey=secretkey&output=json");
+        assert_eq!(h["history"]["slots"][0]["status"], "Extracting");
+        // 5. Terminado: Completed con la ruta final para importar.
+        let id = crate::sab::job_id(&nzo).to_string();
+        b.jobs.lock().clear();
+        b.hist.lock().push(HistoryEntry {
+            id: id.clone(),
+            name: "Some.Show.S01E01.1080p".into(),
+            status: "completed".into(),
+            size: 1_500_000_000,
+            dest: "/dl/tv/Some.Show.S01E01.1080p".into(),
+            category: "tv".into(),
+            completed_at: 1_790_000_000,
+            download_secs: 95,
+            ..Default::default()
+        });
+        let h = get(&b, "mode=history&start=0&limit=60&category=tv&apikey=secretkey&output=json");
+        let s = &h["history"]["slots"][0];
+        assert_eq!(s["nzo_id"], nzo.as_str());
+        assert_eq!(s["status"], "Completed");
+        assert_eq!(s["storage"], "/dl/tv/Some.Show.S01E01.1080p");
+        assert_eq!(s["category"], "tv");
+        assert_eq!(s["bytes"], 1_500_000_000u64);
+        // 6. Tras importar, Sonarr lo quita del historial.
+        get(&b, &format!("mode=history&name=delete&value={}&del_files=0&apikey=secretkey", nzo));
+        assert!(b.hist.lock().is_empty());
+    }
+
+    #[test]
+    fn form_bodies() {
+        let b = crate::sab::tests::Fake::new();
+        // Campos en el formulario (no en la URL) y archivo en el campo nzbfile.
+        let boundary = "xyz";
+        let mut body = format!("--{boundary}\r\nContent-Disposition: form-data; name=\"apikey\"\r\n\r\nsecretkey\r\n--{boundary}\r\nContent-Disposition: form-data; name=\"mode\"\r\n\r\naddfile\r\n--{boundary}\r\nContent-Disposition: form-data; name=\"nzbname\"\r\n\r\nMi Película (2024)\r\n--{boundary}\r\nContent-Disposition: form-data; name=\"nzbfile\"; filename=\"x.nzb\"\r\n\r\n").into_bytes();
+        body.extend_from_slice(crate::sab::tests::NZB.as_bytes());
+        body.extend_from_slice(format!("\r\n--{boundary}--").as_bytes());
+        let mut raw = format!("POST /api HTTP/1.1\r\nContent-Type: multipart/form-data; boundary={boundary}\r\nContent-Length: {}\r\n\r\n", body.len()).into_bytes();
+        raw.extend_from_slice(&body);
+        let r = sab_raw(&b, &raw);
+        assert_eq!(r["status"], true, "{r}");
+        assert_eq!(b.added.lock()[0].1.name.as_deref(), Some("Mi Película (2024)"));
+        // urlencoded + chunked.
+        let form = "mode=addurl&name=https%3A%2F%2Fidx.example%2Fget%2F1&cat=movies&priority=2&apikey=secretkey";
+        let raw = format!("POST /api HTTP/1.1\r\nContent-Type: application/x-www-form-urlencoded\r\nTransfer-Encoding: chunked\r\n\r\n{:x}\r\n{}\r\n0\r\n\r\n", form.len(), form);
+        let r = sab_raw(&b, raw.as_bytes());
+        assert_eq!(r["status"], true, "{r}");
+        let (_, o) = b.added.lock()[1].clone();
+        assert_eq!((o.category.as_deref(), o.priority), (Some("movies"), Some(2)));
+        let r = get(&b, "mode=addurl&name=https://bad.example/x&apikey=secretkey");
+        assert_eq!(r["status"], false);
+    }
+
+    #[test]
+    fn multipart_parsing() {
+        let body = b"--b\r\nContent-Disposition: form-data; name=\"a\"\r\n\r\n1\r\n--b\r\nContent-Disposition: form-data; name=\"f\"; filename*=UTF-8''Pel%C3%ADcula.nzb\r\nContent-Type: x\r\n\r\n\r\nline\r\n\r\n--b--\r\n";
+        let parts = multipart(body, "b");
+        assert_eq!(parts.len(), 2);
+        assert_eq!(parts[0], ("a".into(), None, b"1".to_vec()));
+        assert_eq!(parts[1].1.as_deref(), Some("Película.nzb"));
+        assert_eq!(parts[1].2, b"\r\nline\r\n");
+        assert_eq!(dechunk(b"3\r\nabc\r\n2\r\nde\r\n0\r\n\r\n").unwrap(), b"abcde");
+        assert!(dechunk(b"3\r\nab").is_none());
     }
 }

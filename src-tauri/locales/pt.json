@@ -208,6 +208,7 @@
   "log.restoreFailed": "Não foi possível restaurar “{name}”: {error}",
   "log.retryExtract": "Tentando extrair de novo: {name}",
   "log.retrying": "Tentando de novo: {name}",
+  "log.sab.added": "API SABnzbd: recebido {name}",
   "log.serversUpdated": "Configuração de servidores atualizada",
   "log.started": "Nebula {version} iniciado",
   "log.transferImported": "Configurações importadas de outro dispositivo",

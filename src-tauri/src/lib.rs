@@ -19,6 +19,7 @@ mod os;
 mod postproc;
 mod remote;
 mod rss;
+mod sab;
 mod stats;
 #[cfg(windows)]
 mod tools;
