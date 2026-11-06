@@ -40,7 +40,7 @@ The interface is the same, minus what only makes sense with a window on your own
 
 Forgot the password? Stop Nebula, delete `auth.json` and start it again: it asks you to create the user again. Nothing else is lost.
 
-Scripts and the future CLI can call the interface's commands without a cookie by sending Nebula's API key (from **Settings → API**) in an `X-Api-Key` header. That works even before the web user exists.
+Scripts and the [`nebula` command line](CLI.md) can call the interface's commands without a cookie by sending Nebula's API key (from **Settings → API**) in an `X-Api-Key` header. That works even before the web user exists. nebula-server creates a key on first start if there is none; the API for Sonarr and Radarr stays off until you turn it on.
 
 ## Sonarr, Radarr and Prowlarr
 

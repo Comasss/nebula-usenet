@@ -13,7 +13,7 @@ Search all your indexers, download over NNTP or debrid, repair and extract autom
 ![Platforms](https://img.shields.io/badge/platforms-Windows%20%7C%20Android%20%7C%20Linux%20server-555)
 [![License: PolyForm Noncommercial](https://img.shields.io/badge/license-PolyForm%20Noncommercial-orange)](LICENSE.md)
 
-[**Download**](https://github.com/Comasss/nebula-usenet/releases/latest) · [Features](#features) · [Screenshots](#screenshots) · [Categories](docs/CATEGORIES.md) · [Newznab API](docs/API.md) · [SABnzbd API](docs/SABNZBD.md) · [Server](docs/SERVER.md) · [Docker](docs/DOCKER.md) · [Building](#building)
+[**Download**](https://github.com/Comasss/nebula-usenet/releases/latest) · [Features](#features) · [Screenshots](#screenshots) · [Categories](docs/CATEGORIES.md) · [Newznab API](docs/API.md) · [SABnzbd API](docs/SABNZBD.md) · [Server](docs/SERVER.md) · [Docker](docs/DOCKER.md) · [CLI](docs/CLI.md) · [Building](#building)
 
 <img src="https://github.com/Comasss/nebula-usenet/raw/screenshots/downloads.png" alt="Nebula Usenet: Downloads view with live speed graph, queue and post-processing" width="900">
 
@@ -31,6 +31,7 @@ Search all your indexers, download over NNTP or debrid, repair and extract autom
 - **Newznab API compatible with NZBHydra2**: optional, with its own API key. Sonarr, Radarr, Prowlarr and other apps can search all your indexers at once through Nebula as if it were a single indexer. See [docs/API.md](docs/API.md).
 - **SABnzbd-compatible API**: on the same port and key, Sonarr, Radarr, Lidarr, Readarr and Prowlarr can add Nebula as a **SABnzbd** download client. They send NZBs with their category and priority, follow the queue, and import automatically when History says it's completed. **Settings → API** shows the values to fill in. See [docs/SABNZBD.md](docs/SABNZBD.md).
 - **nebula-server for Linux, NAS and headless machines**: the same engine without a window, with the interface in the browser (a user and password are created on first start, and it works on a phone too) and the Newznab and SABnzbd APIs on the same port, for running next to Sonarr and Radarr. See [docs/SERVER.md](docs/SERVER.md).
+- **`nebula` command line**: add NZBs, check the queue and history, pause, limit the speed and search your indexers on a nebula-server from the terminal (with `--json` for scripts and a live `nebula tui`), or download an NZB with `nebula get` without any server, with documented exit codes. See [docs/CLI.md](docs/CLI.md).
 - **Move your settings between devices with a QR code**: in **Settings → Move to another device** the PC shows a QR code that you scan with Nebula on your phone. To go the other way, the PC shows a QR code with its address on your Wi-Fi and a one-time key; the phone scans it and sends its settings encrypted over the local network. Servers, indexers, debrid services, RSS feeds and rules, the API and preferences travel; folders, history and system-specific options (tray, start with Windows, vibration…) stay as they are. If you can't scan, copy the code and paste it on the other device.
 - **Control your PC from your phone**: the Android app finds Nebula on your PC over the Wi-Fi, pairs with a 6-digit code you approve on the PC, and then shows the PC's downloads, history and statistics live. From the phone you can add NZBs, pause, resume, move and delete jobs and change the speed limit (never settings or passwords). See [Remote control](#remote-control-from-your-phone).
 - **On finish actions** (**Settings → On finish**): when a download completes, when it fails or when the queue becomes empty (nothing paused or waiting left), Nebula can send a notification to **Discord** (webhook URL), **Telegram** (bot token + chat id), **ntfy** (server + topic) or any **webhook** (JSON POST), run a **script or program** with a time limit, or **shut down, sleep or hibernate** Windows after a 60 s countdown you can cancel from a small window, the notification or the tray. Each action picks which of the three cases trigger it and has a **Test** button. Shutdown can be armed "just this once" from the speed panel or the tray menu. Actions never hold up downloads and their errors go to the Log; tokens and webhook URLs are stored encrypted, and only notifications travel with "Move to another device" (on Android only notifications exist).
@@ -127,6 +128,8 @@ nebula-server --data-dir ~/.config/nebula --port 5080
 
 Outside Docker it uses the system's `par2` and `7z` (`sudo apt install par2 7zip`; par2cmdline-turbo is faster), stores passwords encrypted with a key in the data folder and stops cleanly on `Ctrl+C` or SIGTERM, saving the queue. Options, the HTTP routes and how to connect Sonarr and Radarr are in [docs/SERVER.md](docs/SERVER.md).
 
+From the terminal, the `nebula` command line controls it (`nebula add file.nzb --cat tv`, `nebula queue`, `nebula tui`…) or downloads an NZB on its own with `nebula get`: see [docs/CLI.md](docs/CLI.md).
+
 ## Usage
 
 - Add an NZB: the **Add NZB** button, drag it onto the window, double-click a `.nzb` (if the association is enabled) or paste a link into the top bar. Nebula downloads the NZB, parses it and asks where to save it.
@@ -157,7 +160,7 @@ Nebula checks the latest [Release](../../releases) on GitHub when it opens and e
 
 - Runs the tests of the whole workspace (`cargo test --workspace`), checks that `nebula-core` builds without Tauri and builds the interface.
 - Produces the installer and the portable exe and uploads them as a run artifact (**Actions** tab → the run → **Artifacts**).
-- On every push to `main` it publishes the **Release** `vX.Y.Z` for the version in `src-tauri/tauri.conf.json` with `Nebula_<version>_x64-setup.exe`, `Nebula_<version>_x64_portable.exe`, `Nebula_<version>_android_arm64.apk`, `nebula-server_<version>_linux_x64`, `nebula-server_<version>_linux_arm64` and `SHA256SUMS.txt`, and pushes the image `ghcr.io/<owner>/nebula` with the tags `latest` and `vX.Y.Z`:
+- On every push to `main` it publishes the **Release** `vX.Y.Z` for the version in `src-tauri/tauri.conf.json` with `Nebula_<version>_x64-setup.exe`, `Nebula_<version>_x64_portable.exe`, `Nebula_<version>_android_arm64.apk`, `nebula-server_<version>_linux_x64`, `nebula-server_<version>_linux_arm64`, `nebula_<version>_linux_x64`, `nebula_<version>_linux_arm64` (the command line) and `SHA256SUMS.txt`, and pushes the image `ghcr.io/<owner>/nebula` with the tags `latest` and `vX.Y.Z`:
   - If that version has no Release yet, it creates it.
   - If this same workflow created it, it updates it with the new build (and moves the tag to the latest commit).
   - If you published it by hand, it leaves it alone.
@@ -189,7 +192,7 @@ src-tauri/gen/android/build-native-tools.sh   # 7-Zip and par2 for arm64, only o
 npx tauri android build --apk --target aarch64
 ```
 
-The code is a Cargo workspace: `crates/nebula-core` is the engine (queue, NNTP, post-processing, APIs, RSS…) and doesn't depend on Tauri; `src-tauri` is the Windows and Android app on top of it, and `crates/nebula-server` the headless server. How they fit together is in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). The engine alone builds on any platform:
+The code is a Cargo workspace: `crates/nebula-core` is the engine (queue, NNTP, post-processing, APIs, RSS…) and doesn't depend on Tauri; `src-tauri` is the Windows and Android app on top of it, `crates/nebula-server` the headless server and `crates/nebula-cli` the command line. How they fit together is in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). The engine alone builds on any platform:
 
 ```bash
 cargo build -p nebula-core

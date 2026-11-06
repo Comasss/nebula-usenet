@@ -6,6 +6,7 @@ Nebula is a Cargo workspace with the engine on one side and the programs that ho
 crates/nebula-core   the engine, without Tauri
 src-tauri            the Windows and Android app (Tauri) on top of nebula-core
 crates/nebula-server the headless server (axum): the interface in the browser and the APIs
+crates/nebula-cli    the `nebula` command line: talks to nebula-server, or runs the engine itself for `nebula get`
 src                  the interface (Svelte), shared by every host
 ```
 

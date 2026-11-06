@@ -56,6 +56,16 @@ More about the SABnzbd API in [SABNZBD.md](SABNZBD.md).
 
 On start, `/config` is given to `PUID:PGID` if it belongs to someone else. Nebula then drops root and runs as that user. Running the container with `--user` also works; then `PUID`/`PGID` are ignored and the folders must already be writable by that user.
 
+## The command line
+
+The image includes the [`nebula` command line](CLI.md), which finds the server and its key on its own:
+
+```bash
+docker exec nebula nebula status
+docker exec nebula nebula add /downloads/some.nzb --cat tv
+docker exec -it nebula nebula tui
+```
+
 ## Health and stopping
 
 The image has a `HEALTHCHECK` (`nebula-server healthcheck`, which asks `/health`), so `docker ps` shows `healthy` and Compose can wait for it. `docker stop` sends SIGTERM: Nebula saves the queue and the history and exits in a moment, and downloads continue on the next start.
@@ -108,7 +118,7 @@ The [Release](../../../releases) also has `nebula-server_<version>_linux_x64` an
 docker build -t nebula .
 ```
 
-The [`Dockerfile`](../Dockerfile) builds everything in stages: the interface with Node, `nebula-server` as a static binary (musl, with OpenSSL inside), and par2cmdline-turbo and 7-Zip from source (`PAR2_VERSION` and `SEVENZIP_VERSION` are build arguments). The final image is `debian:trixie-slim` with those three programs. To get only the binary:
+The [`Dockerfile`](../Dockerfile) builds everything in stages: the interface with Node, `nebula-server` and the `nebula` command line as static binaries (musl, with OpenSSL inside), and par2cmdline-turbo and 7-Zip from source (`PAR2_VERSION` and `SEVENZIP_VERSION` are build arguments). The final image is `debian:trixie-slim` with those three programs. To get only the binaries:
 
 ```bash
 docker buildx build --target server-bin --output type=local,dest=out .
