@@ -52,6 +52,7 @@ jobs:
 
       # El motor tiene que compilar sin Tauri (lo usan el servidor y la línea de comandos).
       - name: Motor sin Tauri (nebula-core)
+        shell: bash
         run: |
           cargo build -p nebula-core --locked
           if cargo tree -p nebula-core -e normal --prefix none | grep -q '^tauri'; then
