@@ -8,3 +8,6 @@ release/
 
 # Capturas de pruebas sueltas en la raíz
 /*.png
+
+# par2 y 7-Zip para Linux y macOS (dev/desktop-tools.sh)
+src-tauri/bin/nebula-*

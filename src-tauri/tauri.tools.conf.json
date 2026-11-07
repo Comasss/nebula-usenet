@@ -1,0 +1,6 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "bundle": {
+    "externalBin": ["bin/nebula-par2", "bin/nebula-7zz"]
+  }
+}
