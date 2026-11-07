@@ -9,20 +9,22 @@
 #
 # Mismas versiones que la imagen de Docker (Dockerfile).
 set -euo pipefail
-shopt -s inherit_errexit
+# bash 3.2 de macOS no tiene inherit_errexit.
+shopt -s inherit_errexit 2>/dev/null || true
 
 PAR2_VERSION=${PAR2_VERSION:-v1.5.0}
 SEVENZIP_VERSION=${SEVENZIP_VERSION:-25.01}
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 OUT="$ROOT/src-tauri/bin"
-WORK=${WORK:-"$ROOT/target/desktop-tools"}
+# Fuera de target/: la caché de Rust de Actions lo guarda y lo restaura a medias.
+WORK=${WORK:-"${TMPDIR:-/tmp}/nebula-desktop-tools"}
 TRIPLE=${1:-$(rustc -vV | sed -n 's/^host: //p')}
 JOBS=$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 4)
 
 mkdir -p "$WORK" "$OUT"
 cd "$WORK"
-[ -d par2 ] || git clone --depth 1 --branch "$PAR2_VERSION" https://github.com/animetosho/par2cmdline-turbo.git par2
-[ -d 7zip ] || git clone --depth 1 --branch "$SEVENZIP_VERSION" https://github.com/ip7z/7zip.git 7zip
+[ -f par2/automake.sh ] || { rm -rf par2 && git clone --depth 1 --branch "$PAR2_VERSION" https://github.com/animetosho/par2cmdline-turbo.git par2; }
+[ -f 7zip/CPP/7zip/cmpl_gcc.mak ] || { rm -rf 7zip && git clone --depth 1 --branch "$SEVENZIP_VERSION" https://github.com/ip7z/7zip.git 7zip; }
 
 # par2 para una arquitectura: build_par2 <carpeta> [opciones de configure]
 build_par2() {
