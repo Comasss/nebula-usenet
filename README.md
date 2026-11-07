@@ -161,7 +161,7 @@ Nebula checks the latest [Release](../../releases) on GitHub when it opens and e
 
 ## Automatic builds (GitHub Actions)
 
-`.github/workflows/build.yml` builds Nebula on `windows-latest` (the AppImage and `.deb` on `ubuntu-22.04`, the universal `.dmg` on `macos-14`, the Android APK on `ubuntu-latest`, and nebula-server with its Docker image on an amd64 and an arm64 Linux runner) on every push and pull request:
+`.github/workflows/build.yml` builds Nebula on `windows-latest` (the AppImage and `.deb` on `ubuntu-22.04`, the universal `.dmg` on `macos-latest`, the Android APK on `ubuntu-latest`, and nebula-server with its Docker image on an amd64 and an arm64 Linux runner) on every push and pull request:
 
 - Runs the tests of the whole workspace (`cargo test --workspace`), checks that `nebula-core` builds without Tauri and builds the interface.
 - Produces the installer and the portable exe and uploads them as a run artifact (**Actions** tab → the run → **Artifacts**).
