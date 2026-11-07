@@ -2,9 +2,8 @@
   // Descarga automática por RSS: reglas, feeds y registro de capturas. En el escritorio es una
   // pestaña de Indexadores; en Android, una página de Ajustes.
   import { t, tn } from '../lib/i18n.svelte.js';
-  import { invoke } from '@tauri-apps/api/core';
-  import { listen } from '@tauri-apps/api/event';
-  import { onMount } from 'svelte';
+  import { invoke, listen } from '../lib/transport.js';
+    import { onMount } from 'svelte';
   import { fly, fade } from 'svelte/transition';
   import Icon from '../components/Icon.svelte';
   import Modal from '../components/Modal.svelte';
@@ -13,6 +12,7 @@
   import { ui, saveSettings, ask, toast, d } from '../lib/state.svelte.js';
   import { isAndroid, pickFolder } from '../lib/platform.js';
   import { viaOptions } from '../lib/debrid.js';
+  import { categoryList, categoryDir, findCategory } from '../lib/categories.js';
   import { bytes, ago, dateTime } from '../lib/format.js';
 
   const MIN_INTERVAL = 5;
@@ -32,6 +32,7 @@
   const rules = $derived(s?.rssRules ?? []);
   const feeds = $derived(status.feeds);
   const paused = $derived(ui.queue.paused);
+  const ruleCats = $derived([{ value: '', label: t('cats.byNewznab') }, { value: '*', label: t('cats.default') }, ...categoryList(s).map((c) => ({ value: c.name, label: c.name }))]);
   const vias = $derived([{ value: '', label: t('rss.viaDefault') }, ...viaOptions(s).map((o) => ({ value: o.value, label: o.child ? `· ${o.label}` : o.label }))]);
 
   async function refresh() {
@@ -92,6 +93,7 @@
       categories: '',
       via: '',
       destDir: '',
+      category: '',
       createdAt: Math.floor(Date.now() / 1000),
       onlyNew: true,
     };
@@ -105,6 +107,7 @@
 
   function editRule(r) {
     editing = structuredClone($state.snapshot(r));
+    editing.category ??= '';
     isNew = false;
     preview = null;
   }
@@ -316,6 +319,7 @@
             <div class="sub">
               <Icon name="rss" size={12} /> {ruleFeeds(r)}
               {#if r.via}· <Icon name="download" size={12} /> {viaName(r.via)}{/if}
+              {#if r.category}· <Icon name="tag" size={12} /> {r.category}{/if}
               {#if r.destDir}· <Icon name="folder" size={12} /> <span class="truncate">{r.destDir}</span>{/if}
             </div>
           </div>
@@ -445,6 +449,14 @@
         </div>
       </div>
 
+      {#if categoryList(s).length}
+        <div class="field">
+          <span class="label">{t('cats.category')}</span>
+          <Select bind:value={editing.category} options={ruleCats} label={t('cats.category')} />
+          <small class="help">{t('cats.ruleHelp')}</small>
+        </div>
+      {/if}
+
       <div class="grid2">
         <div class="field">
           <span class="label">{t('rss.via')}</span>
@@ -453,7 +465,7 @@
         <div class="field">
           <label for="r-dest">{t('rss.dest')}</label>
           <div class="dest">
-            <input id="r-dest" class="input" bind:value={editing.destDir} placeholder={s.downloadDir} />
+            <input id="r-dest" class="input" bind:value={editing.destDir} placeholder={categoryDir(s, findCategory(s, editing.category))} />
             <button class="btn sm" onclick={pickDest}>{t('common.browse')}</button>
           </div>
           <small class="help">{t('rss.destHelp')}</small>

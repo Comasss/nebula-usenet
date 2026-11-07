@@ -1,6 +1,6 @@
 <script>
   import { t, tn } from '../lib/i18n.svelte.js';
-  import { invoke } from '@tauri-apps/api/core';
+  import { invoke } from '../lib/transport.js';
   import { remote, call } from '../lib/remote.svelte.js';
   import { fly, fade, slide } from 'svelte/transition';
   import { flip } from 'svelte/animate';
@@ -8,8 +8,10 @@
   import Icon from '../components/Icon.svelte';
   import { ui, ask, toast, refreshHistory, d } from '../lib/state.svelte.js';
   import * as f from '../lib/format.js';
-  import { isAndroid } from '../lib/platform.js';
+  import { isMobile, isServer } from '../lib/platform.js';
   import { longpress, actionSheet } from '../lib/feedback.js';
+  import Select from '../components/Select.svelte';
+  import { catLabel, isDefault, DEFAULT_CAT } from '../lib/categories.js';
 
   // Móvil: mantener pulsada una entrada abre sus acciones.
   async function menu(h) {
@@ -17,7 +19,7 @@
     // En un PC controlado desde el móvil no se abren carpetas ni se reintenta (solo ver y borrar).
     const local = !remote.active;
     const actions = [
-      ...(ok && local ? [{ id: 'open', label: t('common.open'), icon: 'folder' }] : []),
+      ...(ok && local && !isServer ? [{ id: 'open', label: t('common.open'), icon: 'folder' }] : []),
       ...(!ok && local && h.canRetryExtract ? [{ id: 'extract', label: t('history.retryExtract'), icon: 'key' }] : []),
       ...(!ok && local ? [{ id: 'retry', label: t('common.retry'), icon: 'refresh' }] : []),
       { id: 'details', label: t('common.details'), icon: 'info' },
@@ -33,6 +35,15 @@
 
   let filter = $state('all');
   let search = $state('');
+  // Filtro por categoría: '' = todas. Las categorías salen del propio historial (así también
+  // funciona con un PC controlado y con categorías ya borradas).
+  let catFilter = $state('');
+  const catKey = (h) => (isDefault(h.category) ? DEFAULT_CAT : h.category);
+  const historyCats = $derived([...new Set(ui.history.map(catKey))].sort((a, b) => (a === DEFAULT_CAT ? -1 : b === DEFAULT_CAT ? 1 : a.localeCompare(b))));
+  const catOptions = $derived([{ value: '', label: t('cats.all') }, ...historyCats.map((c) => ({ value: c, label: catLabel(c) }))]);
+  $effect(() => {
+    if (catFilter && !historyCats.includes(catFilter)) catFilter = '';
+  });
   let open = $state(null);
 
   const counts = $derived({
@@ -42,7 +53,10 @@
   });
   const items = $derived(
     ui.history.filter(
-      (h) => (filter === 'all' || h.status === filter) && (!search || h.name.toLowerCase().includes(search.toLowerCase()))
+      (h) =>
+        (filter === 'all' || h.status === filter) &&
+        (!catFilter || catKey(h) === catFilter) &&
+        (!search || h.name.toLowerCase().includes(search.toLowerCase()))
     )
   );
   const totalSize = $derived(ui.history.filter((h) => h.status === 'completed').reduce((a, h) => a + h.size, 0));
@@ -131,16 +145,21 @@
         </button>
       {/each}
     </div>
+    <div class="right">
+    {#if historyCats.length > 1}
+      <div class="cat-filter"><Select bind:value={catFilter} options={catOptions} label={t('cats.category')} title={t('cats.category')} /></div>
+    {/if}
     <div class="search">
       <Icon name="search" size={15} />
       <input class="input" placeholder={t('common.searchPlaceholder')} bind:value={search} />
+    </div>
     </div>
   </div>
 
   <div class="list">
     {#each items as h (h.id)}
       {@const ok = h.status === 'completed'}
-      <article class="hist card" class:failed={!ok} use:longpress={{ enabled: isAndroid, onlong: () => menu(h), ms: 520 }} animate:flip={{ duration: d(320), easing: cubicOut }} in:fly={{ y: 12, duration: d(280) }} out:fade={{ duration: d(160) }}>
+      <article class="hist card" class:failed={!ok} use:longpress={{ enabled: isMobile, onlong: () => menu(h), ms: 520 }} animate:flip={{ duration: d(320), easing: cubicOut }} in:fly={{ y: 12, duration: d(280) }} out:fade={{ duration: d(160) }}>
         <div class="h-top" onclick={() => (open = open === h.id ? null : h.id)} role="presentation">
           <div class="h-icon {ok ? 'ok' : 'err'}"><Icon name={ok ? 'check' : 'x'} size={17} stroke={2.6} /></div>
           <div class="h-main">
@@ -150,6 +169,7 @@
               <span>·</span>
               <span title={f.dateTime(h.completedAt)}>{f.ago(h.completedAt)}</span>
               {#if ok && h.avgSpeed}<span>·</span><span>{t('history.avg', { speed: f.speed(h.avgSpeed) })}</span>{/if}
+              {#if !isDefault(h.category)}<span class="chip cat"><Icon name="tag" size={10} stroke={2.6} /> {h.category}</span>{/if}
               {#if h.viaName}<span class="chip info" title={t('history.via', { provider: h.viaName })}><Icon name={h.via?.startsWith('nntp') ? 'server' : 'cloud'} size={10} stroke={2.6} /> {h.viaName}</span>{/if}
               {#if h.warning}<span class="chip warn"><Icon name="alert-triangle" size={10} stroke={2.6} /> {t('history.warning')}</span>{/if}
               {#if !ok}<span class="chip err">{t('history.failedAt', { stage: f.stageLabel(h.failedStage) })}</span>{/if}
@@ -159,7 +179,7 @@
             {#if remote.active}
               <!-- PC controlado: solo borrar. -->
             {:else if ok}
-              <button class="btn sm" onclick={() => invoke('open_path', { path: h.dest })}><Icon name="folder" size={14} /> {t('common.open')}</button>
+              {#if !isServer}<button class="btn sm" onclick={() => invoke('open_path', { path: h.dest })}><Icon name="folder" size={14} /> {t('common.open')}</button>{/if}
             {:else}
               {#if h.canRetryExtract}
                 <button class="btn sm" onclick={() => retryExtract(h)}><Icon name="key" size={14} /> {t('history.retryExtract')}</button>
@@ -205,6 +225,8 @@
   .count { font-size: 11px; background: var(--panel-3); padding: 1px 7px; border-radius: 99px; color: var(--text-2); }
   .underline { position: absolute; left: 10px; right: 10px; bottom: -1px; height: 2px; border-radius: 2px; background: var(--grad); animation: grow 0.3s var(--ease); }
   @keyframes grow { from { transform: scaleX(0.3); opacity: 0; } }
+  .right { display: flex; align-items: center; gap: 8px; }
+  .cat-filter { width: 200px; margin-bottom: 8px; }
   .search { position: relative; width: 240px; margin-bottom: 8px; }
   .search :global(svg) { position: absolute; left: 11px; top: 11px; color: var(--muted); }
   .search .input { height: 36px; padding-left: 34px; }
@@ -235,6 +257,8 @@
     .tabs { overflow-x: auto; }
     .tab { padding: 0 10px; flex-shrink: 0; }
     .search { width: 100%; margin-bottom: 0; }
+    .right { flex-direction: column; align-items: stretch; }
+    .cat-filter { width: 100%; margin-bottom: 0; }
     .search .input { height: 42px; }
     .search :global(svg) { top: 13px; }
     .list { margin-top: 12px; }

@@ -5,6 +5,7 @@ Nebula can expose all the Newznab indexers you have configured as **one Newznab 
 - One search goes to all your enabled indexers in parallel; results are merged, sorted by date and (if **Settings → Indexer search → Remove duplicates** is on) the same release found on several indexers is returned once.
 - Download links point to Nebula, which fetches the `.nzb` from the indexer. Your indexers' API keys never leave Nebula.
 - Searches and grabs made through the API count in **Statistics → Indexers** like the ones made in the app.
+- The same server, port and key also speak the **SABnzbd API**, so the same programs can use Nebula as their download client. See [SABNZBD.md](SABNZBD.md).
 
 ## Turning it on
 

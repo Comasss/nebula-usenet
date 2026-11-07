@@ -183,7 +183,8 @@
     "speedLimit": "Límit de velocitat",
     "urlPlaceholder": "Enganxa aquí l'enllaç directe a un .nzb i et preguntaré on desar-lo…",
     "viewHistory": "Mostra l'historial",
-    "viewServers": "Mostra els servidors"
+    "viewServers": "Mostra els servidors",
+    "emptyTextWeb": "Arrossega un fitxer <strong>.nzb</strong> a aquesta pàgina, prem <strong>+</strong> per pujar-lo o enganxa un enllaç a dalt."
   },
   "drop": {
     "subtitle": "S'afegiran a la cua de baixades",
@@ -290,7 +291,9 @@
     "serverTitle": "Es baixa només amb aquest servidor",
     "stepUpload": "Enviament",
     "stepRemote": "A {provider}",
-    "stepFetch": "Baixada"
+    "stepFetch": "Baixada",
+    "checking": "Comprovant",
+    "checkingDetail": "Comprovant que els articles existeixen · {pct} %"
   },
   "logs": {
     "all": "Tot",
@@ -391,7 +394,18 @@
     "ssl": "Connexió xifrada (SSL/TLS)",
     "test": "Prova la connexió",
     "username": "Usuari",
-    "verifyCert": "Verifica el certificat"
+    "verifyCert": "Verifica el certificat",
+    "quota": "Quota de baixada",
+    "quotaPlaceholder": "Sense quota",
+    "quotaPeriod": "Es reinicia",
+    "quotaPeriods": {
+      "day": "cada dia",
+      "week": "cada setmana",
+      "month": "cada mes",
+      "never": "mai"
+    },
+    "quotaResetDay": "Dia del mes",
+    "quotaResetWeekday": "Dia de la setmana"
   },
   "servers": {
     "add": "Afegeix un servidor",
@@ -429,12 +443,16 @@
       "down": "Sense connexió",
       "idle": "Connectat",
       "ready": "A punt",
-      "warn": "Amb errors"
+      "warn": "Amb errors",
+      "quota": "Quota esgotada"
     },
     "subtitle": "Els teus proveïdors Usenet. Els de reserva només s'utilitzen quan al principal li falta un article.",
     "testing": "S'està provant la connexió…",
     "tip": "Els servidors amb la mateixa prioritat es reparteixen la feina. Si un article no és al principal, es cerca als de reserva per ordre.",
-    "updated": "S'ha actualitzat el servidor"
+    "updated": "S'ha actualitzat el servidor",
+    "quotaSub": "quota {size} {period}",
+    "quotaUsed": "Quota: {used} de {total}",
+    "quotaReset": "Posar a zero"
   },
   "settings": {
     "abortHopeless": "Cancel·la les baixades impossibles",
@@ -543,7 +561,10 @@
       "api": "API",
       "transfer": "Passar a un altre dispositiu",
       "remote": "Control remot",
-      "finish": "En acabar"
+      "finish": "En acabar",
+      "categories": "Categories",
+      "schedule": "Programador",
+      "import": "Importar"
     },
     "speedLimitDesc": "En MB/s. 0 = sense límit.",
     "startMinimized": "Inicia minimitzat a la safata",
@@ -559,7 +580,37 @@
     "haptics": "Vibració en tocar",
     "hapticsDesc": "Una vibració breu confirma el que toques i el que mantens premut.",
     "searchPlaceholder": "Cerca a la configuració…",
-    "noResults": "Cap opció coincideix amb «{q}»"
+    "noResults": "Cap opció coincideix amb «{q}»",
+    "deobfuscate": "Desofuscar noms",
+    "deobfuscateDesc": "Recupera els noms reals amb el PAR2 i, si el fitxer principal encara té un nom aleatori, li posa el de la baixada.",
+    "directUnpack": "Extreure durant la baixada",
+    "directUnpackDesc": "Cada fitxer comprimit s'extreu tan bon punt és complet, sense esperar la resta. Els paquets de diversos fitxers acaben abans, però fa servir més disc i CPU mentre baixa.",
+    "passwords": "Contrasenyes de reserva",
+    "passwordsDesc": "Si un fitxer està protegit i la contrasenya de la baixada no l'obre, es proven aquestes per ordre.",
+    "addPassword": "Afegeix contrasenya…",
+    "unwanted": "Fitxers no desitjats",
+    "unwantedDesc": "Què fer si la baixada porta executables o altres fitxers de la llista (al NZB o en extreure).",
+    "unwantedAction": {
+      "off": "No fer res",
+      "warn": "Avisar",
+      "skip": "Descartar-los",
+      "fail": "Rebutjar la baixada"
+    },
+    "unwantedList": "Extensions no desitjades",
+    "unwantedListDesc": "Sense punt: exe, scr, lnk…",
+    "addExtension": "Afegeix extensió…",
+    "precheck": "Comprovar abans de baixar",
+    "precheckDesc": "Pregunta al servidor per cada article (STAT) abans de baixar res i cancel·la si en falta més del que el PAR2 pot reparar. Triga una mica a començar, però no gasta dades en baixades impossibles.",
+    "duplicates": "Baixades repetides",
+    "duplicatesDesc": "Si ja és a la cua o baixat (mateix nom o mateix NZB).",
+    "duplicateAction": {
+      "off": "Afegir igualment",
+      "warn": "Afegir i avisar",
+      "pause": "Afegir en pausa",
+      "skip": "No afegir"
+    },
+    "systemTitle": "Integració amb el sistema",
+    "startWithSystem": "Iniciar amb el sistema"
   },
   "sidebar": {
     "activeConns": {
@@ -798,7 +849,10 @@
       "transfer": "Envia o rep els teus ajustos amb un QR",
       "remote": "Veure i gestionar les baixades d'un PC",
       "rss": "Baixada automàtica amb regles",
-      "finish": "Avisos, scripts i apagada"
+      "finish": "Avisos, scripts i apagada",
+      "categories": "tv, movies… amb la seva carpeta i opcions",
+      "server": "Usuari, contrasenya i sessió",
+      "schedule": "Pauses i velocitat per hores"
     }
   },
   "update": {
@@ -835,12 +889,12 @@
     "unskip": "Torna a avisar-me"
   },
   "api": {
-    "title": "API Newznab",
+    "title": "API Newznab i SABnzbd",
     "enable": "Activa l'API",
-    "enableDesc": "Compatible amb Newznab i NZBHydra2: Sonarr, Radarr, Prowlarr i altres programes poden cercar a tots els teus indexadors a través de Nebula.",
+    "enableDesc": "Sonarr, Radarr, Prowlarr i altres programes poden cercar a tots els teus indexadors a través de Nebula (com NZBHydra2) i fer servir Nebula com a client de baixades SABnzbd.",
     "stopped": "Aturada",
     "address": "Adreça",
-    "addressDesc": "Afegeix-la a Sonarr, Radarr o Prowlarr com a indexador Newznab, juntament amb l'API key.",
+    "addressDesc": "Com a indexador Newznab a Sonarr, Radarr o Prowlarr, juntament amb la API key.",
     "key": "API key",
     "keyDesc": "Els programes l'envien a cada petició. Si la canvies, actualitza-la en ells.",
     "regenerate": "Genera'n una de nova",
@@ -851,10 +905,21 @@
     "portDesc": "Port on escolta l'API (5077 per defecte).",
     "lan": "Permet connexions des de la xarxa local",
     "lanDesc": "Altres dispositius (un NAS, un altre PC…) la podran fer servir amb l'API key. Si està desactivat, només aquest equip.",
-    "noIndexers": "Activa almenys un indexador: l'API hi cerca.",
+    "noIndexers": "Sense indexadors actius la cerca Newznab no retorna res; l'API de SABnzbd funciona igualment.",
     "docs": "Documentació",
     "docsDesc": "Com connectar-la a Sonarr, Radarr o Prowlarr i què admet.",
-    "androidNote": "A Android l'API només respon mentre Nebula és oberta o descarregant."
+    "androidNote": "A Android l'API només respon mentre Nebula és oberta o descarregant.",
+    "sab": {
+      "title": "Client de baixades SABnzbd",
+      "desc": "Sonarr, Radarr, Lidarr, Readarr i Prowlarr envien els NZB a Nebula, en segueixen la baixada i la importen quan acaba.",
+      "step1": "A Sonarr o Radarr: Settings → Download Clients → + → SABnzbd.",
+      "step2": "Omple aquestes dades (la categoria ha d'existir a Nebula):",
+      "step3": "Prem Test i desa. El que enviï Sonarr sortirà a Baixades amb la seva categoria.",
+      "empty": "(buit)",
+      "noCategories": "Encara no tens categories: crea tv i movies perquè Sonarr i Radarr les puguin fer servir.",
+      "lanHint": "Si Sonarr o Radarr funcionen en un altre equip o a Docker, activa «Permet connexions des de la xarxa local».",
+      "docs": "Modes admesos i diferències amb SABnzbd"
+    }
   },
   "transfer": {
     "scanLabel": "Escanejar QR",
@@ -895,7 +960,8 @@
     "sent": "Ajustos enviats. Confirma'ls a l'altre dispositiu.",
     "cameraDenied": "Nebula necessita permís per fer servir la càmera i escanejar el QR.",
     "scanHint": "Apunta al QR que mostra Nebula a l'altre dispositiu",
-    "wizardLink": "Ja fas servir Nebula en un altre dispositiu? Passa els teus ajustos amb un QR"
+    "wizardLink": "Ja fas servir Nebula en un altre dispositiu? Passa els teus ajustos amb un QR",
+    "fromDesktop": "Des d'un ordinador"
   },
   "remote": {
     "mobileTitle": "Controlar un PC",
@@ -1012,7 +1078,7 @@
     "via": "Mètode de baixada",
     "viaDefault": "Predeterminat",
     "dest": "Carpeta de destinació",
-    "destHelp": "Buida = la carpeta de baixades. La carpeta no es passa a altres dispositius.",
+    "destHelp": "Buida = la de la categoria. La carpeta no passa a altres dispositius.",
     "onlyNew": "Només el nou",
     "onlyNewDesc": "Agafa només el publicat després de crear la regla ({date}).",
     "preview": "Previsualització",
@@ -1131,5 +1197,127 @@
       "sub": "La cua de baixades és buida. Passarà d'aquí a {secs} s.",
       "test": "Això és una prova: en acabar no passarà res."
     }
+  },
+  "cats": {
+    "category": "Categoria",
+    "default": "Per defecte",
+    "defaultDesc": "Fixa: fa servir la carpeta de baixades i les opcions globals",
+    "desc": "Cada baixada va a una categoria, que en decideix la carpeta, com es baixa, la prioritat i el postprocessament. Sonarr, Radarr i les regles RSS la poden triar, i els resultats dels indexadors van sols a la que encaixa amb la seva categoria Newznab.",
+    "dir": "Carpeta",
+    "dirPlaceholder": "Buida = la de baixades; relativa = dins seu",
+    "via": "Baixa amb",
+    "viaDefault": "Mètode per defecte",
+    "priority": "Prioritat",
+    "prio": {
+      "force": "Força",
+      "high": "Alta",
+      "normal": "Normal",
+      "low": "Baixa"
+    },
+    "ppLabel": "Postprocessament",
+    "pp": {
+      "global": "Com als ajustos globals",
+      "0": "Res",
+      "1": "Reparar",
+      "2": "Reparar i extreure",
+      "3": "Reparar, extreure i esborrar"
+    },
+    "newznab": "Categories Newznab",
+    "newznabHelp": "Categories Newznab: números o intervals separats per comes (5000-5999 és TV, 2000-2999 pel·lícules). Si n'hi encaixen diverses, guanya l'interval més estret.",
+    "newPlaceholder": "Nom de la categoria nova (tv, movies…)",
+    "add": "Afegeix",
+    "presets": "Crea tv, movies, audio i books",
+    "remove": "Elimina la categoria",
+    "removeConfirm": "Vols eliminar la categoria «{name}»? El que ja és a la cua o a l'historial en conserva el nom.",
+    "all": "Totes les categories",
+    "chooseTitle": "A quina categoria?",
+    "byNewznab": "Segons la seva categoria Newznab",
+    "ruleHelp": "Posa la carpeta, la prioritat i el postprocessament del que agafa aquesta regla (la carpeta i el mètode de la regla manen si els indiques)."
+  },
+  "web": {
+    "unreachable": "No es pot connectar amb el servidor de Nebula.",
+    "mismatch": "Les contrasenyes no coincideixen.",
+    "setupTitle": "Crea el teu usuari",
+    "loginTitle": "Entra",
+    "setupDesc": "És la primera vegada que obres aquest Nebula. L'usuari i la contrasenya protegeixen la interfície web; la contrasenya ha de tenir almenys {n} caràcters.",
+    "username": "Usuari",
+    "password": "Contrasenya",
+    "repeat": "Repeteix la contrasenya",
+    "create": "Crea i entra",
+    "signIn": "Entra",
+    "section": "Compte web",
+    "account": "Has entrat com a {user}",
+    "accountDesc": "La sessió dura 30 dies en aquest navegador. Canviar la contrasenya tanca totes les sessions.",
+    "signOut": "Surt",
+    "changePassword": "Canvia la contrasenya",
+    "currentPassword": "Contrasenya actual",
+    "newPassword": "Contrasenya nova",
+    "passwordChanged": "Contrasenya canviada.",
+    "apiNote": "Sonarr, Radarr i Prowlarr poden fer servir aquest mateix port: {url} (o /sabnzbd/api) amb la clau de sota.",
+    "par2Path": "Programa par2",
+    "sevenZipPath": "Programa 7-Zip",
+    "toolFound": "Es fa servir {path}. Deixa-ho buit per buscar-lo sol.",
+    "toolMissing": "No es troba ({path}). Instal·la'l o indica on és: sense ell les baixades no es reparen ni es descomprimeixen.",
+    "notFound": "No trobat"
+  },
+  "sched": {
+    "pause": "Pausar la cua",
+    "resume": "Reprendre la cua",
+    "speed": "Límit de velocitat",
+    "enabled": "Activa",
+    "time": "Hora",
+    "days": "Dies",
+    "action": "Acció",
+    "empty": "Sense tasques. Per exemple: pausar a les 8:00 de dilluns a divendres i reprendre a les 18:00.",
+    "add": "Afegeix tasca",
+    "hint": "Hora local de l'equip on s'executa Nebula. Sense dies marcats, cada dia."
+  },
+  "import": {
+    "fileLabel": "Des de SABnzbd o NZBGet",
+    "fileDesc": "Tria el seu sabnzbd.ini o nzbget.conf: servidors, categories, carpetes, opcions i programador. Veuràs què hi ha abans d'afegir res.",
+    "choose": "Tria un fitxer",
+    "indexersLabel": "Indexadors de Prowlarr o NZBHydra2",
+    "indexersDesc": "Amb la URL i l'API key, Nebula afegeix cada indexador d'Usenet de Prowlarr, o NZBHydra2 com un de sol.",
+    "title": "Importa de {source}",
+    "subtitle": "Marca el que vols afegir. El que ja tens no es toca.",
+    "servers": "Servidors",
+    "categories": "Categories",
+    "settings": "Opcions",
+    "schedule": "Programador",
+    "exists": "Ja existeix",
+    "disabled": "Desactivat",
+    "conns": "{n} connexions",
+    "yes": "Sí",
+    "no": "No",
+    "noLimit": "Sense límit",
+    "everyDay": "Cada dia",
+    "apply": "Importa ({n})",
+    "done": "Importat: {servers} servidors, {categories} categories, {settings} opcions i {schedule} tasques",
+    "key": {
+      "downloadDir": "Carpeta de baixades",
+      "incompleteDir": "Carpeta temporal",
+      "speedLimitKbps": "Límit de velocitat",
+      "precheck": "Comprovar abans de baixar",
+      "duplicateAction": "Baixades duplicades",
+      "par2Enabled": "Verificar i reparar amb PAR2",
+      "extractEnabled": "Extreure arxius comprimits",
+      "directUnpack": "Extreure mentre es baixa",
+      "deleteArchives": "Esborrar els comprimits després d'extreure",
+      "deletePar2": "Esborrar els PAR2 en acabar",
+      "deobfuscate": "Desofuscar noms",
+      "abortHopeless": "Cancel·lar baixades sense remei",
+      "unwantedExtensions": "Extensions no desitjades",
+      "unwantedAction": "Fitxers no desitjats"
+    }
+  },
+  "discover": {
+    "button": "Des de Prowlarr / NZBHydra2",
+    "title": "Indexadors de Prowlarr o NZBHydra2",
+    "subtitle": "Cada indexador d'Usenet de Prowlarr s'afegeix a part; NZBHydra2 s'afegeix com un de sol que cerca a tots els seus.",
+    "hint": "A Prowlarr: Settings → General. A NZBHydra2: Config → Main.",
+    "find": "Cerca indexadors",
+    "searching": "Cercant…",
+    "add": "Afegeix ({n})",
+    "added": "Indexadors afegits: {n}"
   }
 }

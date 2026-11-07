@@ -1,0 +1,15 @@
+# Solo lo que necesita el Dockerfile: la interfaz, el workspace de Cargo y deploy/.
+*
+!package.json
+!package-lock.json
+!index.html
+!vite.config.js
+!src/
+!Cargo.toml
+!Cargo.lock
+!crates/
+!src-tauri/Cargo.toml
+!src-tauri/build.rs
+!src-tauri/src/
+!deploy/
+!dev/nntp-bench/

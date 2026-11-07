@@ -1,0 +1,13 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "bundle": {
+    "targets": ["appimage", "deb"],
+    "linux": {
+      "deb": {
+        "depends": ["libdbus-1-3"],
+        "section": "net",
+        "desktopTemplate": "linux/nebula.desktop"
+      }
+    }
+  }
+}

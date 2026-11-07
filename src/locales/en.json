@@ -183,7 +183,8 @@
     "speedLimit": "Speed limit",
     "urlPlaceholder": "Paste a direct link to a .nzb here and I'll ask where to save it…",
     "viewHistory": "View history",
-    "viewServers": "View servers"
+    "viewServers": "View servers",
+    "emptyTextWeb": "Drag an <strong>.nzb</strong> file onto this page, press <strong>+</strong> to upload it or paste a link above."
   },
   "drop": {
     "subtitle": "They'll be added to the download queue",
@@ -290,7 +291,9 @@
     "serverTitle": "Downloads only from this server",
     "stepUpload": "Upload",
     "stepRemote": "On {provider}",
-    "stepFetch": "Download"
+    "stepFetch": "Download",
+    "checking": "Checking",
+    "checkingDetail": "Checking that the articles exist · {pct}%"
   },
   "logs": {
     "all": "All",
@@ -391,7 +394,18 @@
     "ssl": "Encrypted connection (SSL/TLS)",
     "test": "Test connection",
     "username": "Username",
-    "verifyCert": "Verify certificate"
+    "verifyCert": "Verify certificate",
+    "quota": "Download quota",
+    "quotaPlaceholder": "No quota",
+    "quotaPeriod": "Resets",
+    "quotaPeriods": {
+      "day": "every day",
+      "week": "every week",
+      "month": "every month",
+      "never": "never"
+    },
+    "quotaResetDay": "Day of the month",
+    "quotaResetWeekday": "Day of the week"
   },
   "servers": {
     "add": "Add server",
@@ -429,12 +443,16 @@
       "down": "Offline",
       "idle": "Connected",
       "ready": "Ready",
-      "warn": "Errors"
+      "warn": "Errors",
+      "quota": "Quota used up"
     },
     "subtitle": "Your Usenet providers. Backup servers are only used when the primary is missing an article.",
     "testing": "Testing connection…",
     "tip": "Servers with the same priority share the work. If an article isn't on the primary, backup servers are checked in order.",
-    "updated": "Server updated"
+    "updated": "Server updated",
+    "quotaSub": "{size} {period} quota",
+    "quotaUsed": "Quota: {used} of {total}",
+    "quotaReset": "Reset"
   },
   "settings": {
     "abortHopeless": "Cancel hopeless downloads",
@@ -543,7 +561,10 @@
       "api": "API",
       "transfer": "Move to another device",
       "remote": "Remote control",
-      "finish": "On finish"
+      "finish": "On finish",
+      "categories": "Categories",
+      "schedule": "Scheduler",
+      "import": "Import"
     },
     "speedLimitDesc": "In MB/s. 0 = no limit.",
     "startMinimized": "Start minimized to tray",
@@ -559,7 +580,37 @@
     "haptics": "Vibrate on touch",
     "hapticsDesc": "A short vibration confirms what you tap and what you press and hold.",
     "searchPlaceholder": "Search settings…",
-    "noResults": "No settings match “{q}”"
+    "noResults": "No settings match “{q}”",
+    "deobfuscate": "Deobfuscate file names",
+    "deobfuscateDesc": "Restores the real names from the PAR2 and, if the main file still has a random name, gives it the download's name.",
+    "directUnpack": "Extract while downloading",
+    "directUnpackDesc": "Each archive is extracted as soon as it's complete, without waiting for the rest. Multi-archive packs finish sooner, but it uses more disk and CPU while downloading.",
+    "passwords": "Fallback passwords",
+    "passwordsDesc": "If an archive is protected and the download's password doesn't open it, these are tried in order.",
+    "addPassword": "Add password…",
+    "unwanted": "Unwanted files",
+    "unwantedDesc": "What to do if the download contains executables or other files from the list (in the NZB or after extracting).",
+    "unwantedAction": {
+      "off": "Do nothing",
+      "warn": "Warn",
+      "skip": "Discard them",
+      "fail": "Reject the download"
+    },
+    "unwantedList": "Unwanted extensions",
+    "unwantedListDesc": "Without the dot: exe, scr, lnk…",
+    "addExtension": "Add extension…",
+    "precheck": "Check before downloading",
+    "precheckDesc": "Asks the server about every article (STAT) before downloading anything and cancels if more is missing than the PAR2 can repair. It takes a moment to start, but doesn't waste data on impossible downloads.",
+    "duplicates": "Duplicate downloads",
+    "duplicatesDesc": "If it's already queued or downloaded (same name or same NZB).",
+    "duplicateAction": {
+      "off": "Add anyway",
+      "warn": "Add and warn",
+      "pause": "Add paused",
+      "skip": "Don't add"
+    },
+    "systemTitle": "System integration",
+    "startWithSystem": "Start with the system"
   },
   "sidebar": {
     "activeConns": {
@@ -798,7 +849,10 @@
       "transfer": "Send or receive your settings with a QR code",
       "remote": "See and manage a PC's downloads",
       "rss": "Automatic downloads with rules",
-      "finish": "Alerts, scripts and shutdown"
+      "finish": "Alerts, scripts and shutdown",
+      "categories": "tv, movies… with their folder and options",
+      "server": "Username, password and session",
+      "schedule": "Pauses and speed by time of day"
     }
   },
   "update": {
@@ -835,12 +889,12 @@
     "unskip": "Notify me again"
   },
   "api": {
-    "title": "Newznab API",
+    "title": "Newznab and SABnzbd API",
     "enable": "Enable API",
-    "enableDesc": "Newznab and NZBHydra2 compatible: Sonarr, Radarr, Prowlarr and other apps can search all your indexers through Nebula.",
+    "enableDesc": "Sonarr, Radarr, Prowlarr and other programs can search all your indexers through Nebula (like NZBHydra2) and use Nebula as a SABnzbd download client.",
     "stopped": "Stopped",
     "address": "Address",
-    "addressDesc": "Add it to Sonarr, Radarr or Prowlarr as a Newznab indexer, together with the API key.",
+    "addressDesc": "As a Newznab indexer in Sonarr, Radarr or Prowlarr, together with the API key.",
     "key": "API key",
     "keyDesc": "Apps send it with every request. If you change it, update it there too.",
     "regenerate": "Generate new",
@@ -851,10 +905,21 @@
     "portDesc": "Port the API listens on (5077 by default).",
     "lan": "Allow connections from the local network",
     "lanDesc": "Other devices (a NAS, another PC…) can use it with the API key. When off, only this computer can.",
-    "noIndexers": "Enable at least one indexer: the API searches them.",
+    "noIndexers": "With no active indexers the Newznab search returns nothing; the SABnzbd API works anyway.",
     "docs": "Documentation",
     "docsDesc": "How to connect it to Sonarr, Radarr or Prowlarr and what it supports.",
-    "androidNote": "On Android the API only answers while Nebula is open or downloading."
+    "androidNote": "On Android the API only answers while Nebula is open or downloading.",
+    "sab": {
+      "title": "SABnzbd download client",
+      "desc": "Sonarr, Radarr, Lidarr, Readarr and Prowlarr send NZBs to Nebula, follow the download and import it when it finishes.",
+      "step1": "In Sonarr or Radarr: Settings → Download Clients → + → SABnzbd.",
+      "step2": "Fill in these values (the category must exist in Nebula):",
+      "step3": "Press Test and save. What Sonarr sends shows up in Downloads with its category.",
+      "empty": "(empty)",
+      "noCategories": "You don't have categories yet: create tv and movies so Sonarr and Radarr can use them.",
+      "lanHint": "If Sonarr or Radarr run on another computer or in Docker, turn on \"Allow connections from the local network\".",
+      "docs": "Supported modes and differences from SABnzbd"
+    }
   },
   "transfer": {
     "scanLabel": "Scan QR code",
@@ -895,7 +960,8 @@
     "sent": "Settings sent. Confirm them on the other device.",
     "cameraDenied": "Nebula needs permission to use the camera to scan the QR code.",
     "scanHint": "Point at the QR code Nebula shows on the other device",
-    "wizardLink": "Already using Nebula on another device? Bring your settings over with a QR code"
+    "wizardLink": "Already using Nebula on another device? Bring your settings over with a QR code",
+    "fromDesktop": "From a computer"
   },
   "remote": {
     "mobileTitle": "Control a PC",
@@ -1012,7 +1078,7 @@
     "via": "Download method",
     "viaDefault": "Default",
     "dest": "Destination folder",
-    "destHelp": "Empty = the downloads folder. The folder isn't moved to other devices.",
+    "destHelp": "Empty = the category's folder. The folder isn't moved to other devices.",
     "onlyNew": "Only new releases",
     "onlyNewDesc": "Only grab what's published after the rule was created ({date}).",
     "preview": "Preview",
@@ -1131,5 +1197,127 @@
       "sub": "The download queue is empty. Happening in {secs} s.",
       "test": "This is a test: nothing will happen at the end."
     }
+  },
+  "cats": {
+    "category": "Category",
+    "default": "Default",
+    "defaultDesc": "Fixed: uses the download folder and the global options",
+    "desc": "Every download goes into a category that sets its folder, how it's downloaded, its priority and its post-processing. Sonarr, Radarr and RSS rules can pick one, and indexer results go on their own to the one that matches their Newznab category.",
+    "dir": "Folder",
+    "dirPlaceholder": "Empty = download folder; relative = inside it",
+    "via": "Download with",
+    "viaDefault": "Default method",
+    "priority": "Priority",
+    "prio": {
+      "force": "Force",
+      "high": "High",
+      "normal": "Normal",
+      "low": "Low"
+    },
+    "ppLabel": "Post-processing",
+    "pp": {
+      "global": "As in the global settings",
+      "0": "None",
+      "1": "Repair",
+      "2": "Repair and extract",
+      "3": "Repair, extract and delete"
+    },
+    "newznab": "Newznab categories",
+    "newznabHelp": "Newznab categories: numbers or ranges separated by commas (5000-5999 is TV, 2000-2999 movies). If several match, the narrowest range wins.",
+    "newPlaceholder": "New category name (tv, movies…)",
+    "add": "Add",
+    "presets": "Create tv, movies, audio and books",
+    "remove": "Remove category",
+    "removeConfirm": "Remove the \"{name}\" category? What's already in the queue or history keeps its name.",
+    "all": "All categories",
+    "chooseTitle": "Which category?",
+    "byNewznab": "By its Newznab category",
+    "ruleHelp": "Sets the folder, priority and post-processing of what this rule grabs (the rule's own folder and method win if you set them)."
+  },
+  "web": {
+    "unreachable": "Can't reach the Nebula server.",
+    "mismatch": "The passwords don't match.",
+    "setupTitle": "Create your account",
+    "loginTitle": "Sign in",
+    "setupDesc": "This is the first time you open this Nebula. The username and password protect the web interface; the password must have at least {n} characters.",
+    "username": "Username",
+    "password": "Password",
+    "repeat": "Repeat the password",
+    "create": "Create and sign in",
+    "signIn": "Sign in",
+    "section": "Web account",
+    "account": "Signed in as {user}",
+    "accountDesc": "The session lasts 30 days in this browser. Changing the password signs out every session.",
+    "signOut": "Sign out",
+    "changePassword": "Change the password",
+    "currentPassword": "Current password",
+    "newPassword": "New password",
+    "passwordChanged": "Password changed.",
+    "apiNote": "Sonarr, Radarr and Prowlarr can use this same port: {url} (or /sabnzbd/api) with the key below.",
+    "par2Path": "par2 program",
+    "sevenZipPath": "7-Zip program",
+    "toolFound": "Using {path}. Leave it empty to find it automatically.",
+    "toolMissing": "Not found ({path}). Install it or say where it is: without it downloads aren't repaired or extracted.",
+    "notFound": "Not found"
+  },
+  "sched": {
+    "pause": "Pause the queue",
+    "resume": "Resume the queue",
+    "speed": "Speed limit",
+    "enabled": "Enabled",
+    "time": "Time",
+    "days": "Days",
+    "action": "Action",
+    "empty": "No tasks yet. For example: pause at 8:00 on weekdays and resume at 18:00.",
+    "add": "Add task",
+    "hint": "Local time of the machine running Nebula. With no days selected, every day."
+  },
+  "import": {
+    "fileLabel": "From SABnzbd or NZBGet",
+    "fileDesc": "Choose its sabnzbd.ini or nzbget.conf: servers, categories, folders, options and scheduler. You'll see what's in it before anything is added.",
+    "choose": "Choose file",
+    "indexersLabel": "Indexers from Prowlarr or NZBHydra2",
+    "indexersDesc": "With its URL and API key, Nebula adds each Usenet indexer from Prowlarr, or NZBHydra2 as a single one.",
+    "title": "Import from {source}",
+    "subtitle": "Mark what you want to add. What you already have isn't touched.",
+    "servers": "Servers",
+    "categories": "Categories",
+    "settings": "Settings",
+    "schedule": "Scheduler",
+    "exists": "Already exists",
+    "disabled": "Disabled",
+    "conns": "{n} connections",
+    "yes": "Yes",
+    "no": "No",
+    "noLimit": "No limit",
+    "everyDay": "Every day",
+    "apply": "Import ({n})",
+    "done": "Imported: {servers} servers, {categories} categories, {settings} settings and {schedule} tasks",
+    "key": {
+      "downloadDir": "Download folder",
+      "incompleteDir": "Temporary folder",
+      "speedLimitKbps": "Speed limit",
+      "precheck": "Check before downloading",
+      "duplicateAction": "Duplicate downloads",
+      "par2Enabled": "Verify and repair with PAR2",
+      "extractEnabled": "Extract archives",
+      "directUnpack": "Extract while downloading",
+      "deleteArchives": "Delete archives after extracting",
+      "deletePar2": "Delete PAR2 files when done",
+      "deobfuscate": "Deobfuscate file names",
+      "abortHopeless": "Cancel hopeless downloads",
+      "unwantedExtensions": "Unwanted extensions",
+      "unwantedAction": "Unwanted files"
+    }
+  },
+  "discover": {
+    "button": "From Prowlarr / NZBHydra2",
+    "title": "Indexers from Prowlarr or NZBHydra2",
+    "subtitle": "Each Usenet indexer in Prowlarr is added separately; NZBHydra2 is added as one that searches all of its own.",
+    "hint": "In Prowlarr: Settings → General. In NZBHydra2: Config → Main.",
+    "find": "Find indexers",
+    "searching": "Searching…",
+    "add": "Add ({n})",
+    "added": "Indexers added: {n}"
   }
 }

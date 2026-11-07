@@ -1,6 +1,7 @@
 <script>
   import { t } from '../lib/i18n.svelte.js';
-  import { invoke } from '@tauri-apps/api/core';
+  import { invoke } from '../lib/transport.js';
+  import { openUrl } from '../lib/platform.js';
   import { fly } from 'svelte/transition';
   import Icon from './Icon.svelte';
   import Switch from './Switch.svelte';
@@ -58,7 +59,7 @@
       </div>
       <div class="hint">
         {info.keyHelp}
-        <button type="button" class="link" onclick={() => invoke('open_url', { url: info.keyUrl })}>{t('common.open')} <Icon name="external" size={11} /></button>
+        <button type="button" class="link" onclick={() => openUrl(info.keyUrl)}>{t('common.open')} <Icon name="external" size={11} /></button>
       </div>
     </div>
     <div class="field">

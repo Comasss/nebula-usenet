@@ -1,8 +1,8 @@
-import { invoke } from '@tauri-apps/api/core';
-import { listen } from '@tauri-apps/api/event';
+import { invoke, listen } from './transport.js';
 import { t, setLanguage } from './i18n.svelte.js';
 import { haptic } from './feedback.js';
 import { remote, call, initRemote, routeShared } from './remote.svelte.js';
+import { isAndroid } from './platform.js';
 
 export const ui = $state({
   ready: false,
@@ -27,6 +27,8 @@ export const ui = $state({
   addItems: [],
   clipboard: [],
   setupOpen: false,
+  // Indexadores › Desde Prowlarr / NZBHydra2 (se puede abrir desde Ajustes › Importar).
+  discoverOpen: false,
   dragging: false,
   dialog: null,
   // Menú "Descargar con" (pulsación larga en Descargar).
@@ -178,6 +180,17 @@ export async function init() {
   await listen('clipboard-nzb', (e) => {
     for (const u of e.payload) if (!ui.clipboard.includes(u)) ui.clipboard.push(u);
   });
+  // Navegador: tras perder la conexión con el servidor se vuelve a pedir el estado.
+  await listen('reconnected', async () => {
+    try {
+      const [s, q] = await Promise.all([invoke('get_settings'), invoke('get_queue')]);
+      ui.settings = s;
+      if (!remote.active) ui.queue = q;
+      if (!remote.active) refreshHistory();
+    } catch (e) {
+      console.error(e);
+    }
+  });
 
   setInterval(() => {
     ui.speedHistory.push(ui.queue.paused ? 0 : ui.queue.speed);
@@ -186,7 +199,7 @@ export async function init() {
 
   await initRemote().catch(console.error);
 
-  if (/android/i.test(navigator.userAgent)) {
+  if (isAndroid) {
     await resumed();
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible') resumed();

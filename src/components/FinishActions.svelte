@@ -1,19 +1,19 @@
 <script>
   // Ajustes › Al terminar: acciones que se ejecutan cuando una descarga termina, falla o la cola
-  // se queda vacía. En Android solo hay notificaciones; la energía solo existe en Windows.
+  // se queda vacía. En Android solo hay notificaciones; la energía, en la app de escritorio.
   import { t } from '../lib/i18n.svelte.js';
-  import { invoke } from '@tauri-apps/api/core';
+  import { invoke } from '../lib/transport.js';
   import { open } from '@tauri-apps/plugin-dialog';
   import { scale } from 'svelte/transition';
   import { getContext } from 'svelte';
   import Icon from './Icon.svelte';
   import Switch from './Switch.svelte';
   import { ui, saveSettings, toast, ask, d } from '../lib/state.svelte.js';
-  import { isAndroid, isWindows } from '../lib/platform.js';
+  import { isAndroid, isWindows, isDesktopApp } from '../lib/platform.js';
   import { fold } from '../lib/format.js';
 
   const NOTIFY = ['discord', 'telegram', 'ntfy', 'webhook'];
-  const KINDS = [...NOTIFY, ...(isAndroid ? [] : ['script']), ...(isWindows ? ['power'] : [])];
+  const KINDS = [...NOTIFY, ...(isAndroid ? [] : ['script']), ...(isDesktopApp ? ['power'] : [])];
   const ICONS = { discord: 'message', telegram: 'send', ntfy: 'bell', webhook: 'plug', script: 'terminal', power: 'power' };
 
   const s = $derived(ui.settings);
@@ -177,7 +177,7 @@
             <span>{t('finish.script')}</span>
             <div class="secret">
               <input class="input" value={a.path} placeholder={isWindows ? 'C:\\scripts\\fin.bat' : '/home/…/fin.sh'} onchange={text(a, 'path')} spellcheck="false" />
-              <button class="btn sm" onclick={() => pickScript(a)}>{t('common.browse')}</button>
+              {#if isDesktopApp}<button class="btn sm" onclick={() => pickScript(a)}>{t('common.browse')}</button>{/if}
             </div>
           </label>
           <label class="f small">

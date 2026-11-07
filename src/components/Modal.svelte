@@ -4,7 +4,7 @@
   import { cubicOut } from 'svelte/easing';
   import Icon from './Icon.svelte';
   import { d } from '../lib/state.svelte.js';
-  import { isAndroid } from '../lib/platform.js';
+  import { isMobile } from '../lib/platform.js';
 
   let {
     title = '',
@@ -20,7 +20,7 @@
 
   // En el móvil el diálogo sube desde abajo como una hoja; en el escritorio aparece en el centro.
   function sheetOrScale(node) {
-    if (!isAndroid) return scale(node, { start: 0.94, duration: d(240), easing: cubicOut });
+    if (!isMobile) return scale(node, { start: 0.94, duration: d(240), easing: cubicOut });
     return { duration: d(280), easing: cubicOut, css: (t) => `transform: translateY(${(1 - t) * 100}%)` };
   }
 
@@ -43,7 +43,7 @@
   role="presentation">
   <div
     class="modal"
-    style={isAndroid ? '' : `width: min(${width}px, calc(100vw - 48px))`}
+    style={isMobile ? '' : `width: min(${width}px, calc(100vw - 48px))`}
     transition:sheetOrScale
     role="dialog"
     aria-modal="true">

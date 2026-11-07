@@ -1,6 +1,6 @@
 <script>
   import { t, tn, th } from '../lib/i18n.svelte.js';
-  import { invoke } from '@tauri-apps/api/core';
+  import { invoke } from '../lib/transport.js';
   import { pickFolder } from '../lib/platform.js';
   import { slide, fade } from 'svelte/transition';
   import Modal from './Modal.svelte';
@@ -8,8 +8,10 @@
   import Switch from './Switch.svelte';
   import { ui, toast, d } from '../lib/state.svelte.js';
   import * as f from '../lib/format.js';
-  import { usableDebrid, debridLabel, defaultVia, hasNntp, kindInfo, nntpServers, serverLabel, viaLabel } from '../lib/debrid.js';
+  import { usableDebrid, debridLabel, hasNntp, kindInfo, nntpServers, serverLabel, viaLabel } from '../lib/debrid.js';
   import { haptic, flyTo } from '../lib/feedback.js';
+  import Select from './Select.svelte';
+  import { categoryOptions, categoryDefaults, priorityOptions, DEFAULT_CAT } from '../lib/categories.js';
 
   const current = $derived(ui.addItems[0]);
   let phase = $state('idle'); // loading | preview | error
@@ -19,7 +21,7 @@
   let showPw = $state(false);
   let showFiles = $state(false);
   let free = $state(null);
-  let form = $state({ name: '', dest: '', password: '', paused: false, top: false, via: 'nntp', options: {} });
+  let form = $state({ name: '', dest: '', password: '', paused: false, top: false, via: 'nntp', options: {}, category: DEFAULT_CAT, priority: 0 });
   let cached = $state([]);
   let loadedKey = null;
 
@@ -47,20 +49,19 @@
           : await invoke('inspect_nzb_url', { url: it.value });
       const s = ui.settings;
       preview = p;
+      // La categoría (elegida o deducida de las categorías Newznab del resultado) pone la carpeta,
+      // el método, la prioridad y el post-procesado.
+      const cat = categoryDefaults(s, it.category);
       form = {
         name: p.name,
-        dest: s.downloadDir || p.defaultDir,
+        dest: cat.dest || p.defaultDir,
         password: p.password ?? '',
         paused: s.addPaused,
         top: false,
-        via: it.via ?? defaultVia(s),
-        options: {
-          par2: s.par2Enabled,
-          extract: s.extractEnabled,
-          deleteArchives: s.deleteArchives,
-          deletePar2: s.deletePar2,
-          createFolder: s.createJobFolder,
-        },
+        via: it.via ?? cat.via,
+        options: cat.options,
+        category: cat.category,
+        priority: cat.priority,
       };
       phase = 'preview';
       checkCache(p.token);
@@ -83,6 +84,18 @@
       if (preview?.token === token) cached = ids;
     } catch {}
   }
+
+  function setCategory(name) {
+    const cat = categoryDefaults(ui.settings, name);
+    form.category = cat.category;
+    form.dest = cat.dest;
+    form.via = current?.via ?? cat.via;
+    form.options = cat.options;
+    form.priority = cat.priority;
+    updateFree();
+  }
+
+  const catOptions = $derived(categoryOptions(ui.settings));
 
   async function updateFree() {
     try {
@@ -114,6 +127,8 @@
           top: form.top,
           via: form.via,
           options: $state.snapshot(form.options),
+          category: form.category,
+          priority: form.priority,
         },
       });
       const viaName = form.via !== 'nntp' ? viaLabel(ui.settings, form.via) : '';
@@ -237,6 +252,19 @@
             <span>{t('add.nntpDisabled', { dir: ui.settings.nzbAskSaveDir ? t('add.askFolder') : ui.settings.nzbSaveDir })}</span>
           </div>
         {:else}
+        {#if catOptions.length > 1}
+          <div class="cat-row">
+            <div class="field">
+              <span class="label">{t('cats.category')}</span>
+              <Select value={form.category} options={catOptions} label={t('cats.category')} onchange={setCategory} />
+            </div>
+            <div class="field">
+              <span class="label">{t('cats.priority')}</span>
+              <Select bind:value={form.priority} options={priorityOptions()} label={t('cats.priority')} />
+            </div>
+          </div>
+        {/if}
+
         {#if debridOptions.length || servers.length > 1}
           <div class="field">
             <span class="label">{t('add.downloadWith')}</span>
@@ -381,6 +409,7 @@
   .via-text strong { font-size: 13px; font-weight: 620; }
   .via-text small { font-size: 11.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .bolt { position: absolute; top: 6px; right: 8px; color: #fcd34d; }
+  .cat-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .opts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 18px; padding: 14px; border-radius: 12px; background: var(--panel-2); border: 1px solid var(--border); }
   .opt { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text-2); cursor: pointer; }
   .files-toggle { align-self: flex-start; display: flex; align-items: center; gap: 6px; border: none; background: none; color: var(--text-2); cursor: pointer; padding: 0; font-size: 13px; }
@@ -394,6 +423,7 @@
     .summary { grid-template-columns: 1fr 1fr; gap: 8px; }
     .dest { flex-direction: column; }
     .opts { grid-template-columns: 1fr; }
+    .cat-row { grid-template-columns: 1fr; }
     .path { max-width: 50%; }
   }
 </style>

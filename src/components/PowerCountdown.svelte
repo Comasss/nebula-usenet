@@ -1,9 +1,8 @@
 <script>
   // Ventana pequeña y siempre encima con la cuenta atrás antes de apagar, suspender o hibernar.
   // La abre el motor cuando la cola se queda vacía; al terminar o cancelar, la cierra él mismo.
-  import { invoke } from '@tauri-apps/api/core';
-  import { listen } from '@tauri-apps/api/event';
-  import { onMount } from 'svelte';
+  import { invoke, listen } from '../lib/transport.js';
+    import { onMount } from 'svelte';
   import { t, i18n } from '../lib/i18n.svelte.js';
   import Icon from './Icon.svelte';
 

@@ -169,6 +169,7 @@ async def main():
     write_nzb(files, args.nzb, args.nzb_password, args.title)
     data_ids = [mid for (name, _, segs) in files if not name.lower().endswith(".par2") for (_, _, mid) in segs]
     missing = set(random.sample(data_ids, min(args.missing, len(data_ids))))
+    counts = {"body": 0, "stat": 0}
     print(f"NZB: {args.nzb} ({len(store)} artículos, {len(missing)} ausentes)")
 
     # HTTP para probar el flujo "pegar enlace"
@@ -199,6 +200,8 @@ async def main():
         def do_GET(self):
             u = urlparse(self.path)
             q = {k: v[0] for k, v in parse_qs(u.query).items()}
+            if u.path == "/_stats":
+                return self._send(json.dumps(counts), "application/json")
             if u.path.startswith("/torbox/dl/") or u.path.startswith("/premiumize/dl/"):
                 return self._serve_file(u.path)
             if u.path.startswith("/torbox/"):
@@ -449,7 +452,18 @@ async def main():
                         writer.write(b"281 Authentication accepted\r\n")
                     else:
                         writer.write(b"481 Authentication failed\r\n")
+                elif up.startswith("STAT"):
+                    counts["stat"] += 1
+                    if not authed:
+                        writer.write(b"480 Authentication required\r\n")
+                    else:
+                        mid = cmd[4:].strip().strip("<>")
+                        if mid in store and mid not in missing:
+                            writer.write(f"223 0 <{mid}>\r\n".encode())
+                        else:
+                            writer.write(b"430 No such article\r\n")
                 elif up.startswith("BODY"):
+                    counts["body"] += 1
                     if not authed:
                         writer.write(b"480 Authentication required\r\n")
                     else:

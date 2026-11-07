@@ -1,10 +1,9 @@
 // Actualizaciones de Nebula: comprueba las Releases de GitHub al abrir la app (y cada pocas horas),
 // avisa con una ventana que se puede cerrar u omitir y deja actualizar también desde Configuración.
-// La descarga y la instalación las hace el motor (src-tauri/src/updater.rs).
-import { invoke } from '@tauri-apps/api/core';
-import { listen } from '@tauri-apps/api/event';
+// La descarga y la instalación las hace el motor (src-tauri/src/updater.rs, en la app).
+import { invoke, listen } from './transport.js';
 import { t } from './i18n.svelte.js';
-import { isAndroid } from './platform.js';
+import { isAndroid, isServer, openUrl } from './platform.js';
 import { ui, saveSettings, toast } from './state.svelte.js';
 import { haptic } from './feedback.js';
 
@@ -56,7 +55,7 @@ export async function startUpdate() {
   if (!info?.available) return;
   if (!info.kind) {
     // No hay archivo para este sistema: se abre la página de la versión.
-    invoke('open_url', { url: info.url });
+    openUrl(info.url);
     return;
   }
   haptic('tap');
@@ -116,6 +115,8 @@ export function skipVersion() {
 }
 
 export async function initUpdater() {
+  // nebula-server se actualiza con su paquete o su imagen de Docker.
+  if (isServer) return;
   let last = { at: 0, bytes: 0 };
   await listen('update-progress', (e) => {
     const { downloaded, total } = e.payload;

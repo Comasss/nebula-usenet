@@ -1,11 +1,11 @@
 [package]
 name = "nebula"
-version = "1.10.1"
-description = "Nebula — a modern Usenet (NZB) client for Windows and Android"
-authors = ["Genis"]
-license = "PolyForm-Noncommercial-1.0.0"
-repository = "https://github.com/Comasss/nebula-usenet"
-edition = "2021"
+version.workspace = true
+description = "Nebula — a modern Usenet (NZB) client for Windows, Linux, macOS and Android"
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+edition.workspace = true
 
 [lib]
 name = "nebula_lib"
@@ -15,46 +15,27 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
+nebula-core.workspace = true
 tauri = { version = "2", features = ["tray-icon", "image-png"] }
 tauri-plugin-dialog = "2"
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
-tokio = { version = "1", features = ["full"] }
-tokio-native-tls = "0.3"
-native-tls = "0.2"
-reqwest = { version = "0.12", default-features = false, features = ["native-tls", "gzip", "multipart", "stream"] }
-bytes = "1"
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+reqwest.workspace = true
+parking_lot.workspace = true
+base64.workspace = true
+sha2.workspace = true
 futures-util = { version = "0.3", default-features = false }
-roxmltree = "0.20"
-crc32fast = "1"
-parking_lot = "0.12"
-regex = "1"
-uuid = { version = "1", features = ["v4"] }
-dirs = "6"
-flate2 = "1"
-base64 = "0.22"
-md-5 = "0.10"
-sha2 = "0.10"
-# Pasar los ajustes a otro dispositivo: QR y cifrado del envío por la red local.
-qrcode = { version = "0.14", default-features = false, features = ["svg"] }
-chacha20poly1305 = "0.10"
-# Control remoto desde el móvil: intercambio de claves al emparejar.
-x25519-dalek = { version = "2", features = ["static_secrets"] }
 
 [target.'cfg(windows)'.dependencies]
 tauri-winrt-notification = "0.8"
 winreg = "0.55"
 clipboard-win = "5"
-windows-sys = { version = "0.59", features = [
+windows-sys = { workspace = true, features = [
     "Win32_Foundation",
-    "Win32_Globalization",
-    "Win32_Security",
-    "Win32_Security_Cryptography",
     "Win32_System_DataExchange",
-    "Win32_System_JobObjects",
     "Win32_System_Power",
     "Win32_System_Threading",
-    "Win32_Storage_FileSystem",
     "Win32_UI_Shell",
 ] }
 
@@ -64,15 +45,17 @@ tauri-plugin-single-instance = "2"
 [target.'cfg(any(target_os = "android", target_os = "ios"))'.dependencies]
 tauri-plugin-barcode-scanner = "2"
 
+# La clave de las contraseñas en el llavero del sistema (Llavero de macOS, libsecret en Linux).
+[target.'cfg(target_os = "macos")'.dependencies]
+keyring = { version = "3", features = ["apple-native"] }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+keyring = { version = "3", features = ["sync-secret-service", "crypto-rust"] }
+
+# Notificaciones y portapapeles en Linux y macOS.
+[target.'cfg(any(target_os = "linux", target_os = "macos"))'.dependencies]
+tauri-plugin-notification = "2"
+arboard = { version = "3", default-features = false }
+
 [target.'cfg(unix)'.dependencies]
-libc = "0.2"
-
-[target.'cfg(target_os = "android")'.dependencies]
-# Android no trae OpenSSL: se compila junto a la app.
-openssl = { version = "0.10", features = ["vendored"] }
-
-[profile.release]
-opt-level = 3
-lto = true
-codegen-units = 1
-strip = true
+libc.workspace = true

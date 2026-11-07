@@ -178,7 +178,8 @@
     "speedLimit": "速度限制",
     "urlPlaceholder": "在此粘贴 .nzb 的直链，我会询问保存位置…",
     "viewHistory": "查看历史",
-    "viewServers": "查看服务器"
+    "viewServers": "查看服务器",
+    "emptyTextWeb": "把 <strong>.nzb</strong> 文件拖到此页面,点 <strong>+</strong> 上传,或在上方粘贴链接。"
   },
   "drop": {
     "subtitle": "将加入下载队列",
@@ -282,7 +283,9 @@
     "serverTitle": "仅从此服务器下载",
     "stepUpload": "上传",
     "stepRemote": "在 {provider}",
-    "stepFetch": "下载"
+    "stepFetch": "下载",
+    "checking": "检查中",
+    "checkingDetail": "正在检查文章是否存在 · {pct}%"
   },
   "logs": {
     "all": "全部",
@@ -377,7 +380,18 @@
     "ssl": "加密连接（SSL/TLS）",
     "test": "测试连接",
     "username": "用户名",
-    "verifyCert": "验证证书"
+    "verifyCert": "验证证书",
+    "quota": "下载配额",
+    "quotaPlaceholder": "无配额",
+    "quotaPeriod": "重置周期",
+    "quotaPeriods": {
+      "day": "每天",
+      "week": "每周",
+      "month": "每月",
+      "never": "从不"
+    },
+    "quotaResetDay": "每月日期",
+    "quotaResetWeekday": "星期几"
   },
   "servers": {
     "add": "添加服务器",
@@ -411,12 +425,16 @@
       "down": "无连接",
       "idle": "已连接",
       "ready": "就绪",
-      "warn": "有错误"
+      "warn": "有错误",
+      "quota": "配额已用完"
     },
     "subtitle": "你的 Usenet 服务商。备用服务器仅在主服务器缺少文章时使用。",
     "testing": "正在测试连接…",
     "tip": "优先级相同的服务器会分担工作。如果主服务器上没有某篇文章，将按顺序在备用服务器中查找。",
-    "updated": "已更新服务器"
+    "updated": "已更新服务器",
+    "quotaSub": "配额 {size}（{period}）",
+    "quotaUsed": "配额：{used} / {total}",
+    "quotaReset": "清零"
   },
   "settings": {
     "abortHopeless": "取消无法完成的下载",
@@ -525,7 +543,10 @@
       "api": "API",
       "transfer": "迁移到其他设备",
       "remote": "远程控制",
-      "finish": "完成后"
+      "finish": "完成后",
+      "categories": "分类",
+      "schedule": "计划任务",
+      "import": "导入"
     },
     "speedLimitDesc": "单位为 MB/s。0 = 不限速。",
     "startMinimized": "启动时最小化到托盘",
@@ -541,7 +562,37 @@
     "haptics": "触摸振动",
     "hapticsDesc": "轻触或长按时以短暂振动确认。",
     "searchPlaceholder": "搜索设置…",
-    "noResults": "没有与“{q}”匹配的设置"
+    "noResults": "没有与“{q}”匹配的设置",
+    "deobfuscate": "还原混淆文件名",
+    "deobfuscateDesc": "通过 PAR2 恢复真实文件名；如果主文件名仍是随机的，则改为下载的名称。",
+    "directUnpack": "边下载边解压",
+    "directUnpackDesc": "每个压缩包一完成就解压，不必等待其余部分。多压缩包的合集会更早完成，但下载时会占用更多磁盘和 CPU。",
+    "passwords": "备用密码",
+    "passwordsDesc": "如果压缩包受保护且下载自带的密码无法打开，将依次尝试这些密码。",
+    "addPassword": "添加密码…",
+    "unwanted": "不需要的文件",
+    "unwantedDesc": "当下载包含可执行文件或列表中的其他文件时（NZB 内或解压后）的处理方式。",
+    "unwantedAction": {
+      "off": "不处理",
+      "warn": "提醒",
+      "skip": "丢弃这些文件",
+      "fail": "拒绝该下载"
+    },
+    "unwantedList": "不需要的扩展名",
+    "unwantedListDesc": "不带点：exe、scr、lnk…",
+    "addExtension": "添加扩展名…",
+    "precheck": "下载前检查",
+    "precheckDesc": "下载前向服务器逐一查询每篇文章（STAT），若缺失量超过 PAR2 可修复的范围则取消。开始时稍慢，但不会在无法完成的下载上浪费流量。",
+    "duplicates": "重复下载",
+    "duplicatesDesc": "如果已在队列中或已下载（名称相同或 NZB 相同）。",
+    "duplicateAction": {
+      "off": "照常添加",
+      "warn": "添加并提醒",
+      "pause": "添加并暂停",
+      "skip": "不添加"
+    },
+    "systemTitle": "系统集成",
+    "startWithSystem": "开机时启动"
   },
   "sidebar": {
     "activeConns": {
@@ -777,7 +828,10 @@
       "transfer": "用二维码发送或接收设置",
       "remote": "查看和管理电脑上的下载",
       "rss": "按规则自动下载",
-      "finish": "通知、脚本和关机"
+      "finish": "通知、脚本和关机",
+      "categories": "tv、movies…及其文件夹和选项",
+      "server": "用户名、密码和会话",
+      "schedule": "按时间暂停和限速"
     }
   },
   "update": {
@@ -814,12 +868,12 @@
     "unskip": "重新提醒"
   },
   "api": {
-    "title": "Newznab API",
+    "title": "Newznab 与 SABnzbd API",
     "enable": "启用 API",
-    "enableDesc": "兼容 Newznab 和 NZBHydra2：Sonarr、Radarr、Prowlarr 等程序可以通过 Nebula 搜索你的所有索引器。",
+    "enableDesc": "Sonarr、Radarr、Prowlarr 等程序可以通过 Nebula 搜索你的所有索引器（类似 NZBHydra2），并把 Nebula 当作 SABnzbd 下载客户端使用。",
     "stopped": "已停止",
     "address": "地址",
-    "addressDesc": "在 Sonarr、Radarr 或 Prowlarr 中将其添加为 Newznab 索引器，并填写 API 密钥。",
+    "addressDesc": "在 Sonarr、Radarr 或 Prowlarr 中作为 Newznab 索引器添加，并填入 API key。",
     "key": "API 密钥",
     "keyDesc": "程序在每次请求时发送它。如果更改，请在这些程序中同步更新。",
     "regenerate": "生成新密钥",
@@ -830,10 +884,21 @@
     "portDesc": "API 监听的端口（默认 5077）。",
     "lan": "允许来自局域网的连接",
     "lanDesc": "其他设备（NAS、另一台电脑…）可使用 API 密钥访问。关闭时仅限本机。",
-    "noIndexers": "请至少启用一个索引器：API 会在其中搜索。",
+    "noIndexers": "没有启用的索引器时，Newznab 搜索不会返回结果；SABnzbd API 仍可正常使用。",
     "docs": "文档",
     "docsDesc": "如何连接 Sonarr、Radarr 或 Prowlarr，以及支持哪些功能。",
-    "androidNote": "在 Android 上，API 仅在 Nebula 打开或正在下载时响应。"
+    "androidNote": "在 Android 上，API 仅在 Nebula 打开或正在下载时响应。",
+    "sab": {
+      "title": "SABnzbd 下载客户端",
+      "desc": "Sonarr、Radarr、Lidarr、Readarr 和 Prowlarr 会把 NZB 发给 Nebula，跟踪下载进度，并在完成后导入。",
+      "step1": "在 Sonarr 或 Radarr 中：Settings → Download Clients → + → SABnzbd。",
+      "step2": "填写以下信息（分类必须已在 Nebula 中存在）：",
+      "step3": "点击 Test 并保存。Sonarr 发送的内容会带着分类出现在“下载”中。",
+      "empty": "（留空）",
+      "noCategories": "你还没有分类：请创建 tv 和 movies，以便 Sonarr 和 Radarr 使用。",
+      "lanHint": "如果 Sonarr 或 Radarr 在另一台电脑或 Docker 中运行，请开启“允许来自局域网的连接”。",
+      "docs": "支持的模式及与 SABnzbd 的差异"
+    }
   },
   "transfer": {
     "scanLabel": "扫描二维码",
@@ -874,7 +939,8 @@
     "sent": "设置已发送。请在另一台设备上确认。",
     "cameraDenied": "Nebula 需要相机权限才能扫描二维码。",
     "scanHint": "对准另一台设备上 Nebula 显示的二维码",
-    "wizardLink": "已在其他设备上使用 Nebula？用二维码迁移设置"
+    "wizardLink": "已在其他设备上使用 Nebula？用二维码迁移设置",
+    "fromDesktop": "来自电脑"
   },
   "remote": {
     "mobileTitle": "控制电脑",
@@ -991,7 +1057,7 @@
     "via": "下载方式",
     "viaDefault": "默认",
     "dest": "目标文件夹",
-    "destHelp": "留空 = 下载文件夹。文件夹不会同步到其他设备。",
+    "destHelp": "留空 = 分类的文件夹。文件夹不会转移到其他设备。",
     "onlyNew": "仅新内容",
     "onlyNewDesc": "只抓取规则创建（{date}）之后发布的内容。",
     "preview": "预览",
@@ -1110,5 +1176,127 @@
       "sub": "下载队列已空。将在 {secs} 秒后执行。",
       "test": "这是测试：结束时不会发生任何事情。"
     }
+  },
+  "cats": {
+    "category": "分类",
+    "default": "默认",
+    "defaultDesc": "固定：使用下载文件夹和全局选项",
+    "desc": "每个下载都属于一个分类，分类决定其文件夹、下载方式、优先级和后处理。Sonarr、Radarr 和 RSS 规则可以指定分类，索引器结果会按其 Newznab 分类自动归入匹配的分类。",
+    "dir": "文件夹",
+    "dirPlaceholder": "留空 = 下载文件夹；相对路径 = 位于其中",
+    "via": "下载方式",
+    "viaDefault": "默认方式",
+    "priority": "优先级",
+    "prio": {
+      "force": "强制",
+      "high": "高",
+      "normal": "普通",
+      "low": "低"
+    },
+    "ppLabel": "后处理",
+    "pp": {
+      "global": "与全局设置相同",
+      "0": "无",
+      "1": "修复",
+      "2": "修复并解压",
+      "3": "修复、解压并删除"
+    },
+    "newznab": "Newznab 分类",
+    "newznabHelp": "Newznab 分类：用逗号分隔的数字或范围（5000-5999 为电视，2000-2999 为电影）。若有多个匹配，范围最窄的优先。",
+    "newPlaceholder": "新分类名称（tv、movies…）",
+    "add": "添加",
+    "presets": "创建 tv、movies、audio 和 books",
+    "remove": "删除分类",
+    "removeConfirm": "删除分类“{name}”？队列和历史中已有的项目会保留该名称。",
+    "all": "所有分类",
+    "chooseTitle": "放入哪个分类？",
+    "byNewznab": "按其 Newznab 分类",
+    "ruleHelp": "决定此规则抓取内容的文件夹、优先级和后处理（如果规则自己设置了文件夹和方式，则以规则为准）。"
+  },
+  "web": {
+    "unreachable": "无法连接到 Nebula 服务器。",
+    "mismatch": "两次输入的密码不一致。",
+    "setupTitle": "创建你的账户",
+    "loginTitle": "登录",
+    "setupDesc": "这是你第一次打开这个 Nebula。用户名和密码用于保护网页界面;密码至少需要 {n} 个字符。",
+    "username": "用户名",
+    "password": "密码",
+    "repeat": "再次输入密码",
+    "create": "创建并登录",
+    "signIn": "登录",
+    "section": "网页账户",
+    "account": "已登录为 {user}",
+    "accountDesc": "此浏览器中的会话有效期为 30 天。修改密码会退出所有会话。",
+    "signOut": "退出",
+    "changePassword": "修改密码",
+    "currentPassword": "当前密码",
+    "newPassword": "新密码",
+    "passwordChanged": "密码已修改。",
+    "apiNote": "Sonarr、Radarr 和 Prowlarr 可以使用同一个端口:{url}(或 /sabnzbd/api),并填写下方的密钥。",
+    "par2Path": "par2 程序",
+    "sevenZipPath": "7-Zip 程序",
+    "toolFound": "正在使用 {path}。留空则自动查找。",
+    "toolMissing": "未找到({path})。请安装或指定位置:缺少它将无法修复或解压下载。",
+    "notFound": "未找到"
+  },
+  "sched": {
+    "pause": "暂停队列",
+    "resume": "恢复队列",
+    "speed": "速度限制",
+    "enabled": "启用",
+    "time": "时间",
+    "days": "日期",
+    "action": "操作",
+    "empty": "暂无任务。例如：工作日 8:00 暂停，18:00 恢复。",
+    "add": "添加任务",
+    "hint": "按运行 Nebula 的设备本地时间。未选日期即每天。"
+  },
+  "import": {
+    "fileLabel": "从 SABnzbd 或 NZBGet",
+    "fileDesc": "选择 sabnzbd.ini 或 nzbget.conf：服务器、分类、文件夹、选项和计划任务。添加前会先显示内容。",
+    "choose": "选择文件",
+    "indexersLabel": "来自 Prowlarr 或 NZBHydra2 的索引器",
+    "indexersDesc": "提供 URL 和 API key 后，Nebula 会添加 Prowlarr 中的每个 Usenet 索引器，或将 NZBHydra2 作为一个索引器添加。",
+    "title": "从 {source} 导入",
+    "subtitle": "勾选要添加的内容。已有的不会改动。",
+    "servers": "服务器",
+    "categories": "分类",
+    "settings": "设置",
+    "schedule": "计划任务",
+    "exists": "已存在",
+    "disabled": "已停用",
+    "conns": "{n} 个连接",
+    "yes": "是",
+    "no": "否",
+    "noLimit": "不限速",
+    "everyDay": "每天",
+    "apply": "导入（{n}）",
+    "done": "已导入：{servers} 台服务器、{categories} 个分类、{settings} 项设置和 {schedule} 个任务",
+    "key": {
+      "downloadDir": "下载文件夹",
+      "incompleteDir": "临时文件夹",
+      "speedLimitKbps": "速度限制",
+      "precheck": "下载前检查",
+      "duplicateAction": "重复下载",
+      "par2Enabled": "使用 PAR2 校验和修复",
+      "extractEnabled": "解压压缩包",
+      "directUnpack": "边下载边解压",
+      "deleteArchives": "解压后删除压缩包",
+      "deletePar2": "完成后删除 PAR2",
+      "deobfuscate": "还原混淆的文件名",
+      "abortHopeless": "取消无法修复的下载",
+      "unwantedExtensions": "不需要的扩展名",
+      "unwantedAction": "不需要的文件"
+    }
+  },
+  "discover": {
+    "button": "从 Prowlarr / NZBHydra2",
+    "title": "来自 Prowlarr 或 NZBHydra2 的索引器",
+    "subtitle": "Prowlarr 中的每个 Usenet 索引器会分别添加；NZBHydra2 作为一个索引器添加，搜索其全部索引器。",
+    "hint": "Prowlarr：Settings → General。NZBHydra2：Config → Main。",
+    "find": "查找索引器",
+    "searching": "正在查找…",
+    "add": "添加（{n}）",
+    "added": "已添加索引器：{n}"
   }
 }

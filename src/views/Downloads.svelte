@@ -1,7 +1,7 @@
 <script>
   import { t, tn, th, locale, num } from '../lib/i18n.svelte.js';
   import { remote, call, addItems } from '../lib/remote.svelte.js';
-  import { pickNzbFiles, isAndroid, isWindows } from '../lib/platform.js';
+  import { pickNzbFiles, isMobile, isDesktopApp, isServer } from '../lib/platform.js';
   import { haptic } from '../lib/feedback.js';
   import { fly, fade, scale } from 'svelte/transition';
   import { flip } from 'svelte/animate';
@@ -104,7 +104,7 @@
         {/if}
       </p>
     </div>
-    {#if !isAndroid}
+    {#if !isMobile}
     <div class="head-actions">
       <button class="btn" onclick={() => call('set_paused', { paused: !ui.queue.paused })} disabled={!jobs.length && !ui.queue.paused}>
         <Icon name={ui.queue.paused ? 'play' : 'pause'} size={16} />
@@ -161,7 +161,7 @@
           <div class="st-value big">{ui.queue.paused ? t('status.paused') : f.speed(ui.queue.speed)}</div>
         </div>
         <div class="st-tools">
-        {#if isWindows}<PowerQuick />{/if}
+        {#if isDesktopApp}<PowerQuick />{/if}
         <div class="limit-wrap">
           <button
             class="limit-btn"
@@ -223,7 +223,7 @@
           <Icon name="download" size={34} stroke={1.8} />
         </div>
         <h3>{t('downloads.emptyTitle')}</h3>
-        <p>{@html th('downloads.emptyText')}</p>
+        <p>{@html th(isServer ? 'downloads.emptyTextWeb' : 'downloads.emptyText')}</p>
         <div class="empty-actions">
           <button class="btn primary" onclick={addFiles}><Icon name="file-plus" size={16} /> {t('downloads.chooseFile')}</button>
           <button class="btn" onclick={() => (ui.view = 'history')}><Icon name="history" size={16} /> {t('downloads.viewHistory')}</button>
@@ -231,7 +231,7 @@
       </div>
     {/each}
   </section>
-  {#if isAndroid}
+  {#if isMobile}
     <button use:portal class="fab" class:idle={!jobs.length} onclick={() => { haptic('tap'); addFiles(); }} aria-label={t('downloads.addNzb')}>
       <Icon name="plus" size={26} stroke={2.6} />
     </button>

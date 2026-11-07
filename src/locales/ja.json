@@ -178,7 +178,8 @@
     "speedLimit": "速度制限",
     "urlPlaceholder": ".nzb の直接リンクをここに貼り付けると、保存先を確認します…",
     "viewHistory": "履歴を表示",
-    "viewServers": "サーバーを表示"
+    "viewServers": "サーバーを表示",
+    "emptyTextWeb": "<strong>.nzb</strong> ファイルをこのページにドラッグするか、<strong>+</strong> でアップロード、または上にリンクを貼り付けます。"
   },
   "drop": {
     "subtitle": "ダウンロードキューに追加されます",
@@ -282,7 +283,9 @@
     "serverTitle": "このサーバーからのみダウンロード",
     "stepUpload": "送信",
     "stepRemote": "{provider} 上",
-    "stepFetch": "ダウンロード"
+    "stepFetch": "ダウンロード",
+    "checking": "確認中",
+    "checkingDetail": "記事の有無を確認中 · {pct}%"
   },
   "logs": {
     "all": "すべて",
@@ -377,7 +380,18 @@
     "ssl": "暗号化接続（SSL/TLS）",
     "test": "接続をテスト",
     "username": "ユーザー名",
-    "verifyCert": "証明書を検証"
+    "verifyCert": "証明書を検証",
+    "quota": "ダウンロード上限",
+    "quotaPlaceholder": "上限なし",
+    "quotaPeriod": "リセット",
+    "quotaPeriods": {
+      "day": "毎日",
+      "week": "毎週",
+      "month": "毎月",
+      "never": "しない"
+    },
+    "quotaResetDay": "日付",
+    "quotaResetWeekday": "曜日"
   },
   "servers": {
     "add": "サーバーを追加",
@@ -411,12 +425,16 @@
       "down": "接続なし",
       "idle": "接続済み",
       "ready": "準備完了",
-      "warn": "エラーあり"
+      "warn": "エラーあり",
+      "quota": "上限到達"
     },
     "subtitle": "Usenet プロバイダーの一覧です。バックアップサーバーは、プライマリにアーティクルがない場合にのみ使用されます。",
     "testing": "接続をテストしています…",
     "tip": "同じ優先度のサーバーは処理を分担します。プライマリにアーティクルがない場合は、バックアップサーバーを順に検索します。",
-    "updated": "サーバーを更新しました"
+    "updated": "サーバーを更新しました",
+    "quotaSub": "上限 {size}（{period}）",
+    "quotaUsed": "上限: {used} / {total}",
+    "quotaReset": "リセット"
   },
   "settings": {
     "abortHopeless": "完了不可能なダウンロードを中止",
@@ -525,7 +543,10 @@
       "api": "API",
       "transfer": "別のデバイスへ移行",
       "remote": "リモート操作",
-      "finish": "完了時"
+      "finish": "完了時",
+      "categories": "カテゴリ",
+      "schedule": "スケジューラ",
+      "import": "インポート"
     },
     "speedLimitDesc": "MB/s 単位。0 = 制限なし。",
     "startMinimized": "トレイに最小化した状態で起動",
@@ -541,7 +562,37 @@
     "haptics": "タップ時に振動",
     "hapticsDesc": "タップや長押しを短い振動で知らせます。",
     "searchPlaceholder": "設定を検索…",
-    "noResults": "「{q}」に一致する設定はありません"
+    "noResults": "「{q}」に一致する設定はありません",
+    "deobfuscate": "難読化された名前を復元",
+    "deobfuscateDesc": "PAR2 から本来の名前を復元し、メインファイルの名前がまだランダムならダウンロード名を付けます。",
+    "directUnpack": "ダウンロード中に展開",
+    "directUnpackDesc": "各アーカイブは完成し次第、残りを待たずに展開します。複数アーカイブのパックは早く終わりますが、ダウンロード中のディスクと CPU の負荷が増えます。",
+    "passwords": "予備のパスワード",
+    "passwordsDesc": "アーカイブが保護されていてダウンロードのパスワードで開けない場合、これらを順に試します。",
+    "addPassword": "パスワードを追加…",
+    "unwanted": "不要なファイル",
+    "unwantedDesc": "ダウンロードに実行ファイルやリストのファイルが含まれる場合（NZB 内または展開後）の動作。",
+    "unwantedAction": {
+      "off": "何もしない",
+      "warn": "警告する",
+      "skip": "破棄する",
+      "fail": "ダウンロードを拒否"
+    },
+    "unwantedList": "不要な拡張子",
+    "unwantedListDesc": "ドットなし: exe、scr、lnk…",
+    "addExtension": "拡張子を追加…",
+    "precheck": "ダウンロード前に確認",
+    "precheckDesc": "何もダウンロードする前に各記事をサーバーに問い合わせ（STAT）、PAR2 で修復できる以上に欠けていれば中止します。開始に少し時間がかかりますが、完了できないダウンロードでデータを無駄にしません。",
+    "duplicates": "重複したダウンロード",
+    "duplicatesDesc": "すでにキューにあるか、ダウンロード済みの場合（同じ名前または同じ NZB）。",
+    "duplicateAction": {
+      "off": "そのまま追加",
+      "warn": "追加して警告",
+      "pause": "一時停止で追加",
+      "skip": "追加しない"
+    },
+    "systemTitle": "システムとの連携",
+    "startWithSystem": "システム起動時に開始"
   },
   "sidebar": {
     "activeConns": {
@@ -777,7 +828,10 @@
       "transfer": "QR コードで設定を送受信",
       "remote": "PC のダウンロードを確認・操作",
       "rss": "ルールで自動ダウンロード",
-      "finish": "通知、スクリプト、シャットダウン"
+      "finish": "通知、スクリプト、シャットダウン",
+      "categories": "tv、movies…とそのフォルダーとオプション",
+      "server": "ユーザー名、パスワード、セッション",
+      "schedule": "時間帯ごとの一時停止と速度"
     }
   },
   "update": {
@@ -814,9 +868,9 @@
     "unskip": "再度通知する"
   },
   "api": {
-    "title": "Newznab API",
+    "title": "Newznab と SABnzbd の API",
     "enable": "API を有効にする",
-    "enableDesc": "Newznab・NZBHydra2 互換：Sonarr、Radarr、Prowlarr などが Nebula 経由ですべてのインデクサーを検索できます。",
+    "enableDesc": "Sonarr、Radarr、Prowlarr などから Nebula を通じてすべてのインデクサーを検索でき（NZBHydra2 と同様）、Nebula を SABnzbd ダウンロードクライアントとしても使えます。",
     "stopped": "停止中",
     "address": "アドレス",
     "addressDesc": "Sonarr、Radarr、Prowlarr に Newznab インデクサーとして API キーと一緒に追加します。",
@@ -830,10 +884,21 @@
     "portDesc": "API が待ち受けるポート（既定は 5077）。",
     "lan": "ローカルネットワークからの接続を許可",
     "lanDesc": "他のデバイス（NAS、別の PC など）も API キーで利用できます。オフならこの PC のみ。",
-    "noIndexers": "インデクサーを少なくとも 1 つ有効にしてください：API はそこを検索します。",
+    "noIndexers": "有効なインデクサーがないと Newznab 検索は何も返しません。SABnzbd API はそのまま使えます。",
     "docs": "ドキュメント",
     "docsDesc": "Sonarr、Radarr、Prowlarr との接続方法と対応機能。",
-    "androidNote": "Android では Nebula が開いているかダウンロード中のときだけ API が応答します。"
+    "androidNote": "Android では Nebula が開いているかダウンロード中のときだけ API が応答します。",
+    "sab": {
+      "title": "SABnzbd ダウンロードクライアント",
+      "desc": "Sonarr、Radarr、Lidarr、Readarr、Prowlarr が NZB を Nebula に送り、ダウンロードを追跡して、完了後にインポートします。",
+      "step1": "Sonarr または Radarr で：Settings → Download Clients → + → SABnzbd。",
+      "step2": "次の値を入力します（カテゴリは Nebula に存在している必要があります）：",
+      "step3": "Test を押して保存します。Sonarr が送ったものはカテゴリ付きでダウンロードに表示されます。",
+      "empty": "（空欄）",
+      "noCategories": "カテゴリがまだありません。Sonarr と Radarr が使えるよう tv と movies を作成してください。",
+      "lanHint": "Sonarr や Radarr が別のコンピューターや Docker で動いている場合は、「ローカルネットワークからの接続を許可」をオンにしてください。",
+      "docs": "対応モードと SABnzbd との違い"
+    }
   },
   "transfer": {
     "scanLabel": "QR コードをスキャン",
@@ -874,7 +939,8 @@
     "sent": "設定を送信しました。もう一方のデバイスで確定してください。",
     "cameraDenied": "QR コードをスキャンするには、Nebula にカメラの許可が必要です。",
     "scanHint": "別のデバイスの Nebula に表示された QR コードに向けてください",
-    "wizardLink": "別のデバイスで Nebula を使っていますか？QR コードで設定を移行できます"
+    "wizardLink": "別のデバイスで Nebula を使っていますか？QR コードで設定を移行できます",
+    "fromDesktop": "パソコンから"
   },
   "remote": {
     "mobileTitle": "PC を操作",
@@ -991,7 +1057,7 @@
     "via": "ダウンロード方法",
     "viaDefault": "既定",
     "dest": "保存先フォルダー",
-    "destHelp": "空欄 = ダウンロードフォルダー。フォルダーは他のデバイスに移行されません。",
+    "destHelp": "空 = カテゴリのフォルダー。フォルダーは他のデバイスに移されません。",
     "onlyNew": "新着のみ",
     "onlyNewDesc": "ルール作成（{date}）以降に公開されたものだけを取得します。",
     "preview": "プレビュー",
@@ -1110,5 +1176,127 @@
       "sub": "ダウンロードキューが空です。{secs} 秒後に実行します。",
       "test": "これはテストです: 最後に何も起こりません。"
     }
+  },
+  "cats": {
+    "category": "カテゴリ",
+    "default": "デフォルト",
+    "defaultDesc": "固定：ダウンロードフォルダーと全体のオプションを使います",
+    "desc": "各ダウンロードはカテゴリに属し、カテゴリが保存先フォルダー、ダウンロード方法、優先度、後処理を決めます。Sonarr、Radarr、RSS ルールはカテゴリを指定でき、インデクサーの結果は Newznab カテゴリに合うカテゴリへ自動で入ります。",
+    "dir": "フォルダー",
+    "dirPlaceholder": "空 = ダウンロードフォルダー、相対パス = その中",
+    "via": "ダウンロード方法",
+    "viaDefault": "既定の方法",
+    "priority": "優先度",
+    "prio": {
+      "force": "強制",
+      "high": "高",
+      "normal": "通常",
+      "low": "低"
+    },
+    "ppLabel": "後処理",
+    "pp": {
+      "global": "全体設定と同じ",
+      "0": "なし",
+      "1": "修復",
+      "2": "修復して展開",
+      "3": "修復・展開して削除"
+    },
+    "newznab": "Newznab カテゴリ",
+    "newznabHelp": "Newznab カテゴリ：カンマ区切りの番号または範囲（5000-5999 はテレビ、2000-2999 は映画）。複数一致した場合は最も狭い範囲が優先されます。",
+    "newPlaceholder": "新しいカテゴリ名（tv、movies…）",
+    "add": "追加",
+    "presets": "tv、movies、audio、books を作成",
+    "remove": "カテゴリを削除",
+    "removeConfirm": "カテゴリ「{name}」を削除しますか？キューや履歴にある項目はその名前のままです。",
+    "all": "すべてのカテゴリ",
+    "chooseTitle": "どのカテゴリに入れますか？",
+    "byNewznab": "Newznab カテゴリに従う",
+    "ruleHelp": "このルールで取得したものの保存先、優先度、後処理を決めます（ルールにフォルダーや方法を指定した場合はそちらが優先）。"
+  },
+  "web": {
+    "unreachable": "Nebula サーバーに接続できません。",
+    "mismatch": "パスワードが一致しません。",
+    "setupTitle": "アカウントを作成",
+    "loginTitle": "サインイン",
+    "setupDesc": "この Nebula を開くのは初めてです。ユーザー名とパスワードで Web 画面を保護します。パスワードは {n} 文字以上にしてください。",
+    "username": "ユーザー名",
+    "password": "パスワード",
+    "repeat": "パスワード(確認)",
+    "create": "作成してサインイン",
+    "signIn": "サインイン",
+    "section": "Web アカウント",
+    "account": "{user} としてサインイン中",
+    "accountDesc": "このブラウザーのセッションは 30 日間有効です。パスワードを変更するとすべてのセッションが終了します。",
+    "signOut": "サインアウト",
+    "changePassword": "パスワードを変更",
+    "currentPassword": "現在のパスワード",
+    "newPassword": "新しいパスワード",
+    "passwordChanged": "パスワードを変更しました。",
+    "apiNote": "Sonarr、Radarr、Prowlarr はこの同じポートを使えます: {url}(または /sabnzbd/api)と下のキー。",
+    "par2Path": "par2 プログラム",
+    "sevenZipPath": "7-Zip プログラム",
+    "toolFound": "{path} を使用中。空欄にすると自動で探します。",
+    "toolMissing": "見つかりません({path})。インストールするか場所を指定してください。ないとダウンロードの修復や展開ができません。",
+    "notFound": "見つかりません"
+  },
+  "sched": {
+    "pause": "キューを一時停止",
+    "resume": "キューを再開",
+    "speed": "速度制限",
+    "enabled": "有効",
+    "time": "時刻",
+    "days": "曜日",
+    "action": "動作",
+    "empty": "タスクはありません。例: 平日 8:00 に一時停止し、18:00 に再開。",
+    "add": "タスクを追加",
+    "hint": "Nebula を実行している機器の現地時刻。曜日を選ばなければ毎日。"
+  },
+  "import": {
+    "fileLabel": "SABnzbd または NZBGet から",
+    "fileDesc": "sabnzbd.ini または nzbget.conf を選択: サーバー、カテゴリ、フォルダー、オプション、スケジューラー。追加前に内容を確認できます。",
+    "choose": "ファイルを選択",
+    "indexersLabel": "Prowlarr または NZBHydra2 のインデクサー",
+    "indexersDesc": "URL と API キーで、Prowlarr の各 Usenet インデクサー、または NZBHydra2 を1つとして追加します。",
+    "title": "{source} からインポート",
+    "subtitle": "追加するものを選んでください。既存の設定は変更されません。",
+    "servers": "サーバー",
+    "categories": "カテゴリ",
+    "settings": "設定",
+    "schedule": "スケジューラー",
+    "exists": "既に存在",
+    "disabled": "無効",
+    "conns": "{n} 接続",
+    "yes": "はい",
+    "no": "いいえ",
+    "noLimit": "制限なし",
+    "everyDay": "毎日",
+    "apply": "インポート（{n}）",
+    "done": "インポート完了: サーバー {servers}、カテゴリ {categories}、設定 {settings}、タスク {schedule}",
+    "key": {
+      "downloadDir": "ダウンロードフォルダー",
+      "incompleteDir": "一時フォルダー",
+      "speedLimitKbps": "速度制限",
+      "precheck": "ダウンロード前に確認",
+      "duplicateAction": "重複ダウンロード",
+      "par2Enabled": "PAR2 で検証・修復",
+      "extractEnabled": "アーカイブを展開",
+      "directUnpack": "ダウンロード中に展開",
+      "deleteArchives": "展開後にアーカイブを削除",
+      "deletePar2": "完了後に PAR2 を削除",
+      "deobfuscate": "ファイル名の難読化を解除",
+      "abortHopeless": "修復不能なダウンロードを中止",
+      "unwantedExtensions": "不要な拡張子",
+      "unwantedAction": "不要なファイル"
+    }
+  },
+  "discover": {
+    "button": "Prowlarr / NZBHydra2 から",
+    "title": "Prowlarr または NZBHydra2 のインデクサー",
+    "subtitle": "Prowlarr の Usenet インデクサーは個別に追加され、NZBHydra2 は全インデクサーを検索する1つとして追加されます。",
+    "hint": "Prowlarr: Settings → General。NZBHydra2: Config → Main。",
+    "find": "インデクサーを検索",
+    "searching": "検索中…",
+    "add": "追加（{n}）",
+    "added": "追加したインデクサー: {n}"
   }
 }

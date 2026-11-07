@@ -2,7 +2,7 @@
   // Selector de carpetas propio (Android no tiene uno que devuelva rutas): navega por el
   // almacenamiento con el mismo estilo que el resto de Nebula.
   import { t } from '../lib/i18n.svelte.js';
-  import { invoke } from '@tauri-apps/api/core';
+  import { invoke } from '../lib/transport.js';
   import { fade } from 'svelte/transition';
   import Modal from './Modal.svelte';
   import Icon from './Icon.svelte';

@@ -6,7 +6,7 @@ use std::path::Path;
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
 use std::time::Duration;
-use tauri::{Emitter, Manager};
+use tauri::Manager;
 use winreg::enums::HKEY_CURRENT_USER;
 use winreg::RegKey;
 
@@ -152,7 +152,7 @@ pub fn toast_power(app: &tauri::AppHandle, tools_dir: &Path, title: &str, body: 
             .on_activated(move |action| {
                 if let Some(e) = handle.try_state::<Arc<Engine>>() {
                     if action.as_deref() == Some("cancel-power") {
-                        crate::finish::cancel_power(&handle, &e.finish);
+                        crate::finish::cancel_power(&e);
                     } else if let Some(w) = handle.get_webview_window("power") {
                         let _ = w.show();
                         let _ = w.set_focus();
@@ -197,22 +197,6 @@ pub fn power_action(mode: &str) -> Result<(), String> {
     }
 }
 
-pub fn disk_free(path: &Path) -> Option<u64> {
-    use windows_sys::Win32::Storage::FileSystem::GetDiskFreeSpaceExW;
-    let mut p = path.to_path_buf();
-    while !p.exists() {
-        p = p.parent()?.to_path_buf();
-    }
-    let wide: Vec<u16> = p.as_os_str().encode_wide_nul();
-    let mut avail: u64 = 0;
-    let ok = unsafe { GetDiskFreeSpaceExW(wide.as_ptr(), &mut avail, std::ptr::null_mut(), std::ptr::null_mut()) };
-    if ok == 0 {
-        None
-    } else {
-        Some(avail)
-    }
-}
-
 trait EncodeWideNul {
     fn encode_wide_nul(&self) -> Vec<u16>;
 }
@@ -252,7 +236,7 @@ pub fn reveal_path(path: &str) -> Result<(), String> {
         .map_err(|e| e.to_string())
 }
 
-pub fn start_clipboard_monitor(engine: Arc<Engine>) {
+pub fn start_clipboard_monitor(app: tauri::AppHandle, engine: Arc<Engine>) {
     std::thread::Builder::new()
         .name("clipboard".into())
         .spawn(move || {
@@ -285,8 +269,7 @@ pub fn start_clipboard_monitor(engine: Arc<Engine>) {
                     seen.drain(..100);
                 }
                 linfo!("{}", t!("log.win.clipboard", n = urls.len()));
-                let visible = engine
-                    .app
+                let visible = app
                     .get_webview_window("main")
                     .and_then(|w| w.is_visible().ok())
                     .unwrap_or(false);
@@ -298,7 +281,7 @@ pub fn start_clipboard_monitor(engine: Arc<Engine>) {
                     }
                 }
                 if engine.ui_ready.load(Ordering::SeqCst) {
-                    let _ = engine.app.emit("clipboard-nzb", urls);
+                    nebula_core::bus::emit(nebula_core::Event::ClipboardNzb(urls));
                 } else {
                     engine.open_items(urls.into_iter().map(|u| OpenItem { kind: "clipboard".into(), value: u }).collect());
                 }

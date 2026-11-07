@@ -6,11 +6,11 @@
   import { cubicOut, backOut } from 'svelte/easing';
   import Icon from './Icon.svelte';
   import { ui, d } from '../lib/state.svelte.js';
-  import { isAndroid } from '../lib/platform.js';
+  import { isMobile } from '../lib/platform.js';
   import { haptic } from '../lib/feedback.js';
 
   const m = $derived(ui.viaMenu);
-  const sheet = isAndroid || window.matchMedia('(max-width: 700px)').matches;
+  const sheet = isMobile || window.matchMedia('(max-width: 700px)').matches;
 
   const pos = $derived.by(() => {
     const r = m?.rect;

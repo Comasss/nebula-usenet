@@ -7,6 +7,9 @@
 //! - Windows portable: el ejecutable en uso se renombra a `.old`, el nuevo ocupa su lugar y se
 //!   reinicia. El `.old` se borra en el siguiente arranque.
 //! - Android: el APK se abre con el instalador del sistema (pide permiso la primera vez).
+//! - Linux con AppImage: la AppImage nueva sustituye a la actual y se reinicia.
+//! - Linux con el .deb y macOS: solo se avisa con el enlace a la release (el .deb lo actualiza el
+//!   gestor de paquetes y la app de macOS se sustituye arrastrándola desde el .dmg).
 //!
 //! La interfaz no elige qué se descarga: solo puede pedir el archivo de la última comprobación.
 use parking_lot::Mutex;
@@ -41,7 +44,8 @@ pub struct UpdateInfo {
     /// Página de la release en GitHub.
     pub url: String,
     pub published_at: String,
-    /// "installer", "portable", "apk" o "" (no hay archivo para este sistema: solo se puede abrir la página).
+    /// "installer", "portable", "apk", "appimage" o "" (no hay archivo para esta instalación: solo
+    /// se puede abrir la página).
     pub kind: String,
     pub asset_name: String,
     pub asset_size: u64,
@@ -74,7 +78,7 @@ struct Asset {
 #[derive(Clone)]
 struct Pending {
     version: String,
-    #[cfg_attr(not(windows), allow(dead_code))]
+    #[cfg_attr(not(any(windows, target_os = "linux")), allow(dead_code))]
     kind: String,
     asset: Asset,
     sums_url: Option<String>,
@@ -117,6 +121,8 @@ fn install_kind() -> &'static str {
         } else {
             "portable"
         }
+    } else if cfg!(target_os = "linux") && std::env::var_os("APPIMAGE").is_some() {
+        "appimage"
     } else {
         ""
     }
@@ -136,6 +142,13 @@ fn pick_asset<'a>(assets: &'a [Asset], kind: &str) -> Option<&'a Asset> {
         "apk" => assets.iter().find(|a| lower(a).ends_with(".apk")),
         "installer" => assets.iter().find(|a| lower(a).ends_with("-setup.exe")),
         "portable" => assets.iter().find(|a| lower(a).ends_with("_portable.exe")),
+        "appimage" => {
+            let arch = if cfg!(target_arch = "aarch64") { "aarch64" } else { "x86_64" };
+            assets.iter().find(|a| {
+                let n = lower(a);
+                n.ends_with(".appimage") && n.contains(arch)
+            })
+        }
         _ => None,
     }
 }
@@ -389,6 +402,16 @@ pub async fn install(app: &AppHandle) -> Result<InstallResult, String> {
         });
         return Ok(InstallResult { started: true, needs_permission: false });
     }
+    #[cfg(target_os = "linux")]
+    if pending.kind == "appimage" {
+        swap_appimage(&file)?;
+        let app = app.clone();
+        tauri::async_runtime::spawn(async move {
+            tokio::time::sleep(Duration::from_millis(400)).await;
+            app.exit(0);
+        });
+        return Ok(InstallResult { started: true, needs_permission: false });
+    }
     #[allow(unreachable_code)]
     {
         let _ = (app, file);
@@ -435,7 +458,35 @@ fn swap_portable(file: &Path) -> Result<(), String> {
         .map_err(|e| t!("update.launchFailed", error = e))
 }
 
-/// Al arrancar tras una actualización portable: espera a que se cierre la versión anterior.
+/// La AppImage nueva se copia junto a la actual (puede estar en otro disco que la descarga) y la
+/// sustituye con un renombrado, que Linux permite aunque la actual esté en marcha. Luego se lanza
+/// la nueva, que espera a que esta se cierre.
+#[cfg(target_os = "linux")]
+fn swap_appimage(file: &Path) -> Result<(), String> {
+    use std::os::unix::fs::PermissionsExt;
+    let current = PathBuf::from(std::env::var_os("APPIMAGE").ok_or_else(|| t!("update.unsupported"))?);
+    let mut tmp = current.as_os_str().to_owned();
+    tmp.push(".new");
+    let tmp = PathBuf::from(tmp);
+    let copy = || -> std::io::Result<()> {
+        std::fs::copy(file, &tmp)?;
+        std::fs::set_permissions(&tmp, std::fs::Permissions::from_mode(0o755))?;
+        std::fs::rename(&tmp, &current)
+    };
+    if let Err(e) = copy() {
+        let _ = std::fs::remove_file(&tmp);
+        return Err(t!("update.replaceFailed", error = e));
+    }
+    let _ = std::fs::remove_file(file);
+    std::process::Command::new(&current)
+        .arg(format!("--after-update={}", std::process::id()))
+        .spawn()
+        .map(|_| ())
+        .map_err(|e| t!("update.launchFailed", error = e))
+}
+
+/// Al arrancar tras una actualización portable o de la AppImage: espera a que se cierre la
+/// versión anterior (si no, la instancia única le pasaría el control a ella).
 pub fn wait_previous() {
     #[cfg(windows)]
     {
@@ -450,6 +501,17 @@ pub fn wait_previous() {
                     WaitForSingleObject(h, 15_000);
                     CloseHandle(h);
                 }
+            }
+        }
+    }
+    #[cfg(target_os = "linux")]
+    {
+        let pid = std::env::args().find_map(|a| a.strip_prefix("--after-update=").and_then(|p| p.parse::<i32>().ok()));
+        if let Some(pid) = pid.filter(|p| *p > 0) {
+            let start = Instant::now();
+            // kill(pid, 0) solo comprueba si el proceso sigue vivo.
+            while unsafe { libc::kill(pid, 0) } == 0 && start.elapsed() < Duration::from_secs(15) {
+                std::thread::sleep(Duration::from_millis(100));
             }
         }
     }
@@ -479,11 +541,17 @@ mod tests {
             mk("Nebula_1.6.0_x64-setup.exe"),
             mk("Nebula_1.6.0_x64_portable.exe"),
             mk("Nebula_1.6.0_android_arm64.apk"),
+            mk("Nebula_1.6.0_linux_amd64.deb"),
+            mk("Nebula_1.6.0_linux_x86_64.AppImage"),
+            mk("Nebula_1.6.0_macos_universal.dmg"),
             mk("SHA256SUMS.txt"),
         ];
         assert_eq!(pick_asset(&list, "installer").unwrap().name, "Nebula_1.6.0_x64-setup.exe");
         assert_eq!(pick_asset(&list, "portable").unwrap().name, "Nebula_1.6.0_x64_portable.exe");
         assert_eq!(pick_asset(&list, "apk").unwrap().name, "Nebula_1.6.0_android_arm64.apk");
+        if cfg!(target_arch = "x86_64") {
+            assert_eq!(pick_asset(&list, "appimage").unwrap().name, "Nebula_1.6.0_linux_x86_64.AppImage");
+        }
         assert!(pick_asset(&list, "").is_none());
     }
 

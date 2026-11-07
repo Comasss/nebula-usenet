@@ -5,14 +5,14 @@
   import { cubicOut } from 'svelte/easing';
   import Icon from './Icon.svelte';
   import { d } from '../lib/state.svelte.js';
-  import { isAndroid } from '../lib/platform.js';
+  import { isMobile } from '../lib/platform.js';
 
   let { value = $bindable(), options = [], onchange = null, class: cls = '', title = '', id = undefined, label = '' } = $props();
 
   let open = $state(false);
   let btn;
   let pos = $state({ left: 0, top: 0, width: 0, up: false, max: 320 });
-  const sheet = isAndroid || window.matchMedia('(max-width: 700px)').matches;
+  const sheet = isMobile || window.matchMedia('(max-width: 700px)').matches;
   const current = $derived(options.find((o) => o.value === value));
 
   function toggle() {

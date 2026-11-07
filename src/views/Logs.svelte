@@ -1,7 +1,7 @@
 <script>
-  import { isAndroid } from '../lib/platform.js';
+  import { isDesktopApp } from '../lib/platform.js';
   import { t } from '../lib/i18n.svelte.js';
-  import { invoke } from '@tauri-apps/api/core';
+  import { invoke } from '../lib/transport.js';
   import { tick } from 'svelte';
   import Icon from '../components/Icon.svelte';
   import { ui, toast } from '../lib/state.svelte.js';
@@ -53,7 +53,7 @@
     </div>
     <div class="actions">
       <button class="btn sm" onclick={copy}><Icon name="copy" size={14} /> {t('logs.copy')}</button>
-      {#if !isAndroid}<button class="btn sm" onclick={() => invoke('open_path', { path: ui.info.logDir })}><Icon name="folder" size={14} /> {t('logs.openFolder')}</button>{/if}
+      {#if isDesktopApp}<button class="btn sm" onclick={() => invoke('open_path', { path: ui.info.logDir })}><Icon name="folder" size={14} /> {t('logs.openFolder')}</button>{/if}
       <button class="btn ghost sm" onclick={clear}><Icon name="trash" size={14} /> {t('common.clear')}</button>
     </div>
   </header>

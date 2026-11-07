@@ -1,0 +1,37 @@
+[package]
+name = "nebula-cli"
+description = "Nebula desde la terminal: controla nebula-server o descarga un NZB sin servidor"
+version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+edition.workspace = true
+
+# El ejecutable se llama nebula-cli para no chocar con la app de escritorio (nebula.exe). En
+# Linux y Docker se publica como `nebula`.
+[[bin]]
+name = "nebula-cli"
+path = "src/main.rs"
+
+[features]
+default = ["tui"]
+# `nebula tui`: la cola en la terminal, con ratatui.
+tui = ["dep:ratatui"]
+
+[dependencies]
+nebula-core.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+reqwest.workspace = true
+clap = { version = "4", features = ["derive", "env"] }
+clap_complete = "4"
+indicatif = "0.17"
+toml = "0.8"
+dirs = "6"
+uuid = { version = "1", features = ["v4"] }
+ratatui = { version = "0.29", optional = true }
+
+# Igual que nebula-server: con musl (Linux estático), OpenSSL va dentro.
+[target.'cfg(target_env = "musl")'.dependencies]
+openssl = { version = "0.10", features = ["vendored"] }

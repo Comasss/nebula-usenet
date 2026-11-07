@@ -24,8 +24,8 @@
   import { initUpdater } from './lib/updater.svelte.js';
   import { installRipples } from './lib/feedback.js';
   import Icon from './components/Icon.svelte';
-  import { invoke } from '@tauri-apps/api/core';
-  import { isAndroid } from './lib/platform.js';
+  import { invoke } from './lib/transport.js';
+  import { isAndroid, isMobile, isDesktopApp, isServer, importNzbFiles } from './lib/platform.js';
   import { onBackButtonPress } from '@tauri-apps/api/app';
   import Downloads from './views/Downloads.svelte';
   import History from './views/History.svelte';
@@ -82,7 +82,7 @@
         console.error(e);
         toast('error', t('app.startError', { error: e }));
       });
-    if (!isAndroid) getCurrentWebview()
+    if (isDesktopApp) getCurrentWebview()
       .onDragDropEvent((ev) => {
         const p = ev.payload;
         if (p.type === 'enter' || p.type === 'over') {
@@ -97,6 +97,41 @@
         }
       })
       .then((f) => (unlistenDrop = f));
+
+    // Navegador (nebula-server): los .nzb arrastrados se suben al servidor.
+    let dragCleanup;
+    if (isServer) {
+      const hasFiles = (e) => [...(e.dataTransfer?.types ?? [])].includes('Files');
+      const over = (e) => {
+        if (!hasFiles(e)) return;
+        e.preventDefault();
+        ui.dragging = true;
+      };
+      const leave = (e) => {
+        if (!e.relatedTarget) ui.dragging = false;
+      };
+      const drop = async (e) => {
+        if (!hasFiles(e)) return;
+        e.preventDefault();
+        ui.dragging = false;
+        const files = [...e.dataTransfer.files].filter((f) => /\.nzb(\.gz)?$/i.test(f.name));
+        if (!files.length) return toast('warn', t('app.onlyNzb'));
+        try {
+          const paths = await importNzbFiles(files);
+          queueAdd(paths.map((value) => ({ kind: 'file', value })));
+        } catch (err) {
+          toast('error', String(err));
+        }
+      };
+      window.addEventListener('dragover', over);
+      window.addEventListener('dragleave', leave);
+      window.addEventListener('drop', drop);
+      dragCleanup = () => {
+        window.removeEventListener('dragover', over);
+        window.removeEventListener('dragleave', leave);
+        window.removeEventListener('drop', drop);
+      };
+    }
 
     // Botón Atrás de Android: cierra lo que esté abierto, luego vuelve a la vista principal y,
     // desde ella, deja Nebula en segundo plano (sin cerrarla, para no cortar las descargas).
@@ -123,6 +158,7 @@
     window.addEventListener('keydown', onKey);
     return () => {
       unlistenDrop?.();
+      dragCleanup?.();
       backListener?.unregister();
       window.removeEventListener('keydown', onKey);
     };
@@ -131,7 +167,7 @@
   // En el móvil, indexadores, servidores, debrid y el registro se abren dentro de Configuración.
   const IN_SETTINGS = ['indexers', 'servers', 'debrid', 'logs'];
   $effect(() => {
-    if (isAndroid && IN_SETTINGS.includes(ui.view)) {
+    if (isMobile && IN_SETTINGS.includes(ui.view)) {
       ui.settingsPage = ui.view;
       ui.view = 'settings';
     }
@@ -140,7 +176,7 @@
   // La barra inferior se reduce al bajar por una lista y vuelve al subir.
   let lastScroll = 0;
   function onPageScroll(e) {
-    if (!isAndroid) return;
+    if (!isMobile) return;
     const el = e.target;
     if (!(el instanceof HTMLElement) || el.scrollHeight - el.clientHeight < 120) return;
     const y = el.scrollTop;
@@ -156,17 +192,17 @@
     lastScroll = 0;
   });
 
-  const View = $derived(isAndroid && ui.view === 'settings' ? MobileSettings : (VIEWS[ui.view] ?? Downloads));
+  const View = $derived(isMobile && ui.view === 'settings' ? MobileSettings : (VIEWS[ui.view] ?? Downloads));
 </script>
 
 <div class="app">
-  {#if isAndroid}
+  {#if isMobile}
     <MobileHeader />
   {:else}
     <TitleBar />
   {/if}
   <div class="body">
-    {#if !isAndroid}<Sidebar />{/if}
+    {#if !isMobile}<Sidebar />{/if}
     <main>
       {#if isAndroid && ui.ready && remote.active && ['downloads', 'history', 'stats'].includes(ui.view)}
         <RemoteBanner />
@@ -194,7 +230,7 @@
       {/if}
     </main>
   </div>
-  {#if isAndroid && ui.ready}<MobileNav />{/if}
+  {#if isMobile && ui.ready}<MobileNav />{/if}
 </div>
 
 {#if ui.ready}

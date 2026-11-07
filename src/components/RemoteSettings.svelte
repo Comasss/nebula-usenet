@@ -3,9 +3,8 @@
   // - PC: activarlo, ver la dirección y los móviles emparejados (y revocarlos).
   // - Android ("Controlar un PC"): buscar PCs en la red, emparejarlos, añadir uno a mano y controlarlo.
   import { t } from '../lib/i18n.svelte.js';
-  import { invoke } from '@tauri-apps/api/core';
-  import { listen } from '@tauri-apps/api/event';
-  import Icon from './Icon.svelte';
+  import { invoke, listen } from '../lib/transport.js';
+    import Icon from './Icon.svelte';
   import SettingRow from './SettingRow.svelte';
   import Modal from './Modal.svelte';
   import { ui, saveSettings, ask } from '../lib/state.svelte.js';

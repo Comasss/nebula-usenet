@@ -1,14 +1,16 @@
 <script>
   import { t, tn } from '../lib/i18n.svelte.js';
-  import { invoke } from '@tauri-apps/api/core';
+  import { invoke } from '../lib/transport.js';
   import { remote as rc, call } from '../lib/remote.svelte.js';
   import { slide } from 'svelte/transition';
   import Icon from './Icon.svelte';
   import ProgressBar from './ProgressBar.svelte';
   import { ui, ask, toast, d } from '../lib/state.svelte.js';
   import * as f from '../lib/format.js';
-  import { isAndroid } from '../lib/platform.js';
+  import { isMobile, isServer } from '../lib/platform.js';
   import { haptic, longpress, actionSheet } from '../lib/feedback.js';
+  import Select from './Select.svelte';
+  import { catLabel, isDefault, categoryOptions, priorityOptions, priorityLabel, PRIORITIES } from '../lib/categories.js';
 
   let { job, index, count } = $props();
   let expanded = $state(false);
@@ -16,14 +18,16 @@
 
   const st = $derived(f.STATUS[job.status] ?? f.STATUS.queued);
   const pp = $derived(['verifying', 'repairing', 'extracting', 'moving'].includes(job.status));
-  const percent = $derived(pp && job.post ? job.post.percent : job.percent);
+  // Precomprobación (STAT) antes de descargar.
+  const checking = $derived(job.checking != null && job.status === 'downloading');
+  const percent = $derived(checking ? job.checking : pp && job.post ? job.post.percent : job.percent);
   const rate = $derived(pp ? job.post?.speed ?? 0 : job.speed);
   // Descarga debrid mientras el servicio aún la tiene (antes de bajar los archivos al PC).
   const remote = $derived(!!job.debrid && job.debrid.phase !== 'fetch' && !pp);
   const barKind = $derived(
     remote && job.status === 'downloading'
       ? 'info'
-      : ({ downloading: 'accent', queued: 'muted', paused: 'paused', verifying: 'info', repairing: 'warn', extracting: 'teal', moving: 'teal' }[job.status] ?? 'accent')
+      : checking ? 'info' : ({ downloading: 'accent', queued: 'muted', paused: 'paused', verifying: 'info', repairing: 'warn', extracting: 'teal', moving: 'teal' }[job.status] ?? 'accent')
   );
   const waiting = $derived(pp && job.post?.stage === 'waiting');
   // Debrid: una barra por fase (subida del NZB, descarga en el servicio y bajada al dispositivo).
@@ -76,10 +80,11 @@
             { id: 'top', label: t('job.moveTop'), icon: 'arrow-up-to-line', disabled: index === 0 },
             { id: 'up', label: t('job.moveUp'), icon: 'chevron-up', disabled: index === 0 },
             { id: 'down', label: t('job.moveDown'), icon: 'chevron-down', disabled: index >= count - 1 },
+            { id: 'priority', label: `${t('cats.priority')}: ${priorityLabel(job.priority ?? 0)}`, icon: 'zap' },
           ]
         : []),
       { id: 'details', label: expanded ? t('job.hideDetails') : t('common.details'), icon: 'info' },
-      ...(!rc.active ? [{ id: 'open', label: t('job.openDest'), icon: 'folder' }] : []),
+      ...(!rc.active && !isServer ? [{ id: 'open', label: t('job.openDest'), icon: 'folder' }] : []),
       { id: 'remove', label: t('common.remove'), icon: 'trash', danger: true },
     ];
     const a = await actionSheet({ title: job.name, subtitle: `${f.bytes(job.total)} · ${st.label}`, actions });
@@ -87,6 +92,14 @@
     else if (a === 'top') move(0);
     else if (a === 'up') move(index - 1);
     else if (a === 'down') move(index + 1);
+    else if (a === 'priority') {
+      const p = await actionSheet({
+        title: t('cats.priority'),
+        subtitle: job.name,
+        actions: PRIORITIES.map((v) => ({ id: String(v), label: priorityLabel(v), icon: v === (job.priority ?? 0) ? 'check' : 'zap' })),
+      });
+      if (p !== null && p !== undefined) setPriority(Number(p));
+    }
     else if (a === 'details') expanded = !expanded;
     else if (a === 'open') invoke('open_path', { path: job.dest });
     else if (a === 'remove') remove();
@@ -115,6 +128,13 @@
     call('move_job', { id: job.id, to });
   }
 
+  function setPriority(priority) {
+    if (priority !== (job.priority ?? 0)) call('set_job_priority', { id: job.id, priority });
+  }
+
+  // Las categorías de un PC controlado no se conocen aquí: allí solo se cambia la prioridad.
+  const catOptions = $derived(rc.active ? [] : categoryOptions(ui.settings));
+
   // Fase del post-procesado (clave de traducción; las colas antiguas pueden traer el texto ya escrito).
   function stageText(stage) {
     const key = `stage.${stage}`;
@@ -127,6 +147,7 @@
       const stage = job.post?.stage ? stageText(job.post.stage) : st.label;
       return job.post?.detail ? `${stage} · ${job.post.detail}` : stage;
     }
+    if (checking) return t('job.checkingDetail', { pct: Math.floor(job.checking) });
     if (remote) return job.status === 'paused' ? `${t('status.paused')} · ${job.debrid.state}` : job.debrid.state;
     const parts = [t('job.progress', { done: f.bytes(job.done + job.failed), total: f.bytes(job.total) })];
     parts.push(t('job.filesProgress', { done: job.filesDone, total: job.files }));
@@ -134,7 +155,7 @@
   }
 </script>
 
-<article class="job card {job.status}" class:expanded use:longpress={{ enabled: isAndroid, onlong: openMenu, ms: 520 }}>
+<article class="job card {job.status}" class:expanded use:longpress={{ enabled: isMobile, onlong: openMenu, ms: 520 }}>
   <div class="top">
     <div class="s-icon {st.kind}" class:spinning={pp && !waiting}>
       {#if pp && !waiting}
@@ -146,12 +167,18 @@
     <div class="main">
       <div class="name truncate" title={job.name}>{job.name}</div>
       <div class="meta">
-        <span class="chip {st.kind}">{waiting ? t('stage.waiting') : st.label}</span>
+        <span class="chip {checking ? 'info' : st.kind}">{waiting ? t('stage.waiting') : checking ? t('job.checking') : st.label}</span>
         {#if job.debrid}
           <span class="chip info" title={t('job.viaTitle', { provider: job.debrid.provider })}><Icon name="cloud" size={11} stroke={2.4} /> {job.debrid.provider}</span>
         {/if}
         {#if job.server}
           <span class="chip accent" title={t('job.serverTitle')}><Icon name="server" size={11} stroke={2.4} /> {job.server}</span>
+        {/if}
+        {#if !isDefault(job.category)}
+          <span class="chip cat" title={t('cats.category')}><Icon name="tag" size={11} stroke={2.4} /> {job.category}</span>
+        {/if}
+        {#if job.priority && job.priority !== 0}
+          <span class="chip {job.priority > 0 ? 'warn' : 'muted'}" title={t('cats.priority')}><Icon name="zap" size={11} stroke={2.4} /> {priorityLabel(job.priority)}</span>
         {/if}
         <span class="sub truncate">{subline()}</span>
         {#if job.heldPar2 > 0 && ['queued', 'downloading', 'paused'].includes(job.status)}
@@ -181,7 +208,7 @@
       {/if}
     </div>
 
-    {#if isAndroid}
+    {#if isMobile}
       <div class="m-actions">
         {#if !pp}
           <button class="m-btn" class:resume={job.status === 'paused'} onclick={togglePause}>
@@ -202,7 +229,7 @@
           <Icon name={job.status === 'paused' ? 'play' : 'pause'} size={16} />
         </button>
       {/if}
-      {#if !rc.active}<button class="icon-btn" onclick={() => invoke('open_path', { path: job.dest })} title={t('job.openDest')}><Icon name="folder" size={16} /></button>{/if}
+      {#if !rc.active && !isServer}<button class="icon-btn" onclick={() => invoke('open_path', { path: job.dest })} title={t('job.openDest')}><Icon name="folder" size={16} /></button>{/if}
       <button class="icon-btn danger" onclick={remove} title={t('common.remove')}><Icon name="trash" size={16} /></button>
       <button class="icon-btn chevron" class:open={expanded} onclick={() => (expanded = !expanded)} title={t('common.details')}><Icon name="chevron-down" size={17} /></button>
     </div>
@@ -256,6 +283,14 @@
         {/if}
         {#if job.heldPar2 > 0}
           <div><span class="k">{t('job.heldPar2')}</span><span class="v">{tn('job.heldVolumes', job.heldPar2)}</span></div>
+        {/if}
+        {#if !pp}
+          {#if catOptions.length > 1}
+            <div><span class="k">{t('cats.category')}</span><Select value={catOptions.some((o) => o.value === job.category) ? job.category : '*'} options={catOptions} label={t('cats.category')} onchange={(v) => call('set_job_category', { id: job.id, category: v })} /></div>
+          {:else if !isDefault(job.category)}
+            <div><span class="k">{t('cats.category')}</span><span class="v">{catLabel(job.category)}</span></div>
+          {/if}
+          <div><span class="k">{t('cats.priority')}</span><Select value={job.priority ?? 0} options={priorityOptions()} label={t('cats.priority')} onchange={setPriority} /></div>
         {/if}
       </div>
       {#if files.length}

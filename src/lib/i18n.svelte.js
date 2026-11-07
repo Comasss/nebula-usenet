@@ -1,6 +1,6 @@
 // Traducciones de la interfaz. Los textos están en src/locales/<código>.json; `es` es el original
 // y `en` el idioma de reserva cuando falta una cadena o el idioma del sistema no está disponible.
-import { invoke } from '@tauri-apps/api/core';
+import { invoke } from './transport.js';
 
 const files = import.meta.glob('../locales/*.json', { eager: true, import: 'default' });
 

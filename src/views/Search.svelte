@@ -1,8 +1,8 @@
 <script>
   import Select from '../components/Select.svelte';
   import { t, tn, num } from '../lib/i18n.svelte.js';
-  import { invoke } from '@tauri-apps/api/core';
-  import { pickFolder } from '../lib/platform.js';
+  import { invoke } from '../lib/transport.js';
+  import { pickFolder, openUrl } from '../lib/platform.js';
   import { fly, fade, scale, slide } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
   import Icon from '../components/Icon.svelte';
@@ -12,6 +12,7 @@
   import { haptic, longpress, flyTo, chooseVia } from '../lib/feedback.js';
   import { viaOptions, viaLabel } from '../lib/debrid.js';
   import { remote, pcViaOptions, sendLinkToPc } from '../lib/remote.svelte.js';
+  import { categoryForNewznab } from '../lib/categories.js';
   import { untrack } from 'svelte';
   import { session as S, run } from '../lib/searchSession.svelte.js';
 
@@ -202,7 +203,7 @@
     setAct(g, 'working');
     haptic('tap');
     try {
-      await tryEach(sources, (src) => sendLinkToPc(src.link, g.title, via));
+      await tryEach(sources, (src) => sendLinkToPc(src.link, g.title, via, src.categoryIds ?? []));
       setAct(g, 'queued');
       haptic('success');
       flyTo(el, 'downloads');
@@ -224,16 +225,17 @@
       await tryEach(sources, async (src) => {
         const p = await invoke('inspect_nzb_url', { url: src.link, indexerId: src.indexerId });
         if (s.searchQuickAdd) {
+          // Sin carpeta ni opciones: las pone la categoría que toque por sus categorías Newznab.
           await invoke('add_job', {
             req: {
               token: p.token,
               name: g.title,
-              destDir: s.downloadDir,
+              destDir: '',
               password: p.password ?? null,
               paused: s.addPaused,
               top: false,
-              options: { par2: s.par2Enabled, extract: s.extractEnabled, deleteArchives: s.deleteArchives, deletePar2: s.deletePar2, createFolder: s.createJobFolder },
               via,
+              newznab: src.categoryIds ?? [],
             },
           });
           setAct(g, 'queued');
@@ -243,7 +245,7 @@
           toast('success', label ? t('add.queuedVia', { provider: label, name: g.title }) : t('add.queued', { name: g.title }), 3000);
         } else {
           setAct(g, null);
-          queueAdd([{ kind: 'url', value: src.link, preview: { ...p, name: g.title }, via }]);
+          queueAdd([{ kind: 'url', value: src.link, preview: { ...p, name: g.title }, via, category: categoryForNewznab(s, src.categoryIds ?? []) }]);
         }
       });
     } catch (e) {
@@ -410,7 +412,7 @@
                     <span class="muted">{s.date ? f.ago(s.date) : ''}</span>
                     <span class="muted">{s.grabs != null ? t('search.grabsShort', { n: num(s.grabs) }) : ''}</span>
                     <span class="s-act">
-                      {#if s.details}<button class="icon-btn" title={t('search.openInIndexer')} onclick={() => invoke('open_url', { url: s.details })}><Icon name="external" size={14} /></button>{/if}
+                      {#if s.details}<button class="icon-btn" title={t('search.openInIndexer')} onclick={() => openUrl(s.details)}><Icon name="external" size={14} /></button>{/if}
                       {#if nntp}<button class="icon-btn hold-ring" title={t('search.downloadFrom')} onclick={(e) => download(g, [s], null, e.currentTarget)} use:longpress={{ onlong: (el) => downloadWith(g, [s], el) }}><Icon name="download" size={14} /></button>{/if}
                       <button class="icon-btn" title={t('search.saveFrom')} onclick={() => saveNzb(g, [s])}><Icon name="file" size={14} /></button>
                     </span>

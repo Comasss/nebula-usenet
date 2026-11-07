@@ -179,6 +179,7 @@ textarea.input { height: auto; padding: 10px 12px; resize: vertical; }
 .chip.info { background: rgba(96, 165, 250, 0.14); color: #93c5fd; }
 .chip.teal { background: rgba(45, 212, 191, 0.14); color: #5eead4; }
 .chip.muted { background: var(--panel-3); color: var(--muted); }
+.chip.cat { background: rgba(244, 114, 182, 0.14); color: #f9a8d4; }
 
 .alert {
   display: flex;

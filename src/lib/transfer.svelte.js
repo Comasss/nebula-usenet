@@ -2,8 +2,7 @@
 // - Enviar: el QR lleva los ajustes y el otro dispositivo los importa.
 // - Recibir: el QR lleva la dirección de este equipo en la Wi-Fi; el móvil lo escanea y envía los suyos.
 // Si no se puede escanear, el mismo código se copia y se pega como texto.
-import { invoke } from '@tauri-apps/api/core';
-import { listen } from '@tauri-apps/api/event';
+import { invoke, listen } from './transport.js';
 import { scan, cancel, checkPermissions, requestPermissions, Format } from '@tauri-apps/plugin-barcode-scanner';
 import { t, setLanguage } from './i18n.svelte.js';
 import { ui, toast } from './state.svelte.js';
