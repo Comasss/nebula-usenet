@@ -1,4 +1,4 @@
-//! App de escritorio (Windows) y Android de Nebula: la interfaz Tauri sobre el motor
+//! App de escritorio (Windows, Linux y macOS) y Android de Nebula: la interfaz Tauri sobre el motor
 //! `nebula-core`. Aquí solo va lo que necesita Tauri: ventanas, bandeja, comandos, eventos y la
 //! integración con cada sistema.
 #[macro_use]
@@ -7,9 +7,13 @@ extern crate nebula_core;
 #[cfg(target_os = "android")]
 mod android;
 mod commands;
+#[cfg(any(target_os = "linux", target_os = "macos"))]
+mod keychain;
 mod os;
 #[cfg(windows)]
 mod tools;
+#[cfg(any(target_os = "linux", target_os = "macos"))]
+mod unixint;
 mod updater;
 #[cfg(windows)]
 mod winint;
@@ -212,6 +216,8 @@ fn forward_events(app: AppHandle) {
 /// Carpetas, registro, ajustes, idioma y herramientas: lo que hay que preparar antes del motor.
 fn boot(paths: config::AppPaths) -> (config::AppPaths, config::Settings) {
     logger::init(&paths.logs);
+    #[cfg(any(target_os = "linux", target_os = "macos"))]
+    keychain::install();
     let settings = config::Settings::load(&paths);
     if settings.language.is_empty() || !i18n::set(&settings.language) {
         i18n::set(i18n::system_language());
@@ -254,6 +260,10 @@ pub fn run() {
     #[cfg(mobile)]
     {
         builder = builder.plugin(tauri_plugin_barcode_scanner::init());
+    }
+    #[cfg(any(target_os = "linux", target_os = "macos"))]
+    {
+        builder = builder.plugin(tauri_plugin_notification::init());
     }
     let app = builder
         .plugin(tauri_plugin_dialog::init())
@@ -402,11 +412,34 @@ pub fn run() {
         .build(tauri::generate_context!())
         .expect("no se pudo iniciar Nebula");
 
-    app.run(|app, event| {
-        if let RunEvent::Exit = event {
+    app.run(|app, event| match event {
+        RunEvent::Exit => {
             if let Some(e) = app.try_state::<Arc<Engine>>() {
                 e.shutdown();
             }
         }
+        // En macOS los .nzb abiertos desde Finder llegan como evento, no como argumentos.
+        #[cfg(target_os = "macos")]
+        RunEvent::Opened { urls } => {
+            let args: Vec<String> = urls
+                .iter()
+                .map(|u| match u.to_file_path() {
+                    Ok(p) => p.to_string_lossy().to_string(),
+                    Err(_) => u.to_string(),
+                })
+                .collect();
+            if let Some(e) = app.try_state::<Arc<Engine>>() {
+                e.show_main();
+                e.open_items(parse_args(&args, None));
+            }
+        }
+        // Clic en el icono del Dock con la ventana escondida en la bandeja.
+        #[cfg(target_os = "macos")]
+        RunEvent::Reopen { has_visible_windows: false, .. } => {
+            if let Some(e) = app.try_state::<Arc<Engine>>() {
+                e.show_main();
+            }
+        }
+        _ => {}
     });
 }

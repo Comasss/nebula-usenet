@@ -1,5 +1,5 @@
 <script>
-  // Panel de velocidad (Windows): apagar, suspender o hibernar al vaciarse la cola, solo esta vez.
+  // Panel de velocidad (app de escritorio): apagar, suspender o hibernar al vaciarse la cola, solo esta vez.
   import { invoke, listen } from '../lib/transport.js';
     import { onMount } from 'svelte';
   import { scale } from 'svelte/transition';

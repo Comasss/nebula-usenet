@@ -1,5 +1,5 @@
 // Dónde corre la interfaz. Es la misma en todos los casos; aquí se resuelve lo que cambia:
-// - App de escritorio (Windows, Tauri): ventana propia, bandeja, diálogos del sistema.
+// - App de escritorio (Windows, Linux y macOS, Tauri): ventana propia, bandeja, diálogos del sistema.
 // - App de Android (Tauri): diseño móvil, selector de carpetas propio, permisos, vibración.
 // - Navegador contra nebula-server: sin ventana ni bandeja; las carpetas son las del servidor
 //   (selector propio) y los .nzb se suben. En una pantalla estrecha usa el diseño móvil.

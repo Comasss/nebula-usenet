@@ -1,7 +1,7 @@
 <script>
   import { t, tn, th, locale, num } from '../lib/i18n.svelte.js';
   import { remote, call, addItems } from '../lib/remote.svelte.js';
-  import { pickNzbFiles, isMobile, isWindows, isServer } from '../lib/platform.js';
+  import { pickNzbFiles, isMobile, isDesktopApp, isServer } from '../lib/platform.js';
   import { haptic } from '../lib/feedback.js';
   import { fly, fade, scale } from 'svelte/transition';
   import { flip } from 'svelte/animate';
@@ -161,7 +161,7 @@
           <div class="st-value big">{ui.queue.paused ? t('status.paused') : f.speed(ui.queue.speed)}</div>
         </div>
         <div class="st-tools">
-        {#if isWindows}<PowerQuick />{/if}
+        {#if isDesktopApp}<PowerQuick />{/if}
         <div class="limit-wrap">
           <button
             class="limit-btn"

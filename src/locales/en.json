@@ -608,7 +608,9 @@
       "warn": "Add and warn",
       "pause": "Add paused",
       "skip": "Don't add"
-    }
+    },
+    "systemTitle": "System integration",
+    "startWithSystem": "Start with the system"
   },
   "sidebar": {
     "activeConns": {
@@ -958,7 +960,8 @@
     "sent": "Settings sent. Confirm them on the other device.",
     "cameraDenied": "Nebula needs permission to use the camera to scan the QR code.",
     "scanHint": "Point at the QR code Nebula shows on the other device",
-    "wizardLink": "Already using Nebula on another device? Bring your settings over with a QR code"
+    "wizardLink": "Already using Nebula on another device? Bring your settings over with a QR code",
+    "fromDesktop": "From a computer"
   },
   "remote": {
     "mobileTitle": "Control a PC",

@@ -608,7 +608,9 @@
       "warn": "Adicionar e avisar",
       "pause": "Adicionar pausado",
       "skip": "Não adicionar"
-    }
+    },
+    "systemTitle": "Integração com o sistema",
+    "startWithSystem": "Iniciar com o sistema"
   },
   "sidebar": {
     "activeConns": {
@@ -958,7 +960,8 @@
     "sent": "Configurações enviadas. Confirme-as no outro dispositivo.",
     "cameraDenied": "O Nebula precisa de permissão para usar a câmara e ler o QR.",
     "scanHint": "Aponte para o QR que o Nebula mostra no outro dispositivo",
-    "wizardLink": "Já usa o Nebula noutro dispositivo? Passe as configurações com um QR"
+    "wizardLink": "Já usa o Nebula noutro dispositivo? Passe as configurações com um QR",
+    "fromDesktop": "De um computador"
   },
   "remote": {
     "mobileTitle": "Controlar um PC",

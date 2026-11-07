@@ -1,5 +1,5 @@
-//! Lo que depende del sistema operativo en la app: Windows (winint.rs), Android (android.rs) y,
-//! para compilar y probar, el resto de Unix. El motor lo usa a través de `TauriPlatform`.
+//! Lo que depende del sistema operativo en la app: Windows (winint.rs), Linux y macOS (unixint.rs)
+//! y Android (android.rs). El motor lo usa a través de `TauriPlatform`.
 use crate::engine::Engine;
 use nebula_core::Platform;
 use std::path::PathBuf;
@@ -8,6 +8,8 @@ use tauri::{AppHandle, Manager};
 
 #[cfg(windows)]
 pub use crate::winint::{open_path, refresh_registrations, register_app_identity, reveal_path};
+#[cfg(any(target_os = "linux", target_os = "macos"))]
+pub use crate::unixint::{open_path, open_url, refresh_registrations, reveal_path};
 
 /// Lo que el motor le pide a la app: notificaciones, bandeja, ventanas y energía.
 pub struct TauriPlatform {
@@ -23,21 +25,29 @@ impl Platform for TauriPlatform {
         crate::winint::toast(&self.app, &self.tools, title, body);
         #[cfg(target_os = "android")]
         crate::android::notify(title, body);
-        #[cfg(not(any(windows, target_os = "android")))]
+        #[cfg(any(target_os = "linux", target_os = "macos"))]
+        crate::unixint::notify(&self.app, title, body);
+        #[cfg(not(any(windows, target_os = "android", target_os = "linux", target_os = "macos")))]
         let _ = (title, body);
     }
 
     fn notify_power(&self, title: &str, body: &str, cancel: &str) {
         #[cfg(windows)]
         crate::winint::toast_power(&self.app, &self.tools, title, body, cancel);
-        #[cfg(not(windows))]
+        // Sin botón en la notificación: se cancela desde la ventana de la cuenta atrás.
+        #[cfg(any(target_os = "linux", target_os = "macos"))]
+        {
+            let _ = cancel;
+            crate::unixint::notify(&self.app, title, body);
+        }
+        #[cfg(not(any(windows, target_os = "linux", target_os = "macos")))]
         let _ = (title, body, cancel);
     }
 
-    /// En Windows va al icono de la bandeja; en Android, a la notificación permanente que
+    /// En escritorio va al icono de la bandeja; en Android, a la notificación permanente que
     /// mantiene viva la descarga con la pantalla apagada.
     fn queue_status(&self, active: usize, text: String) {
-        #[cfg(all(desktop, windows))]
+        #[cfg(desktop)]
         {
             let _ = active;
             if let Some(tray) = self.app.tray_by_id("main") {
@@ -46,7 +56,7 @@ impl Platform for TauriPlatform {
         }
         #[cfg(target_os = "android")]
         crate::android::keep_alive(active > 0, &text);
-        #[cfg(not(any(windows, target_os = "android")))]
+        #[cfg(not(any(desktop, target_os = "android")))]
         let _ = (active, text);
     }
 
@@ -76,13 +86,15 @@ impl Platform for TauriPlatform {
     }
 
     fn supports_power(&self) -> bool {
-        cfg!(windows)
+        cfg!(any(windows, target_os = "linux", target_os = "macos"))
     }
 
     fn power_action(&self, mode: &str) -> Result<(), String> {
         #[cfg(windows)]
         return crate::winint::power_action(mode);
-        #[cfg(not(windows))]
+        #[cfg(any(target_os = "linux", target_os = "macos"))]
+        return crate::unixint::power_action(mode);
+        #[cfg(not(any(windows, target_os = "linux", target_os = "macos")))]
         {
             let _ = mode;
             Err(t!("finish.windowsOnly"))
@@ -92,7 +104,9 @@ impl Platform for TauriPlatform {
     fn set_association(&self, enable: bool) -> Result<(), String> {
         #[cfg(windows)]
         return crate::winint::set_association(enable);
-        #[cfg(not(windows))]
+        #[cfg(any(target_os = "linux", target_os = "macos"))]
+        return crate::unixint::set_association(enable);
+        #[cfg(not(any(windows, target_os = "linux", target_os = "macos")))]
         {
             // En Android el APK ya declara que abre archivos .nzb.
             let _ = enable;
@@ -103,7 +117,9 @@ impl Platform for TauriPlatform {
     fn set_autostart(&self, enable: bool) -> Result<(), String> {
         #[cfg(windows)]
         return crate::winint::set_autostart(enable);
-        #[cfg(not(windows))]
+        #[cfg(any(target_os = "linux", target_os = "macos"))]
+        return crate::unixint::set_autostart(enable);
+        #[cfg(not(any(windows, target_os = "linux", target_os = "macos")))]
         {
             // En Android no hay "iniciar con el sistema".
             let _ = enable;
@@ -145,11 +161,13 @@ pub fn start_clipboard_monitor(app: AppHandle, engine: Arc<Engine>) {
     // interfaz al volver a ella (comando `app_resumed`).
     #[cfg(windows)]
     crate::winint::start_clipboard_monitor(app, engine);
-    #[cfg(not(windows))]
+    #[cfg(any(target_os = "linux", target_os = "macos"))]
+    crate::unixint::start_clipboard_monitor(app, engine);
+    #[cfg(not(any(windows, target_os = "linux", target_os = "macos")))]
     let _ = (app, engine);
 }
 
-#[cfg(not(windows))]
+#[cfg(not(any(windows, target_os = "linux", target_os = "macos")))]
 pub fn open_path(path: &str) -> Result<(), String> {
     #[cfg(target_os = "android")]
     return crate::android::open_path(path);
@@ -157,7 +175,7 @@ pub fn open_path(path: &str) -> Result<(), String> {
     std::process::Command::new("xdg-open").arg(path).spawn().map(|_| ()).map_err(|e| e.to_string())
 }
 
-#[cfg(not(windows))]
+#[cfg(not(any(windows, target_os = "linux", target_os = "macos")))]
 pub fn reveal_path(path: &str) -> Result<(), String> {
     let p = std::path::Path::new(path);
     match p.parent() {
@@ -166,6 +184,7 @@ pub fn reveal_path(path: &str) -> Result<(), String> {
     }
 }
 
+#[cfg(not(any(target_os = "linux", target_os = "macos")))]
 pub fn open_url(url: &str) -> Result<(), String> {
     #[cfg(windows)]
     return std::process::Command::new("explorer").arg(url).spawn().map(|_| ()).map_err(|e| e.to_string());
@@ -175,7 +194,7 @@ pub fn open_url(url: &str) -> Result<(), String> {
     std::process::Command::new("xdg-open").arg(url).spawn().map(|_| ()).map_err(|e| e.to_string())
 }
 
-#[cfg(not(windows))]
+#[cfg(not(any(windows, target_os = "linux", target_os = "macos")))]
 pub fn refresh_registrations(_associate: bool, _autostart: bool) {}
 
 #[cfg(not(windows))]

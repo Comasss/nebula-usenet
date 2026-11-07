@@ -38,7 +38,7 @@
   function titleOf(id) {
     if (id === 'debrid') return t('settings.downloadMethod');
     if (id === 'search') return t('settings.searchTitle');
-    if (id === 'windows') return isAndroid ? t('mobile.appTitle') : t('settings.windowsTitle');
+    if (id === 'windows') return isAndroid ? t('mobile.appTitle') : isWindows ? t('settings.windowsTitle') : t('settings.systemTitle');
     if (id === 'api') return t('api.title');
     if (id === 'remote') return isAndroid ? t('remote.mobileTitle') : t('settings.section.remote');
     if (id === 'server') return t('web.section');
@@ -488,7 +488,7 @@
         {#if isAndroid}
           <h2><Icon name="smartphone" size={18} /> {t('mobile.appTitle')}</h2>
         {:else}
-          <h2><Icon name="monitor" size={18} /> {t('settings.windowsTitle')}</h2>
+          <h2><Icon name="monitor" size={18} /> {isWindows ? t('settings.windowsTitle') : t('settings.systemTitle')}</h2>
         {/if}
         <div class="card group">
           {#if isAndroid}
@@ -501,7 +501,7 @@
             </SettingRow>
           {:else}
             <SettingRow icon="file" label={t('settings.associate')} description={t('settings.associateDesc')} checked={s.associateNzb} onchange={set('associateNzb')} />
-            <SettingRow icon="power" label={t('settings.startWithWindows')} checked={s.startWithWindows} onchange={set('startWithWindows')} />
+            <SettingRow icon="power" label={isWindows ? t('settings.startWithWindows') : t('settings.startWithSystem')} checked={s.startWithWindows} onchange={set('startWithWindows')} />
             <SettingRow label={t('settings.startMinimized')} checked={s.startMinimized} onchange={set('startMinimized')} />
             <SettingRow label={t('settings.minimizeToTray')} description={t('settings.minimizeToTrayDesc')} checked={s.minimizeToTray} onchange={set('minimizeToTray')} />
             <SettingRow label={t('settings.closeToTray')} description={t('settings.closeToTrayDesc')} checked={s.closeToTray} onchange={set('closeToTray')} />

@@ -15,7 +15,7 @@
   };
   const head = $derived(TITLES[tr.mode] ?? ['', 'info']);
   const p = $derived(tr.preview);
-  const from = $derived(p?.from === 'android' ? t('transfer.fromAndroid') : p?.from === 'windows' ? t('transfer.fromWindows') : '');
+  const from = $derived(p?.from === 'android' ? t('transfer.fromAndroid') : p?.from === 'windows' ? t('transfer.fromWindows') : p?.from ? t('transfer.fromDesktop') : '');
 </script>
 
 {#if tr.mode}

@@ -590,7 +590,9 @@
       "warn": "追加して警告",
       "pause": "一時停止で追加",
       "skip": "追加しない"
-    }
+    },
+    "systemTitle": "システムとの連携",
+    "startWithSystem": "システム起動時に開始"
   },
   "sidebar": {
     "activeConns": {
@@ -937,7 +939,8 @@
     "sent": "設定を送信しました。もう一方のデバイスで確定してください。",
     "cameraDenied": "QR コードをスキャンするには、Nebula にカメラの許可が必要です。",
     "scanHint": "別のデバイスの Nebula に表示された QR コードに向けてください",
-    "wizardLink": "別のデバイスで Nebula を使っていますか？QR コードで設定を移行できます"
+    "wizardLink": "別のデバイスで Nebula を使っていますか？QR コードで設定を移行できます",
+    "fromDesktop": "パソコンから"
   },
   "remote": {
     "mobileTitle": "PC を操作",

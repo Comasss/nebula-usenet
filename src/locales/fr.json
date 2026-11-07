@@ -608,7 +608,9 @@
       "warn": "Ajouter et avertir",
       "pause": "Ajouter en pause",
       "skip": "Ne pas ajouter"
-    }
+    },
+    "systemTitle": "Intégration au système",
+    "startWithSystem": "Lancer au démarrage du système"
   },
   "sidebar": {
     "activeConns": {
@@ -958,7 +960,8 @@
     "sent": "Réglages envoyés. Confirmez-les sur l'autre appareil.",
     "cameraDenied": "Nebula a besoin d'accéder à la caméra pour scanner le QR code.",
     "scanHint": "Visez le QR code affiché par Nebula sur l'autre appareil",
-    "wizardLink": "Vous utilisez déjà Nebula sur un autre appareil ? Récupérez vos réglages avec un QR code"
+    "wizardLink": "Vous utilisez déjà Nebula sur un autre appareil ? Récupérez vos réglages avec un QR code",
+    "fromDesktop": "Depuis un ordinateur"
   },
   "remote": {
     "mobileTitle": "Contrôler un PC",
