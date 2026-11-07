@@ -4,16 +4,16 @@
 
 # Nebula Usenet
 
-**A modern Usenet (NZB) client for Windows, Android and Linux servers.**<br>
+**A modern Usenet (NZB) client for Windows, Linux, macOS, Android and servers.**<br>
 Search all your indexers, download over NNTP or debrid, repair and extract automatically, all from one fast, dark, animated app. An alternative to SABnzbd and NZBGet.
 
 [![Latest release](https://img.shields.io/github/v/release/Comasss/nebula-usenet?label=release&color=7c5cff)](https://github.com/Comasss/nebula-usenet/releases/latest)
 [![Downloads](https://img.shields.io/github/downloads/Comasss/nebula-usenet/total?color=22c3e6)](https://github.com/Comasss/nebula-usenet/releases)
 [![Build](https://img.shields.io/github/actions/workflow/status/Comasss/nebula-usenet/build.yml?branch=main&label=build)](https://github.com/Comasss/nebula-usenet/actions/workflows/build.yml)
-![Platforms](https://img.shields.io/badge/platforms-Windows%20%7C%20Android%20%7C%20Linux%20server-555)
+![Platforms](https://img.shields.io/badge/platforms-Windows%20%7C%20Linux%20%7C%20macOS%20%7C%20Android%20%7C%20Server-555)
 [![License: PolyForm Noncommercial](https://img.shields.io/badge/license-PolyForm%20Noncommercial-orange)](LICENSE.md)
 
-[**Download**](https://github.com/Comasss/nebula-usenet/releases/latest) · [Features](#features) · [Screenshots](#screenshots) · [Categories](docs/CATEGORIES.md) · [Newznab API](docs/API.md) · [SABnzbd API](docs/SABNZBD.md) · [Server](docs/SERVER.md) · [Docker](docs/DOCKER.md) · [CLI](docs/CLI.md) · [Download options](docs/DOWNLOADING.md) · [Moving from SABnzbd/NZBGet](docs/IMPORT.md) · [Benchmarks](docs/BENCHMARKS.md) · [Building](#building)
+[**Download**](https://github.com/Comasss/nebula-usenet/releases/latest) · [Features](#features) · [Screenshots](#screenshots) · [Categories](docs/CATEGORIES.md) · [Newznab API](docs/API.md) · [SABnzbd API](docs/SABNZBD.md) · [Linux & macOS](docs/DESKTOP.md) · [Server](docs/SERVER.md) · [Docker](docs/DOCKER.md) · [CLI](docs/CLI.md) · [Download options](docs/DOWNLOADING.md) · [Moving from SABnzbd/NZBGet](docs/IMPORT.md) · [Benchmarks](docs/BENCHMARKS.md) · [Building](#building)
 
 <img src="https://github.com/Comasss/nebula-usenet/raw/screenshots/downloads.png" alt="Nebula Usenet: Downloads view with live speed graph, queue and post-processing" width="900">
 
@@ -36,9 +36,9 @@ Search all your indexers, download over NNTP or debrid, repair and extract autom
 - **`nebula` command line**: add NZBs, check the queue and history, pause, limit the speed and search your indexers on a nebula-server from the terminal (with `--json` for scripts and a live `nebula tui`), or download an NZB with `nebula get` without any server, with documented exit codes. See [docs/CLI.md](docs/CLI.md).
 - **Move your settings between devices with a QR code**: in **Settings → Move to another device** the PC shows a QR code that you scan with Nebula on your phone. To go the other way, the PC shows a QR code with its address on your Wi-Fi and a one-time key; the phone scans it and sends its settings encrypted over the local network. Servers, indexers, debrid services, RSS feeds and rules, the API and preferences travel; folders, history and system-specific options (tray, start with Windows, vibration…) stay as they are. If you can't scan, copy the code and paste it on the other device.
 - **Control your PC from your phone**: the Android app finds Nebula on your PC over the Wi-Fi, pairs with a 6-digit code you approve on the PC, and then shows the PC's downloads, history and statistics live. From the phone you can add NZBs, pause, resume, move and delete jobs and change the speed limit (never settings or passwords). See [Remote control](#remote-control-from-your-phone).
-- **On finish actions** (**Settings → On finish**): when a download completes, when it fails or when the queue becomes empty (nothing paused or waiting left), Nebula can send a notification to **Discord** (webhook URL), **Telegram** (bot token + chat id), **ntfy** (server + topic) or any **webhook** (JSON POST), run a **script or program** with a time limit, or **shut down, sleep or hibernate** Windows after a 60 s countdown you can cancel from a small window, the notification or the tray. Each action picks which of the three cases trigger it and has a **Test** button. Shutdown can be armed "just this once" from the speed panel or the tray menu. Actions never hold up downloads and their errors go to the Log; tokens and webhook URLs are stored encrypted, and only notifications travel with "Move to another device" (on Android only notifications exist).
+- **On finish actions** (**Settings → On finish**): when a download completes, when it fails or when the queue becomes empty (nothing paused or waiting left), Nebula can send a notification to **Discord** (webhook URL), **Telegram** (bot token + chat id), **ntfy** (server + topic) or any **webhook** (JSON POST), run a **script or program** with a time limit, or **shut down, sleep or hibernate** the computer (Windows, Linux or macOS) after a 60 s countdown you can cancel from a small window, the notification or the tray. Each action picks which of the three cases trigger it and has a **Test** button. Shutdown can be armed "just this once" from the speed panel or the tray menu. Actions never hold up downloads and their errors go to the Log; tokens and webhook URLs are stored encrypted, and only notifications travel with "Move to another device" (on Android only notifications exist).
 - **Pick your features** on first launch (at least one): indexers only (save `.nzb` files), indexers + NNTP, or NNTP only.
-- **12 languages**: English, Spanish, Simplified Chinese, Hindi, Portuguese (Brazil), French, German, Russian, Japanese, Arabic, Italian and Catalan. On startup it uses the Windows language (or English if it isn't available), and you can change it in **Settings → Language**; the tray menu, notifications and error messages are translated too.
+- **12 languages**: English, Spanish, Simplified Chinese, Hindi, Portuguese (Brazil), French, German, Russian, Japanese, Arabic, Italian and Catalan. On startup it uses the system language (or English if it isn't available), and you can change it in **Settings → Language**; the tray menu, notifications and error messages are translated too.
 - **Svelte 5 interface**: first-run NNTP credentials wizard, Downloads / History / Statistics / Servers / Settings / Log tabs, `.nzb` drag and drop, link pasting, configurable clipboard watching, tray icon and notifications.
 
 ## Screenshots
@@ -61,6 +61,8 @@ Search all your indexers, download over NNTP or debrid, repair and extract autom
 - `Nebula_<version>_x64_portable.exe`: a single executable, no installation.
 
 Both need WebView2, which comes with Windows 11 (the installer downloads it if missing).
+
+For Linux desktops there are `Nebula_<version>_linux_x86_64.AppImage` (no installation, updates itself) and `Nebula_<version>_linux_amd64.deb`, and for macOS 11+ `Nebula_<version>_macos_universal.dmg` (Apple Silicon and Intel). All three include par2 and 7-Zip, keep passwords in the system keyring (Secret Service or Keychain) and have the tray, notifications, `.nzb` association, start with the system and shutdown on finish. Installing, the unsigned-app step on macOS and where data is stored: [docs/DESKTOP.md](docs/DESKTOP.md).
 
 For Linux servers and NAS there are `nebula-server_<version>_linux_x64` and `nebula-server_<version>_linux_arm64` (a single static binary, see [docs/SERVER.md](docs/SERVER.md)) and the Docker image `ghcr.io/comasss/nebula` for amd64 and arm64 (see [docs/DOCKER.md](docs/DOCKER.md)).
 
@@ -144,7 +146,7 @@ From the terminal, the `nebula` command line controls it (`nebula add file.nzb -
   Each download goes through three stages: sending the NZB, downloading on the service (its progress and speed are shown) and downloading to the PC (8 connections and 32 MB chunks by default, resumable after closing Nebula). Afterwards it is verified/extracted by the usual post-processing if needed and, optionally, removed from the service. When adding an NZB, if TorBox already has it cached it is marked as instant (⚡).
 - Scripts on finish receive `NEBULA_NAME`, `NEBULA_STATUS` (`completed`, `failed` or `queueEmpty`), `NEBULA_PATH`, `NEBULA_SIZE` (bytes), `NEBULA_ERROR` and `NEBULA_STAGE` (the stage that failed, empty otherwise) as environment variables, plus `NEBULA_EVENT`. `.ps1` files run through PowerShell; past the time limit the process is stopped. The generic webhook receives the same data as JSON (`event`, `name`, `status`, `path`, `size`, `durationSecs`, `avgSpeed`, `via`, `error`, `stage`, `completed`, `failed`, `title`, `message`).
 - Translations: UI strings live in `src/locales/<code>.json` and engine strings in `crates/nebula-core/locales/<code>.json` (`es` is the original). To add a language, create both files and add it to `LANGUAGES` in `src/lib/i18n.svelte.js` and to `LOCALES` in `crates/nebula-core/src/i18n.rs`; `cargo test` checks that every translation has the same keys and variables.
-- Data: `%APPDATA%\Nebula` (settings, queue, history, statistics, logs). Server passwords are encrypted with DPAPI.
+- Data: `%APPDATA%\Nebula` (settings, queue, history, statistics, logs). Server passwords are encrypted with DPAPI. On Linux it's `~/.config/Nebula` and on macOS `~/Library/Application Support/Nebula`, with the encryption key in the system keyring ([docs/DESKTOP.md](docs/DESKTOP.md#where-your-data-is)).
   The `NEBULA_DATA_DIR` environment variable lets you use another folder (portable mode or testing).
 
 ## Updates
@@ -153,16 +155,17 @@ Nebula checks the latest [Release](../../releases) on GitHub when it opens and e
 
 - The file is downloaded inside the app and checked against `SHA256SUMS.txt` before installing.
 - Windows installer: the new `-setup.exe` runs silently, closes Nebula and reopens it updated. Portable exe: the running `.exe` is swapped for the new one and Nebula restarts.
+- Linux AppImage: the new AppImage replaces the running one and Nebula restarts. `.deb` and macOS: the window shows what's new and opens the Release page to download it (the `.deb` is installed with `apt`, and on macOS the app is replaced from the `.dmg`).
 - Android: the new APK is downloaded and the system installer opens. The first time, Android asks to allow Nebula to install apps.
 - Only a higher version number counts as an update, so a rebuild published under the same version isn't offered.
 
 ## Automatic builds (GitHub Actions)
 
-`.github/workflows/build.yml` builds Nebula on `windows-latest` (the Android APK on `ubuntu-latest`, and nebula-server with its Docker image on an amd64 and an arm64 Linux runner) on every push and pull request:
+`.github/workflows/build.yml` builds Nebula on `windows-latest` (the AppImage and `.deb` on `ubuntu-22.04`, the universal `.dmg` on `macos-14`, the Android APK on `ubuntu-latest`, and nebula-server with its Docker image on an amd64 and an arm64 Linux runner) on every push and pull request:
 
 - Runs the tests of the whole workspace (`cargo test --workspace`), checks that `nebula-core` builds without Tauri and builds the interface.
 - Produces the installer and the portable exe and uploads them as a run artifact (**Actions** tab → the run → **Artifacts**).
-- On every push to `main` it publishes the **Release** `vX.Y.Z` for the version in `src-tauri/tauri.conf.json` with `Nebula_<version>_x64-setup.exe`, `Nebula_<version>_x64_portable.exe`, `Nebula_<version>_android_arm64.apk`, `nebula-server_<version>_linux_x64`, `nebula-server_<version>_linux_arm64`, `nebula_<version>_linux_x64`, `nebula_<version>_linux_arm64` (the command line) and `SHA256SUMS.txt`, and pushes the image `ghcr.io/<owner>/nebula` with the tags `latest` and `vX.Y.Z`:
+- On every push to `main` it publishes the **Release** `vX.Y.Z` for the version in `src-tauri/tauri.conf.json` with `Nebula_<version>_x64-setup.exe`, `Nebula_<version>_x64_portable.exe`, `Nebula_<version>_linux_x86_64.AppImage`, `Nebula_<version>_linux_amd64.deb`, `Nebula_<version>_macos_universal.dmg`, `Nebula_<version>_android_arm64.apk`, `nebula-server_<version>_linux_x64`, `nebula-server_<version>_linux_arm64`, `nebula_<version>_linux_x64`, `nebula_<version>_linux_arm64` (the command line) and `SHA256SUMS.txt`, and pushes the image `ghcr.io/<owner>/nebula` with the tags `latest` and `vX.Y.Z`:
   - If that version has no Release yet, it creates it.
   - If this same workflow created it, it updates it with the new build (and moves the tag to the latest commit).
   - If you published it by hand, it leaves it alone.
@@ -186,6 +189,8 @@ Development with hot reload:
 npx tauri dev
 ```
 
+Linux and macOS: see [docs/DESKTOP.md](docs/DESKTOP.md#building) (`dev/desktop-tools.sh` builds par2 and 7-Zip to go inside the packages).
+
 Android (needs the Android SDK + NDK, Java 17+ and `rustup target add aarch64-linux-android`):
 
 ```bash
@@ -194,7 +199,7 @@ src-tauri/gen/android/build-native-tools.sh   # 7-Zip and par2 for arm64, only o
 npx tauri android build --apk --target aarch64
 ```
 
-The code is a Cargo workspace: `crates/nebula-core` is the engine (queue, NNTP, post-processing, APIs, RSS…) and doesn't depend on Tauri; `src-tauri` is the Windows and Android app on top of it, `crates/nebula-server` the headless server and `crates/nebula-cli` the command line. How they fit together is in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). The engine alone builds on any platform:
+The code is a Cargo workspace: `crates/nebula-core` is the engine (queue, NNTP, post-processing, APIs, RSS…) and doesn't depend on Tauri; `src-tauri` is the desktop (Windows, Linux, macOS) and Android app on top of it, `crates/nebula-server` the headless server and `crates/nebula-cli` the command line. How they fit together is in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). The engine alone builds on any platform:
 
 ```bash
 cargo build -p nebula-core

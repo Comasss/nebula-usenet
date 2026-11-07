@@ -70,7 +70,7 @@ What the engine needs from its host and depends on the system goes through the `
 
 ## The app (src-tauri)
 
-`src-tauri` keeps only what needs Tauri: windows, the tray, the commands the interface calls, the Windows integration (`winint.rs`: registry, notifications, clipboard), the Android plugin (`android.rs`) and the updater. On start it:
+`src-tauri` keeps only what needs Tauri: windows, the tray, the commands the interface calls, the Windows integration (`winint.rs`: registry, notifications, clipboard), the Linux and macOS integration (`unixint.rs`: autostart, `.nzb` association, notifications, power, clipboard; `keychain.rs` keeps the password key in the system keyring), the Android plugin (`android.rs`) and the updater. On start it:
 
 1. Gives the engine Tauri's runtime (`rt::set_handle`).
 2. Subscribes to the bus and forwards every event to the interface with `app.emit(event.name(), event.payload())`.
