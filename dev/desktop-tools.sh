@@ -60,7 +60,13 @@ case "$TRIPLE" in
     arm=$(build_7zz cmpl_clang.mak MY_ARCH="-arch arm64" CFLAGS_WARN_WALL=-Wall CFLAGS_WARN=); cp "$arm" 7zz-arm64
     x64=$(build_7zz cmpl_clang.mak MY_ARCH="-arch x86_64" CFLAGS_WARN_WALL=-Wall CFLAGS_WARN=); cp "$x64" 7zz-x64
     lipo -create 7zz-arm64 7zz-x64 -output "$OUT/nebula-7zz-$TRIPLE"
-    chmod 755 "$OUT/nebula-par2-$TRIPLE" "$OUT/nebula-7zz-$TRIPLE"
+    # tauri build --target universal-apple-darwin compila cada arquitectura por separado y también
+    # pide los de cada una.
+    cp par2-arm64/par2 "$OUT/nebula-par2-aarch64-apple-darwin"
+    cp par2-x64/par2 "$OUT/nebula-par2-x86_64-apple-darwin"
+    cp 7zz-arm64 "$OUT/nebula-7zz-aarch64-apple-darwin"
+    cp 7zz-x64 "$OUT/nebula-7zz-x86_64-apple-darwin"
+    chmod 755 "$OUT"/nebula-*-apple-darwin
     lipo -info "$OUT/nebula-par2-$TRIPLE" "$OUT/nebula-7zz-$TRIPLE"
     ;;
   *)
@@ -71,4 +77,4 @@ esac
 
 "$OUT/nebula-par2-$TRIPLE" -V | head -1
 "$OUT/nebula-7zz-$TRIPLE" i | head -3
-ls -la "$OUT"/nebula-*-"$TRIPLE"
+ls -la "$OUT"/nebula-*
