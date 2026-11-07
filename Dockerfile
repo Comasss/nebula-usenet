@@ -34,6 +34,8 @@ COPY crates crates
 # lo cargue; no se compila.
 COPY src-tauri/Cargo.toml src-tauri/build.rs src-tauri/
 COPY src-tauri/src src-tauri/src
+# Miembro del workspace (el servidor NNTP de dev/bench.py): hace falta para que Cargo cargue el workspace.
+COPY dev/nntp-bench dev/nntp-bench
 COPY --from=ui /src/dist dist
 ARG TARGETARCH
 RUN --mount=type=cache,id=cargo-registry,target=/usr/local/cargo/registry \

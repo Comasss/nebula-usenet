@@ -12,3 +12,4 @@
 !src-tauri/build.rs
 !src-tauri/src/
 !deploy/
+!dev/nntp-bench/
