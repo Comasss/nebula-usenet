@@ -107,7 +107,26 @@ fn system_languages() -> Vec<String> {
 
 #[cfg(not(windows))]
 fn system_languages() -> Vec<String> {
-    ["LC_ALL", "LC_MESSAGES", "LANG"].iter().filter_map(|v| std::env::var(v).ok()).filter(|v| !v.is_empty()).collect()
+    #[allow(unused_mut)]
+    let mut out: Vec<String> =
+        ["LC_ALL", "LC_MESSAGES", "LANG"].iter().filter_map(|v| std::env::var(v).ok()).filter(|v| !v.is_empty()).collect();
+    // Las apps de macOS abiertas desde Finder no tienen LANG: el idioma está en las preferencias.
+    #[cfg(target_os = "macos")]
+    if out.is_empty() {
+        if let Ok(o) = std::process::Command::new("defaults").args(["read", "-g", "AppleLanguages"]).output() {
+            out = parse_apple_languages(&String::from_utf8_lossy(&o.stdout));
+        }
+    }
+    out
+}
+
+/// Salida de `defaults read -g AppleLanguages`: `(\n    "es-ES",\n    en\n)`.
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+fn parse_apple_languages(text: &str) -> Vec<String> {
+    text.split(|c: char| c == ',' || c == '\n' || c == '(' || c == ')')
+        .map(|s| s.trim().trim_matches('"').to_string())
+        .filter(|s| !s.is_empty())
+        .collect()
 }
 
 /// Texto traducido, con variables opcionales: `t!("clave")` o `t!("clave", nombre = valor)`.
@@ -123,6 +142,12 @@ macro_rules! t {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn apple_languages() {
+        assert_eq!(super::parse_apple_languages("(\n    \"es-ES\",\n    en\n)\n"), vec!["es-ES", "en"]);
+        assert!(super::parse_apple_languages("").is_empty());
+    }
+
     use super::*;
     use std::collections::BTreeSet;
 
