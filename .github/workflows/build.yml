@@ -504,7 +504,12 @@ jobs:
 
   release:
     name: Publicar release
-    if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+    # El .dmg no es imprescindible: si el job de macOS no llega a correr (runners de macOS no disponibles
+    # en la cuenta), la release sale igual sin él.
+    if: >-
+      !cancelled() && github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+      && needs.test.result == 'success' && needs.build.result == 'success' && needs.linux.result == 'success'
+      && needs.android.result == 'success' && needs.server.result == 'success'
     needs: [test, build, linux, macos, android, server]
     runs-on: ubuntu-latest
     permissions:
@@ -533,7 +538,12 @@ jobs:
           v=$(jq -r .version src-tauri/tauri.conf.json)
           tag="v$v"
           short="${GITHUB_SHA::7}"
+          shopt -s nullglob
           (cd release && sha256sum *.exe *.AppImage *.deb *.dmg *.apk nebula-server_* nebula_* > SHA256SUMS.txt)
+          mac_row=""
+          if [ -e "release/Nebula_${v}_macos_universal.dmg" ]; then
+            mac_row="| \`Nebula_${v}_macos_universal.dmg\` | macOS app (Apple Silicon and Intel, macOS 11 or later). Not signed: the first time, right-click → Open. |"$'\n'
+          fi
           cat > notes.md <<EOF
           <!-- nebula-autobuild -->
           Automatic build of **Nebula $v** from commit [\`$short\`](https://github.com/$GITHUB_REPOSITORY/commit/$GITHUB_SHA).
@@ -544,8 +554,7 @@ jobs:
           | \`Nebula_${v}_x64_portable.exe\` | A single executable, no installation. Stores its data in \`%APPDATA%\\Nebula\`. |
           | \`Nebula_${v}_linux_x86_64.AppImage\` | Linux desktop app, no installation: make it executable and open it. Updates itself. |
           | \`Nebula_${v}_linux_amd64.deb\` | Linux desktop app for Debian, Ubuntu and derivatives (\`sudo apt install ./Nebula_${v}_linux_amd64.deb\`). |
-          | \`Nebula_${v}_macos_universal.dmg\` | macOS app (Apple Silicon and Intel, macOS 11 or later). Not signed: the first time, right-click → Open. |
-          | \`Nebula_${v}_android_arm64.apk\` | Android app (arm64, Android 7.0 or later). Open it on the phone to install it. |
+          ${mac_row}| \`Nebula_${v}_android_arm64.apk\` | Android app (arm64, Android 7.0 or later). Open it on the phone to install it. |
           | \`nebula-server_${v}_linux_x64\`, \`nebula-server_${v}_linux_arm64\` | nebula-server for Linux servers and NAS: web interface and SABnzbd/Newznab APIs. A single static binary; see [docs/SERVER.md](https://github.com/$GITHUB_REPOSITORY/blob/main/docs/SERVER.md). |
           | \`nebula_${v}_linux_x64\`, \`nebula_${v}_linux_arm64\` | The \`nebula\` command line: control nebula-server or download an NZB on its own; see [docs/CLI.md](https://github.com/$GITHUB_REPOSITORY/blob/main/docs/CLI.md). |
           | \`SHA256SUMS.txt\` | SHA-256 checksums to verify the files. |
