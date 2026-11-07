@@ -218,7 +218,7 @@
   "finish.testName": "اختبار Nebula",
   "finish.testOk": "أُرسل الاختبار: {action}",
   "finish.unknownKind": "نوع إجراء غير معروف: {kind}",
-  "finish.windowsOnly": "متاح على Windows فقط.",
+  "finish.windowsOnly": "متاح في تطبيق سطح المكتب فقط.",
   "imp.applied": "تم الاستيراد: {servers} خوادم و{categories} فئات و{settings} إعدادات و{schedule} مهام",
   "imp.globalQuota": "لا تُستورد الحصة العامة: في Nebula لكل خادم حصته",
   "imp.nothing": "لا يحتوي الملف على شيء للاستيراد",

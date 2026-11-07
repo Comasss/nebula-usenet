@@ -218,7 +218,7 @@
   "finish.testName": "Тест Nebula",
   "finish.testOk": "Тест отправлен: {action}",
   "finish.unknownKind": "Неизвестный тип действия: {kind}",
-  "finish.windowsOnly": "Доступно только в Windows.",
+  "finish.windowsOnly": "Доступно только в настольном приложении.",
   "imp.applied": "Импортировано: серверов {servers}, категорий {categories}, настроек {settings}, задач {schedule}",
   "imp.globalQuota": "Общая квота не импортируется: в Nebula квота задаётся для каждого сервера",
   "imp.nothing": "В файле нечего импортировать",

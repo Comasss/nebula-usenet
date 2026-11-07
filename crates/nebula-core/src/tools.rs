@@ -2,7 +2,9 @@
 //! - Windows: los que Nebula lleva dentro y extrae en la carpeta `tools` (`par2.exe`, `7z.exe`).
 //! - Android: van en el APK como bibliotecas nativas (`libpar2.so`, `lib7zz.so`), porque Android
 //!   solo deja ejecutar archivos de esa carpeta.
-//! - Resto (Linux, macOS): los de la carpeta `tools` si están; si no, los del sistema (PATH).
+//! - Resto (Linux, macOS): los de la carpeta `tools` si están; si no, los que van junto al
+//!   ejecutable (`nebula-par2` y `nebula-7zz` en la app de escritorio, con nombre propio para no
+//!   chocar con los del sistema en /usr/bin); si no, los del sistema (PATH).
 use std::path::{Path, PathBuf};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -25,9 +27,9 @@ fn names(tool: Tool) -> &'static [&'static str] {
     };
     #[cfg(not(any(windows, target_os = "android")))]
     return match tool {
-        Tool::Par2 => &["par2"],
+        Tool::Par2 => &["nebula-par2", "par2"],
         // 7zz es el 7-Zip oficial; 7z y 7za, los de p7zip.
-        Tool::SevenZip => &["7zz", "7z", "7za"],
+        Tool::SevenZip => &["nebula-7zz", "7zz", "7z", "7za"],
     };
 }
 
@@ -43,13 +45,21 @@ pub fn path(dir: &Path, tool: Tool) -> PathBuf {
         }
     }
     #[cfg(not(any(windows, target_os = "android")))]
-    if let Some(p) = list.iter().find_map(|n| in_path(n)) {
-        return p;
+    {
+        // Junto al ejecutable: los que trae la app de escritorio de Linux y macOS.
+        let exe_dir = std::env::current_exe().ok().and_then(|e| e.parent().map(Path::to_path_buf));
+        if let Some(p) = exe_dir.and_then(|d| list.iter().map(|n| d.join(n)).find(|p| p.is_file())) {
+            return p;
+        }
+        if let Some(p) = list.iter().find_map(|n| in_path(n)) {
+            return p;
+        }
     }
     #[cfg(any(windows, target_os = "android"))]
     return dir.join(list[0]);
+    // Sin encontrarla: el nombre del sistema (par2, 7zz) para que el error se entienda.
     #[allow(unreachable_code)]
-    PathBuf::from(list[0])
+    PathBuf::from(list[1])
 }
 
 /// La herramienta que se va a usar: la de los ajustes si se eligió una, si no la automática.

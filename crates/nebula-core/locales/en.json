@@ -218,7 +218,7 @@
   "finish.testName": "Nebula test",
   "finish.testOk": "Test sent: {action}",
   "finish.unknownKind": "Unknown action type: {kind}",
-  "finish.windowsOnly": "Only available on Windows.",
+  "finish.windowsOnly": "Only available in the desktop app.",
   "imp.applied": "Imported: {servers} servers, {categories} categories, {settings} settings and {schedule} tasks",
   "imp.globalQuota": "The global quota isn't imported: in Nebula each server has its own quota",
   "imp.nothing": "The file has nothing to import",

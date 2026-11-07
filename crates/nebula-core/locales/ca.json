@@ -218,7 +218,7 @@
   "finish.testName": "Prova de Nebula",
   "finish.testOk": "Prova enviada: {action}",
   "finish.unknownKind": "Tipus d'acció desconegut: {kind}",
-  "finish.windowsOnly": "Només disponible a Windows.",
+  "finish.windowsOnly": "Només disponible a l'aplicació d'escriptori.",
   "imp.applied": "Importat: {servers} servidors, {categories} categories, {settings} opcions i {schedule} tasques",
   "imp.globalQuota": "La quota global no s'importa: a Nebula cada servidor té la seva quota",
   "imp.nothing": "El fitxer no té res per importar",

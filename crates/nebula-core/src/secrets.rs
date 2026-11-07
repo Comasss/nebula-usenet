@@ -5,6 +5,8 @@
 //! - Linux, macOS…: ChaCha20-Poly1305 con una clave aleatoria en `secret.key` dentro de la carpeta
 //!   de datos (solo legible por su dueño, 600). Se guarda como `v1:<base64(nonce + cifrado)>`;
 //!   lo guardado antes en base64 se sigue leyendo y se cifra al volver a guardar.
+//!   La app de escritorio guarda esa clave en el llavero del sistema (Llavero de macOS, libsecret
+//!   en Linux) con [`set_key_store`]; el archivo queda solo como reserva si el llavero no funciona.
 use base64::Engine as _;
 #[cfg(not(any(windows, target_os = "android")))]
 use std::path::{Path, PathBuf};
@@ -91,11 +93,53 @@ pub fn unprotect(enc: &str) -> Option<String> {
 #[cfg(not(any(windows, target_os = "android")))]
 const PREFIX: &str = "v1:";
 
+/// Un llavero del sistema donde guardar la clave en vez de en `secret.key`.
+pub trait KeyStore: Send + Sync {
+    fn get(&self) -> Option<Vec<u8>>;
+    fn set(&self, key: &[u8]) -> bool;
+}
+
+#[cfg(not(any(windows, target_os = "android")))]
+static STORE: OnceLock<Box<dyn KeyStore>> = OnceLock::new();
+
+/// Usar un llavero para la clave. Hay que llamarlo antes de leer los ajustes.
+pub fn set_key_store(store: Box<dyn KeyStore>) {
+    #[cfg(not(any(windows, target_os = "android")))]
+    let _ = STORE.set(store);
+    #[cfg(any(windows, target_os = "android"))]
+    let _ = store;
+}
+
 /// La clave de `secret.key`, creada (600) la primera vez.
 #[cfg(not(any(windows, target_os = "android")))]
 fn key() -> Option<[u8; 32]> {
     static KEY: OnceLock<Option<[u8; 32]>> = OnceLock::new();
-    *KEY.get_or_init(|| load_or_create(&KEY_DIR.get()?.join("secret.key")))
+    *KEY.get_or_init(|| {
+        let file = KEY_DIR.get()?.join("secret.key");
+        match STORE.get() {
+            Some(store) => with_store(store.as_ref(), &file),
+            None => load_or_create(&file),
+        }
+    })
+}
+
+/// La clave con llavero: la del llavero si hay; si no, la del archivo (o una nueva) pasa al
+/// llavero, y el archivo se borra solo cuando se ha comprobado que el llavero la devuelve igual.
+/// Si el llavero falla, todo sigue con el archivo como antes.
+#[cfg(not(any(windows, target_os = "android")))]
+fn with_store(store: &dyn KeyStore, file: &Path) -> Option<[u8; 32]> {
+    if let Some(k) = store.get().and_then(|v| <[u8; 32]>::try_from(v).ok()) {
+        // Un archivo que sobró de antes, con la misma clave: ya no hace falta.
+        if std::fs::read(file).ok().as_deref() == Some(&k[..]) {
+            let _ = std::fs::remove_file(file);
+        }
+        return Some(k);
+    }
+    let k = load_or_create(file)?;
+    if store.set(&k) && store.get().as_deref() == Some(&k[..]) {
+        let _ = std::fs::remove_file(file);
+    }
+    Some(k)
 }
 
 #[cfg(not(any(windows, target_os = "android")))]
@@ -169,6 +213,30 @@ mod tests {
             use std::os::unix::fs::PermissionsExt;
             assert_eq!(std::fs::metadata(&path).unwrap().permissions().mode() & 0o777, 0o600);
         }
+        let _ = std::fs::remove_dir_all(&dir);
+        // Con llavero: el archivo pasa al llavero y se borra; después sale del llavero.
+        struct Mem(std::sync::Mutex<Option<Vec<u8>>>, bool);
+        impl KeyStore for Mem {
+            fn get(&self) -> Option<Vec<u8>> {
+                self.0.lock().unwrap().clone()
+            }
+            fn set(&self, key: &[u8]) -> bool {
+                if self.1 {
+                    *self.0.lock().unwrap() = Some(key.to_vec());
+                }
+                self.1
+            }
+        }
+        let k = load_or_create(&path).unwrap();
+        let ok = Mem(Default::default(), true);
+        assert_eq!(with_store(&ok, &path), Some(k));
+        assert!(!path.exists());
+        assert_eq!(with_store(&ok, &path), Some(k));
+        // Un llavero que no guarda: el archivo se queda.
+        let broken = Mem(Default::default(), false);
+        let k2 = with_store(&broken, &path).unwrap();
+        assert!(path.exists());
+        assert_eq!(load_or_create(&path), Some(k2));
         let _ = std::fs::remove_dir_all(&dir);
         // Lo que se guardó en base64 antes de cifrar se sigue leyendo.
         assert_eq!(unprotect("c2VjcmV0").as_deref(), Some("secret"));

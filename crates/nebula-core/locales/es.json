@@ -218,7 +218,7 @@
   "finish.testName": "Prueba de Nebula",
   "finish.testOk": "Prueba enviada: {action}",
   "finish.unknownKind": "Tipo de acción desconocido: {kind}",
-  "finish.windowsOnly": "Solo disponible en Windows.",
+  "finish.windowsOnly": "Solo disponible en la app de escritorio.",
   "imp.applied": "Importado: {servers} servidores, {categories} categorías, {settings} ajustes y {schedule} tareas",
   "imp.globalQuota": "La cuota global no se importa: en Nebula la cuota va en cada servidor",
   "imp.nothing": "El archivo no tiene nada que importar",

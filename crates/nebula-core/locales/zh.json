@@ -218,7 +218,7 @@
   "finish.testName": "Nebula 测试",
   "finish.testOk": "测试已发送：{action}",
   "finish.unknownKind": "未知的操作类型：{kind}",
-  "finish.windowsOnly": "仅在 Windows 上可用。",
+  "finish.windowsOnly": "仅在桌面应用中可用。",
   "imp.applied": "已导入：{servers} 台服务器、{categories} 个分类、{settings} 项设置和 {schedule} 个任务",
   "imp.globalQuota": "不会导入全局配额：Nebula 中每台服务器有各自的配额",
   "imp.nothing": "文件中没有可导入的内容",

@@ -75,6 +75,10 @@ pub enum Preview {
 fn platform() -> &'static str {
     if cfg!(target_os = "android") {
         "android"
+    } else if cfg!(target_os = "macos") {
+        "macos"
+    } else if cfg!(target_os = "linux") {
+        "linux"
     } else {
         "windows"
     }

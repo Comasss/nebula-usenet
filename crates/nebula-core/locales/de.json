@@ -218,7 +218,7 @@
   "finish.testName": "Nebula-Test",
   "finish.testOk": "Test gesendet: {action}",
   "finish.unknownKind": "Unbekannter Aktionstyp: {kind}",
-  "finish.windowsOnly": "Nur unter Windows verfügbar.",
+  "finish.windowsOnly": "Nur in der Desktop-App verfügbar.",
   "imp.applied": "Importiert: {servers} Server, {categories} Kategorien, {settings} Einstellungen und {schedule} Aufgaben",
   "imp.globalQuota": "Das globale Kontingent wird nicht importiert: in Nebula hat jeder Server sein eigenes",
   "imp.nothing": "Die Datei enthält nichts zum Importieren",

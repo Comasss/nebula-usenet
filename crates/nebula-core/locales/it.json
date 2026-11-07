@@ -218,7 +218,7 @@
   "finish.testName": "Prova di Nebula",
   "finish.testOk": "Prova inviata: {action}",
   "finish.unknownKind": "Tipo di azione sconosciuto: {kind}",
-  "finish.windowsOnly": "Disponibile solo su Windows.",
+  "finish.windowsOnly": "Disponibile solo nell'app desktop.",
   "imp.applied": "Importato: {servers} server, {categories} categorie, {settings} impostazioni e {schedule} attività",
   "imp.globalQuota": "La quota globale non viene importata: in Nebula ogni server ha la sua quota",
   "imp.nothing": "Il file non contiene nulla da importare",

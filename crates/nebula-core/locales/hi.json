@@ -218,7 +218,7 @@
   "finish.testName": "Nebula परीक्षण",
   "finish.testOk": "परीक्षण भेजा गया: {action}",
   "finish.unknownKind": "अज्ञात क्रिया प्रकार: {kind}",
-  "finish.windowsOnly": "केवल Windows पर उपलब्ध।",
+  "finish.windowsOnly": "केवल डेस्कटॉप ऐप में उपलब्ध।",
   "imp.applied": "आयात किया गया: {servers} सर्वर, {categories} श्रेणियाँ, {settings} सेटिंग्स और {schedule} कार्य",
   "imp.globalQuota": "वैश्विक कोटा आयात नहीं होता: Nebula में हर सर्वर का अपना कोटा होता है",
   "imp.nothing": "फ़ाइल में आयात करने को कुछ नहीं है",

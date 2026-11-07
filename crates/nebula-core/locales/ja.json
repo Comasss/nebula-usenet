@@ -218,7 +218,7 @@
   "finish.testName": "Nebula のテスト",
   "finish.testOk": "テストを送信しました: {action}",
   "finish.unknownKind": "不明なアクションの種類: {kind}",
-  "finish.windowsOnly": "Windows でのみ利用できます。",
+  "finish.windowsOnly": "デスクトップアプリでのみ利用できます。",
   "imp.applied": "インポート完了: サーバー {servers}、カテゴリ {categories}、設定 {settings}、タスク {schedule}",
   "imp.globalQuota": "全体のクォータはインポートされません。Nebula ではサーバーごとに設定します",
   "imp.nothing": "ファイルにインポートできる項目がありません",
