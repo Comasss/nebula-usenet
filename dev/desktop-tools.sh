@@ -9,6 +9,7 @@
 #
 # Mismas versiones que la imagen de Docker (Dockerfile).
 set -euo pipefail
+shopt -s inherit_errexit
 
 PAR2_VERSION=${PAR2_VERSION:-v1.5.0}
 SEVENZIP_VERSION=${SEVENZIP_VERSION:-25.01}
@@ -30,10 +31,11 @@ build_par2() {
   (cd "$dir" && ./automake.sh >/dev/null && ./configure "$@" >/dev/null && make -j"$JOBS" >/dev/null)
 }
 
-# 7zz para una plataforma: build_7zz <makefile de CPP/7zip>
+# 7zz para una plataforma: build_7zz <makefile de CPP/7zip> [variables de make]
 build_7zz() {
+  local mk=$1; shift
   rm -rf 7zip/CPP/7zip/Bundles/Alone2/b
-  (cd 7zip/CPP/7zip/Bundles/Alone2 && make -j"$JOBS" -f "../../$1" >/dev/null)
+  (cd 7zip/CPP/7zip/Bundles/Alone2 && make -j"$JOBS" -f "../../$mk" "$@" >/dev/null)
   find 7zip/CPP/7zip/Bundles/Alone2 -type f -name 7zz -perm -u+x | head -1
 }
 
@@ -45,13 +47,16 @@ case "$TRIPLE" in
     strip "$OUT/nebula-par2-$TRIPLE" "$OUT/nebula-7zz-$TRIPLE"
     ;;
   universal-apple-darwin)
+    export MACOSX_DEPLOYMENT_TARGET=11.0
     # Cada arquitectura por separado (par2 elige las instrucciones SIMD según la arquitectura) y
     # luego un binario universal con lipo.
     build_par2 par2-arm64 --host=aarch64-apple-darwin CC="clang -arch arm64" CXX="clang++ -arch arm64"
     build_par2 par2-x64 --host=x86_64-apple-darwin CC="clang -arch x86_64" CXX="clang++ -arch x86_64"
     lipo -create par2-arm64/par2 par2-x64/par2 -output "$OUT/nebula-par2-$TRIPLE"
-    arm=$(build_7zz cmpl_mac_arm64.mak); cp "$arm" 7zz-arm64
-    x64=$(build_7zz cmpl_mac_x64.mak); cp "$x64" 7zz-x64
+    # Sin el ensamblador de 7-Zip (el clang de Xcode reciente no acepta su 7zAsm.S de arm64) y sin
+    # -Werror, que con -Weverything rompe con cada versión nueva de clang.
+    arm=$(build_7zz cmpl_clang.mak MY_ARCH="-arch arm64" CFLAGS_WARN_WALL=-Wall CFLAGS_WARN=); cp "$arm" 7zz-arm64
+    x64=$(build_7zz cmpl_clang.mak MY_ARCH="-arch x86_64" CFLAGS_WARN_WALL=-Wall CFLAGS_WARN=); cp "$x64" 7zz-x64
     lipo -create 7zz-arm64 7zz-x64 -output "$OUT/nebula-7zz-$TRIPLE"
     chmod 755 "$OUT/nebula-par2-$TRIPLE" "$OUT/nebula-7zz-$TRIPLE"
     lipo -info "$OUT/nebula-par2-$TRIPLE" "$OUT/nebula-7zz-$TRIPLE"
