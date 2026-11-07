@@ -2902,7 +2902,7 @@ dependencies = [
 
 [[package]]
 name = "nebula"
-version = "1.10.1"
+version = "1.11.0"
 dependencies = [
  "arboard",
  "base64 0.22.1",
@@ -2930,7 +2930,7 @@ dependencies = [
 
 [[package]]
 name = "nebula-cli"
-version = "1.10.1"
+version = "1.11.0"
 dependencies = [
  "clap",
  "clap_complete",
@@ -2949,7 +2949,7 @@ dependencies = [
 
 [[package]]
 name = "nebula-core"
-version = "1.10.1"
+version = "1.11.0"
 dependencies = [
  "base64 0.22.1",
  "bytes",
@@ -2981,7 +2981,7 @@ dependencies = [
 
 [[package]]
 name = "nebula-server"
-version = "1.10.1"
+version = "1.11.0"
 dependencies = [
  "argon2",
  "axum",

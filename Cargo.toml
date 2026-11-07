@@ -9,7 +9,7 @@ resolver = "2"
 members = ["crates/nebula-core", "crates/nebula-server", "crates/nebula-cli", "src-tauri", "dev/nntp-bench"]
 
 [workspace.package]
-version = "1.10.1"
+version = "1.11.0"
 authors = ["Genis"]
 license = "PolyForm-Noncommercial-1.0.0"
 repository = "https://github.com/Comasss/nebula-usenet"
