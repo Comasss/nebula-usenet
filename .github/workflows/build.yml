@@ -1,8 +1,8 @@
-# Compila Nebula para Windows, Android y Linux (nebula-server y su imagen de Docker) en cada push / PR.
-# - Artefactos: instalador NSIS, ejecutable portable, APK de Android y nebula-server para Linux x64 y arm64
-#   (pestaña Actions → ejecución → Artifacts).
+# Compila Nebula para Windows, Linux, macOS, Android y nebula-server (con su imagen de Docker) en cada push / PR.
+# - Artefactos: instalador NSIS, ejecutable portable, AppImage y .deb, .dmg universal de macOS, APK de Android y
+#   nebula-server para Linux x64 y arm64 (pestaña Actions → ejecución → Artifacts).
 # - Cada push a main publica la Release vX.Y.Z de la versión de src-tauri/tauri.conf.json con los dos .exe,
-#   el .apk, los dos nebula-server y SHA256SUMS.txt, y la imagen ghcr.io/<dueño>/nebula con las etiquetas
+#   la AppImage, el .deb, el .dmg, el .apk, los dos nebula-server y SHA256SUMS.txt, y la imagen ghcr.io/<dueño>/nebula con las etiquetas
 #   latest y vX.Y.Z (amd64 y arm64). Si esa Release ya la creó este workflow, se actualiza con la nueva compilación; si se
 #   publicó a mano, no se toca (sube la versión para publicar otra). También funciona subiendo una etiqueta vX.Y.Z.
 name: Build
@@ -112,6 +112,129 @@ jobs:
         with:
           name: Nebula_${{ env.VERSION }}_x64
           path: release/*.exe
+          if-no-files-found: error
+
+  # Linux: AppImage y .deb con par2 y 7-Zip dentro. Se compila en Ubuntu 22.04 para que funcione
+  # también en distribuciones con una glibc más antigua que la del runner más nuevo.
+  linux:
+    name: Build Linux x64 (AppImage y .deb)
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: . -> target
+          key: linux-desktop
+
+      - name: Dependencias del sistema
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libwebkit2gtk-4.1-dev libayatana-appindicator3-dev \
+            librsvg2-dev libdbus-1-dev libxdo-dev libssl-dev patchelf file build-essential automake autoconf
+
+      - name: Caché de par2 y 7-Zip
+        id: tools-cache
+        uses: actions/cache@v4
+        with:
+          path: src-tauri/bin/nebula-*
+          key: desktop-tools-linux-x64-${{ hashFiles('dev/desktop-tools.sh') }}
+
+      - name: Compilar par2 y 7-Zip
+        if: steps.tools-cache.outputs.cache-hit != 'true'
+        run: dev/desktop-tools.sh
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Compilar (tauri build)
+        run: npx tauri build --ci --config src-tauri/tauri.tools.conf.json
+
+      - name: Preparar paquetes
+        run: |
+          set -euo pipefail
+          v=$(jq -r .version src-tauri/tauri.conf.json)
+          mkdir -p release
+          cp target/release/bundle/appimage/*.AppImage "release/Nebula_${v}_linux_x86_64.AppImage"
+          cp target/release/bundle/deb/*.deb "release/Nebula_${v}_linux_amd64.deb"
+          # par2 y 7-Zip tienen que ir dentro de los dos.
+          dpkg-deb -c "release/Nebula_${v}_linux_amd64.deb" | grep -E 'usr/bin/nebula-(par2|7zz)$'
+          (cd release && chmod +x *.AppImage && ./Nebula_${v}_linux_x86_64.AppImage --appimage-extract >/dev/null \
+            && ls squashfs-root/usr/bin/nebula-par2 squashfs-root/usr/bin/nebula-7zz && rm -rf squashfs-root)
+          ls -la release
+          echo "VERSION=$v" >> "$GITHUB_ENV"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Nebula_${{ env.VERSION }}_linux_x64
+          path: |
+            release/*.AppImage
+            release/*.deb
+          if-no-files-found: error
+
+  # macOS: un .dmg universal (Apple Silicon e Intel). Sin firmar: la primera vez se abre con clic
+  # derecho → Abrir (docs/DESKTOP.md).
+  macos:
+    name: Build macOS (universal)
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: . -> target
+          key: macos
+
+      - name: Caché de par2 y 7-Zip
+        id: tools-cache
+        uses: actions/cache@v4
+        with:
+          path: src-tauri/bin/nebula-*
+          key: desktop-tools-macos-universal-${{ hashFiles('dev/desktop-tools.sh') }}
+
+      - name: Compilar par2 y 7-Zip
+        if: steps.tools-cache.outputs.cache-hit != 'true'
+        run: |
+          brew install automake autoconf
+          dev/desktop-tools.sh universal-apple-darwin
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Compilar (tauri build)
+        run: npx tauri build --ci --target universal-apple-darwin --config src-tauri/tauri.tools.conf.json
+
+      - name: Preparar .dmg
+        run: |
+          set -euo pipefail
+          v=$(jq -r .version src-tauri/tauri.conf.json)
+          out=target/universal-apple-darwin/release/bundle
+          lipo -info "$out/macos/Nebula.app/Contents/MacOS/nebula" "$out/macos/Nebula.app/Contents/MacOS/nebula-par2" "$out/macos/Nebula.app/Contents/MacOS/nebula-7zz"
+          mkdir -p release
+          cp "$out"/dmg/*.dmg "release/Nebula_${v}_macos_universal.dmg"
+          ls -la release
+          echo "VERSION=$v" >> "$GITHUB_ENV"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Nebula_${{ env.VERSION }}_macos
+          path: release/*.dmg
           if-no-files-found: error
 
   android:
@@ -382,7 +505,7 @@ jobs:
   release:
     name: Publicar release
     if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
-    needs: [test, build, android, server]
+    needs: [test, build, linux, macos, android, server]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -410,7 +533,7 @@ jobs:
           v=$(jq -r .version src-tauri/tauri.conf.json)
           tag="v$v"
           short="${GITHUB_SHA::7}"
-          (cd release && sha256sum *.exe *.apk nebula-server_* nebula_* > SHA256SUMS.txt)
+          (cd release && sha256sum *.exe *.AppImage *.deb *.dmg *.apk nebula-server_* nebula_* > SHA256SUMS.txt)
           cat > notes.md <<EOF
           <!-- nebula-autobuild -->
           Automatic build of **Nebula $v** from commit [\`$short\`](https://github.com/$GITHUB_REPOSITORY/commit/$GITHUB_SHA).
@@ -419,6 +542,9 @@ jobs:
           |---|---|
           | \`Nebula_${v}_x64-setup.exe\` | Installer: shortcut, uninstaller and \`.nzb\` file association. |
           | \`Nebula_${v}_x64_portable.exe\` | A single executable, no installation. Stores its data in \`%APPDATA%\\Nebula\`. |
+          | \`Nebula_${v}_linux_x86_64.AppImage\` | Linux desktop app, no installation: make it executable and open it. Updates itself. |
+          | \`Nebula_${v}_linux_amd64.deb\` | Linux desktop app for Debian, Ubuntu and derivatives (\`sudo apt install ./Nebula_${v}_linux_amd64.deb\`). |
+          | \`Nebula_${v}_macos_universal.dmg\` | macOS app (Apple Silicon and Intel, macOS 11 or later). Not signed: the first time, right-click → Open. |
           | \`Nebula_${v}_android_arm64.apk\` | Android app (arm64, Android 7.0 or later). Open it on the phone to install it. |
           | \`nebula-server_${v}_linux_x64\`, \`nebula-server_${v}_linux_arm64\` | nebula-server for Linux servers and NAS: web interface and SABnzbd/Newznab APIs. A single static binary; see [docs/SERVER.md](https://github.com/$GITHUB_REPOSITORY/blob/main/docs/SERVER.md). |
           | \`nebula_${v}_linux_x64\`, \`nebula_${v}_linux_arm64\` | The \`nebula\` command line: control nebula-server or download an NZB on its own; see [docs/CLI.md](https://github.com/$GITHUB_REPOSITORY/blob/main/docs/CLI.md). |
@@ -426,7 +552,7 @@ jobs:
 
           Docker: \`docker pull ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/nebula:v$v\` (amd64 and arm64), see [docs/DOCKER.md](https://github.com/$GITHUB_REPOSITORY/blob/main/docs/DOCKER.md).
 
-          Requirements: Windows 10/11 x64 with WebView2 (included in Windows 11; the installer downloads it if missing). Android 7.0+ on a 64-bit ARM phone or tablet.
+          Requirements: Windows 10/11 x64 with WebView2 (included in Windows 11; the installer downloads it if missing). Linux x64 with WebKitGTK 4.1 (Ubuntu 22.04, Debian 12, Fedora 36 or later). macOS 11 or later. Android 7.0+ on a 64-bit ARM phone or tablet.
           EOF
           if gh release view "$tag" --json body -q .body > current.md 2>/dev/null; then
             if ! grep -q "nebula-autobuild" current.md; then
